@@ -1,7 +1,7 @@
 
-  # Aethos Dashboard Design Specs
+  # Aethos
 
-  This is a code bundle for Aethos Dashboard Design Specs. The original project is available at https://www.figma.com/design/XIpRuzZ5Zzm1MfCDFtXEvR/Aethos-Dashboard-Design-Specs.
+  This is a code bundle for Aethos. The original project is available at https://www.figma.com/design/XIpRuzZ5Zzm1MfCDFtXEvR/Aethos.
 
   ## Running the code
 
