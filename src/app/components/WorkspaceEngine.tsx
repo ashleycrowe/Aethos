@@ -1,0 +1,637 @@
+import React, { useState } from 'react';
+import { 
+  Plus, 
+  Search, 
+  ChevronRight, 
+  Grid as GridIcon,
+  List,
+  FileText,
+  Clock,
+  Trash2,
+  Target as TargetIcon,
+  Sparkles,
+  Zap,
+  Activity,
+  ShieldCheck,
+  Cpu,
+  Database,
+  ArrowRight,
+  MessageSquare,
+  History,
+  TrendingDown,
+  Layout,
+  ExternalLink,
+  Users,
+  Share2,
+  Globe,
+  Slack,
+  Link2,
+  Shield,
+  Eye,
+  Lock,
+  MoreVertical,
+  Edit3,
+  Upload,
+  Pin,
+  MoreHorizontal,
+  PlusCircle,
+  RefreshCcw,
+  AlertCircle,
+  Settings as SettingsIcon
+} from 'lucide-react';
+import { motion as Motion, AnimatePresence } from 'motion/react';
+import { useAethos } from '../context/AethosContext';
+import { PinnedArtifact, Workspace } from '../types/aethos.types';
+import { WorkspaceCreationWizard } from './WorkspaceCreationWizard';
+import { WorkspaceSyncManager } from './WorkspaceSyncManager';
+import { ArtifactWizard } from './ArtifactWizard';
+import { ResourceSynthesizer } from './ResourceSynthesizer';
+import { useTheme } from '../context/ThemeContext';
+import { useOracle } from '../context/OracleContext';
+import { useUser } from '../context/UserContext';
+import { PulseCommunicator } from './PulseCommunicator';
+import { PulseFeedItem } from './PulseFeedItem';
+import { GlassCard } from './GlassCard';
+import { toast } from 'sonner';
+import { syncRulesService } from '../services/syncRules.service';
+import { syncEngineService } from '../services/syncEngine.service';
+
+export const WorkspaceEngine = () => {
+  const { state: { workspaces }, unpinFromWorkspace, updateWorkspace, validatePointers, addWorkspace } = useAethos();
+  const { isDaylight } = useTheme();
+  const { setIsOpen: setOracleOpen, search: oracleSearch } = useOracle();
+  const { user } = useUser();
+  
+  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string | null>(workspaces[0]?.id || null);
+  const [isWizardOpen, setIsWizardOpen] = useState(false);
+  const [isSyncManagerOpen, setIsSyncManagerOpen] = useState(false);
+  const [isSynthesizerOpen, setIsSynthesizerOpen] = useState(false);
+  const [editingArtifact, setEditingArtifact] = useState<PinnedArtifact | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState<'lattice' | 'pulse' | 'forensic'>('pulse');
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const selectedWorkspace = workspaces.find(ws => ws.id === selectedWorkspaceId);
+  const { state: { containers: allContainers }, tickRetention } = useAethos();
+
+  const handleSync = async () => {
+    setIsSyncing(true);
+    await validatePointers();
+    setIsSyncing(false);
+  };
+
+  const handleCreateWorkspace = async (data: {
+    name: string;
+    description: string;
+    contentMethod: 'smart' | 'manual' | 'hybrid';
+    syncRules?: Partial<SyncRule>[];
+    selectedAssets?: string[];
+  }) => {
+    try {
+      // Create the base workspace
+      const newWorkspace: Workspace = {
+        id: `ws-${Math.random().toString(36).substr(2, 9)}`,
+        name: data.name,
+        description: data.description,
+        color: '#00F0FF',
+        icon: 'Target',
+        primaryStorage: {
+          provider: 'microsoft',
+          containerId: 'sp-new-auto',
+          path: `/Shared Documents/${data.name}`,
+          name: `${data.name} Storage`
+        },
+        pinnedItems: [],
+        linkedSources: [],
+        subscriptions: [],
+        members: [user.id],
+        pulseFeed: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        intelligenceScore: 75,
+        syncRules: [],
+      };
+
+      // Add workspace to context
+      addWorkspace(newWorkspace);
+
+      toast.success(`✨ Workspace "${data.name}" created successfully!`, {
+        description: data.contentMethod !== 'manual' 
+          ? `Auto-sync enabled with ${data.syncRules?.length || 0} rule(s)`
+          : 'Manual content management',
+      });
+
+      // Close wizard and select new workspace
+      setIsWizardOpen(false);
+      setSelectedWorkspaceId(newWorkspace.id);
+
+      // TODO: Create sync rules via syncRulesService
+      // if (data.syncRules && data.syncRules.length > 0) {
+      //   for (const rule of data.syncRules) {
+      //     await syncRulesService.createSyncRule(newWorkspace.id, rule);
+      //   }
+      // }
+
+    } catch (error) {
+      console.error('Error creating workspace:', error);
+      toast.error('Failed to create workspace');
+    }
+  };
+
+  const handleOpenWizard = () => {
+    // Check trial mode restrictions
+    if (user.tier === 'TRIAL' && workspaces.length >= 1) {
+      toast.error('Trial Limit Reached', {
+        description: 'Upgrade to Base tier to create unlimited workspaces',
+        duration: 5000,
+      });
+      return;
+    }
+    setIsWizardOpen(true);
+  };
+
+  if (workspaces.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center animate-in fade-in duration-700">
+        <div className="w-20 h-20 rounded-3xl bg-slate-100 dark:bg-white/5 flex items-center justify-center mb-8">
+          <TargetIcon className="w-10 h-10 text-slate-400" />
+        </div>
+        <h2 className="text-3xl font-black uppercase tracking-tight mb-4 text-slate-900 dark:text-white">No Workspaces Yet</h2>
+        <p className="text-slate-500 dark:text-slate-400 text-sm mb-10 max-w-md font-medium leading-relaxed">
+          Create an operational workspace to synthesize cross-cloud resources into a unified lattice.
+        </p>
+        <button 
+          onClick={handleOpenWizard}
+          className="px-10 py-4 bg-slate-900 dark:bg-white text-white dark:text-black rounded-2xl font-black text-[11px] uppercase tracking-[0.3em] shadow-xl hover:scale-105 active:scale-95 transition-all"
+        >
+          Create Workspace
+        </button>
+        <WorkspaceCreationWizard isOpen={isWizardOpen} onClose={() => setIsWizardOpen(false)} onComplete={handleCreateWorkspace} />
+      </div>
+    );
+  }
+
+  const criticalItems = selectedWorkspace?.pinnedItems.filter(item => item.category === 'critical') || [];
+  const otherItems = selectedWorkspace?.pinnedItems.filter(item => item.category !== 'critical') || [];
+
+  return (
+    <div className="space-y-10 animate-in fade-in duration-700 pb-20">
+      {/* Workspace Selection Strip */}
+      <div className="flex items-center gap-4 overflow-x-auto no-scrollbar pb-2 px-1">
+        <button 
+          onClick={handleOpenWizard}
+          className="flex-shrink-0 w-12 h-12 rounded-xl border-2 border-dashed border-slate-200 dark:border-white/10 flex items-center justify-center hover:border-[#00F0FF] transition-all group"
+        >
+          <Plus className="w-5 h-5 text-slate-400 group-hover:text-[#00F0FF]" />
+        </button>
+        {workspaces.map((ws) => (
+          <button 
+            key={ws.id}
+            onClick={() => setSelectedWorkspaceId(ws.id)}
+            className={`flex-shrink-0 flex items-center gap-3 px-5 py-2.5 rounded-xl border transition-all relative ${
+              selectedWorkspaceId === ws.id 
+                ? 'bg-white dark:bg-white/10 border-slate-900 dark:border-white shadow-lg shadow-[#00F0FF]/5' 
+                : 'bg-transparent border-slate-200 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/5'
+            }`}
+          >
+            <div className="w-6 h-6 rounded-lg shrink-0" style={{ backgroundColor: ws.color }} />
+            <span className={`text-[10px] font-black uppercase tracking-[0.2em] whitespace-nowrap ${selectedWorkspaceId === ws.id ? 'text-slate-900 dark:text-white' : 'text-slate-400'}`}>
+              {ws.name}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {selectedWorkspace && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+          {/* Main Workspace Column */}
+          <div className="lg:col-span-8 space-y-10">
+            {/* Context Header */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+              <div className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl shrink-0" style={{ backgroundColor: selectedWorkspace.color }}>
+                    <TargetIcon className="w-7 h-7 text-white" />
+                  </div>
+                  <div>
+                    <h1 className="text-4xl font-black uppercase tracking-tighter leading-none text-slate-900 dark:text-white">{selectedWorkspace.name}</h1>
+                    <div className="flex items-center gap-3 mt-2">
+                       <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Operational Lattice Live</span>
+                       <div className="w-1.5 h-1.5 rounded-full bg-[#00F0FF] animate-pulse shadow-[0_0_10px_#00F0FF]" />
+                    </div>
+                  </div>
+                </div>
+                <p className="text-sm text-slate-500 dark:text-slate-400 max-w-2xl font-medium leading-relaxed italic">
+                  "{selectedWorkspace.description || "Operational intelligence layer for cross-tenant collaboration."}"
+                </p>
+              </div>
+              
+              <div className={`flex items-center p-1.5 rounded-2xl border ${isDaylight ? 'bg-white border-slate-200 shadow-sm' : 'bg-white/5 border-white/5 backdrop-blur-xl'}`}>
+                {[
+                  { id: 'pulse', label: 'Signal Feed', icon: Activity },
+                  { id: 'lattice', label: 'Lattice Resources', icon: Database },
+                  { id: 'forensic', label: 'Purge Ops', icon: ShieldCheck }
+                ].map(t => (
+                  <button 
+                    key={t.id}
+                    onClick={() => setActiveTab(t.id as any)}
+                    className={`px-6 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-2.5 ${
+                      activeTab === t.id 
+                        ? (isDaylight ? 'bg-slate-900 text-white' : 'bg-[#00F0FF] text-black shadow-lg shadow-[#00F0FF]/10') 
+                        : 'text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/5'
+                    }`}
+                  >
+                    <t.icon className="w-4 h-4" />
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Sub-Tab Content */}
+            <AnimatePresence mode="wait">
+              {activeTab === 'pulse' && (
+                <Motion.div 
+                  key="pulse" 
+                  initial={{ opacity: 0, y: 10 }} 
+                  animate={{ opacity: 1, y: 0 }} 
+                  exit={{ opacity: 0, y: -10 }} 
+                  className="space-y-10"
+                >
+                  {/* Top Stats Strip */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className={`p-8 rounded-[36px] border ${isDaylight ? 'bg-white border-slate-100 shadow-sm' : 'bg-white/[0.03] border-white/5'}`}>
+                       <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 block mb-4">Lattice Density</span>
+                       <div className="text-4xl font-black text-[#00F0FF]">{selectedWorkspace.pinnedItems.length}</div>
+                       <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mt-2 italic">Active Pointers</p>
+                    </div>
+                    <div className={`p-8 rounded-[36px] border ${isDaylight ? 'bg-white border-slate-100 shadow-sm' : 'bg-white/[0.03] border-white/5'}`}>
+                       <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 block mb-4">Integrity Score</span>
+                       <div className="text-4xl font-black text-white">{selectedWorkspace.intelligenceScore}%</div>
+                       <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mt-2 italic">Operational Fidelity</p>
+                    </div>
+                    <div className={`p-8 rounded-[36px] border ${isDaylight ? 'bg-white border-slate-100 shadow-sm' : 'bg-white/[0.03] border-white/5'}`}>
+                       <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 block mb-4">Sync Velocity</span>
+                       <div className="text-4xl font-black text-emerald-500">92/100</div>
+                       <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mt-2 italic">Real-time Pulse</p>
+                    </div>
+                  </div>
+
+                  {/* Pulse Activity Stream */}
+                  <div className="space-y-8">
+                    <div className="flex items-center justify-between px-4">
+                      <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-600">Operational Pulse</h3>
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
+                           <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10B981]" />
+                           <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Active Sync</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <PulseCommunicator workspaceId={selectedWorkspace.id} />
+
+                    <div className="space-y-4">
+                      {selectedWorkspace.pulseFeed.length > 0 ? (
+                        selectedWorkspace.pulseFeed.map((event) => (
+                          <PulseFeedItem 
+                            key={event.id} 
+                            workspaceId={selectedWorkspace.id} 
+                            event={event} 
+                          />
+                        ))
+                      ) : (
+                        <div className="py-20 text-center space-y-4">
+                           <Activity className="w-10 h-10 text-slate-800 mx-auto" />
+                           <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.4em]">No architectural signals detected</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </Motion.div>
+              )}
+
+              {activeTab === 'lattice' && (
+                <Motion.div 
+                  key="lattice" 
+                  initial={{ opacity: 0, y: 10 }} 
+                  animate={{ opacity: 1, y: 0 }} 
+                  exit={{ opacity: 0, y: -10 }} 
+                  className="space-y-12"
+                >
+                    {/* Actions Strip */}
+                    <div className="flex flex-col md:flex-row gap-4">
+                       <button 
+                         onClick={() => setIsSynthesizerOpen(true)}
+                         className="px-10 py-5 rounded-2xl bg-[#00F0FF] text-black text-[11px] font-black uppercase tracking-[0.2em] shadow-xl shadow-[#00F0FF]/20 flex items-center gap-3 hover:scale-105 transition-all"
+                       >
+                          <PlusCircle className="w-5 h-5" /> Synthesize Resource
+                       </button>
+                       <button 
+                         onClick={handleSync}
+                         disabled={isSyncing}
+                         className={`px-8 py-5 rounded-2xl border flex items-center gap-3 text-[11px] font-black uppercase tracking-[0.2em] transition-all ${isSyncing ? 'bg-white/5 border-white/5 text-slate-500' : 'bg-white/5 border-white/10 text-white hover:bg-white/10'}`}
+                       >
+                          <RefreshCcw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                          {isSyncing ? 'Validating Pointers...' : 'Nexus Sync Engine'}
+                       </button>
+                       <div className="flex-1 relative">
+                          <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                          <input 
+                            type="text" 
+                            placeholder="SEARCH THE LATTICE..." 
+                            className="w-full h-full min-h-[64px] pl-16 pr-6 rounded-2xl bg-white/5 border border-white/5 outline-none font-black text-[11px] uppercase tracking-widest text-white focus:border-[#00F0FF]/30 transition-all"
+                          />
+                       </div>
+                    </div>
+
+                    {/* Alert for Broken Links */}
+                    {selectedWorkspace.pinnedItems.some(i => i.syncStatus === 'broken') && (
+                      <Motion.div 
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="p-6 rounded-[32px] border border-[#FF5733]/40 bg-[#FF5733]/5 flex flex-col md:flex-row items-center justify-between gap-6"
+                      >
+                         <div className="flex items-center gap-4">
+                            <div className="p-3 rounded-2xl bg-[#FF5733]/20 text-[#FF5733]">
+                               <AlertCircle className="w-6 h-6" />
+                            </div>
+                            <div>
+                               <h4 className="text-sm font-black text-white uppercase tracking-tight">Pointer Drift Detected</h4>
+                               <p className="text-[10px] text-[#FF5733] font-black uppercase tracking-widest mt-1 italic">
+                                 {selectedWorkspace.pinnedItems.filter(i => i.syncStatus === 'broken').length} Molecules have moved or lost source connectivity.
+                               </p>
+                            </div>
+                         </div>
+                         <button 
+                           onClick={handleSync}
+                           className="px-6 py-3 rounded-xl bg-[#FF5733] text-white text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all"
+                         >
+                            Heal Resource Lattice
+                         </button>
+                      </Motion.div>
+                    )}
+
+                    {/* Key Resources Section */}
+                   <div className="space-y-8">
+                      <div className="flex items-center justify-between pl-4">
+                         <h3 className="text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 flex items-center gap-3">
+                            <Pin className="w-4 h-4 text-[#00F0FF]" /> Key Operational Anchors
+                         </h3>
+                         <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 italic">Pinned for instant forensic access</span>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                         {criticalItems.map(item => (
+                           <div key={item.id} className={`p-8 rounded-[40px] bg-gradient-to-br border flex flex-col group relative overflow-hidden transition-all ${item.syncStatus === 'broken' ? 'from-[#FF5733]/10 to-transparent border-[#FF5733]/40' : 'from-[#00F0FF]/10 to-transparent border-[#00F0FF]/20 hover:border-[#00F0FF]/40'}`}>
+                              <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-125 transition-transform duration-700">
+                                 {item.syncStatus === 'broken' ? <AlertCircle className="w-24 h-24 text-[#FF5733]" /> : <Pin className="w-24 h-24 text-[#00F0FF]" />}
+                              </div>
+                              <div className="flex justify-between items-start mb-10 relative z-10">
+                                 <div className={`p-4 rounded-2xl bg-black/60 border border-white/10 transition-colors ${item.syncStatus === 'broken' ? 'text-[#FF5733]' : 'group-hover:text-[#00F0FF]'}`}>
+                                    {item.provider === 'slack' ? <Slack className="w-6 h-6" /> : <FileText className="w-6 h-6" />}
+                                 </div>
+                                 <div className="flex gap-2">
+                                    {item.syncStatus === 'broken' && (
+                                      <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#FF5733]/10 border border-[#FF5733]/20 text-[8px] font-black text-[#FF5733] uppercase tracking-widest">
+                                         Source Drift
+                                      </div>
+                                    )}
+                                    <button className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-500 hover:text-white transition-all"><MoreHorizontal className="w-4 h-4" /></button>
+                                 </div>
+                              </div>
+                              <div className="space-y-4 relative z-10">
+                                 <h4 className="text-lg font-black text-white uppercase tracking-tighter">{item.title}</h4>
+                                 <p className="text-xs text-slate-400 font-medium leading-relaxed italic line-clamp-2">"{item.aethosNote || "Primary operational anchor for project context."}"</p>
+                              </div>
+                              <div className="mt-8 pt-8 border-t border-white/5 flex items-center justify-between relative z-10">
+                                 <span className={`text-[9px] font-black uppercase tracking-[0.2em] ${item.syncStatus === 'broken' ? 'text-[#FF5733]' : 'text-[#00F0FF]'}`}>{item.provider} • {item.type}</span>
+                                 <div className="flex items-center gap-2">
+                                   {item.syncStatus === 'broken' ? (
+                                     <button 
+                                       onClick={handleSync}
+                                       className="px-4 py-2 rounded-xl bg-[#FF5733] text-white text-[9px] font-black uppercase tracking-widest hover:scale-105 transition-all"
+                                     >
+                                       Heal Link
+                                     </button>
+                                   ) : (
+                                     <a href={item.url} target="_blank" rel="noopener noreferrer" className="p-3 rounded-full bg-white/5 hover:bg-[#00F0FF] hover:text-black transition-all">
+                                        <ExternalLink className="w-4 h-4" />
+                                     </a>
+                                   )}
+                                 </div>
+                              </div>
+                           </div>
+                         ))}
+                         {criticalItems.length === 0 && (
+                           <div className="col-span-2 p-10 rounded-[40px] border border-dashed border-white/10 flex flex-col items-center justify-center text-center space-y-4">
+                              <Pin className="w-8 h-8 text-slate-700" />
+                              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Pin artifacts to create Key Operational Anchors</p>
+                           </div>
+                         )}
+                      </div>
+                   </div>
+
+                   {/* Other Lattice Resources */}
+                   <div className="space-y-8">
+                      <div className="flex items-center justify-between pl-4">
+                         <h3 className="text-[11px] font-black uppercase tracking-[0.4em] text-slate-400">Supporting Synthesis</h3>
+                         <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">{otherItems.length} Discovered Artifacts</span>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                         {otherItems.map(item => (
+                            <div key={item.id} className="p-6 rounded-[32px] bg-white/[0.03] border border-white/5 hover:border-white/20 transition-all group flex flex-col">
+                               <div className="flex items-center justify-between mb-8">
+                                  <div className="p-2.5 rounded-xl bg-black/40 border border-white/10 text-slate-500 group-hover:text-[#00F0FF] transition-colors">
+                                     <Link2 className="w-4 h-4" />
+                                  </div>
+                                  <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">{item.provider}</span>
+                               </div>
+                               <h5 className="text-[13px] font-black text-white uppercase tracking-tight mb-3 truncate">{item.title}</h5>
+                               <p className="text-[10px] text-slate-500 leading-relaxed line-clamp-2 mb-6">{item.aethosNote || "Federated resource pointer."}</p>
+                               <div className="mt-auto flex items-center justify-between pt-4 border-t border-white/5">
+                                  <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">{item.type}</span>
+                                  <button onClick={() => unpinFromWorkspace(selectedWorkspace.id, item.id)} className="text-slate-700 hover:text-[#FF5733] transition-colors">
+                                     <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                               </div>
+                            </div>
+                         ))}
+                      </div>
+                   </div>
+                </Motion.div>
+              )}
+
+              {activeTab === 'forensic' && (
+                <Motion.div 
+                  key="forensic" 
+                  initial={{ opacity: 0, y: 10 }} 
+                  animate={{ opacity: 1, y: 0 }} 
+                  exit={{ opacity: 0, y: -10 }} 
+                  className="space-y-10"
+                >
+                   {/* Retention Countdown Monitor */}
+                   <div className="space-y-6">
+                      <div className="flex items-center justify-between px-4">
+                         <h3 className="text-[11px] font-black uppercase tracking-[0.4em] text-slate-500">Retention Countdown Monitor</h3>
+                         <button 
+                           onClick={tickRetention}
+                           className="text-[9px] font-black text-[#00F0FF] uppercase tracking-widest hover:text-white transition-colors"
+                         >
+                            Simulate Day Transition
+                         </button>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                         {allContainers.filter(c => c.retentionDaysLeft !== undefined).map(c => (
+                            <GlassCard key={c.id} className={`p-8 border-l-4 ${c.retentionDaysLeft! <= 3 ? 'border-l-[#FF5733]' : 'border-l-[#00F0FF]'}`}>
+                               <div className="flex justify-between items-start mb-6">
+                                  <div>
+                                     <h4 className="text-sm font-black text-white uppercase tracking-tight">{c.title}</h4>
+                                     <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1">{c.provider} • {c.type}</p>
+                                  </div>
+                                  <div className="text-right">
+                                     <div className={`text-3xl font-black font-['JetBrains_Mono'] ${c.retentionDaysLeft! <= 3 ? 'text-[#FF5733]' : 'text-white'}`}>
+                                        {c.retentionDaysLeft}
+                                     </div>
+                                     <p className="text-[7px] font-black text-slate-600 uppercase tracking-widest">Days Remaining</p>
+                                  </div>
+                               </div>
+                               <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden mb-6">
+                                  <div 
+                                    className={`h-full transition-all duration-1000 ${c.retentionDaysLeft! <= 3 ? 'bg-[#FF5733]' : 'bg-[#00F0FF]'}`} 
+                                    style={{ width: `${(c.retentionDaysLeft! / 30) * 100}%` }} 
+                                  />
+                               </div>
+                               <div className="flex items-center justify-between">
+                                  <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest italic">Target: Governance_Vault</span>
+                                  <button className={`px-4 py-2 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all ${c.retentionDaysLeft! <= 3 ? 'bg-[#FF5733] text-white' : 'bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10'}`}>
+                                     {c.retentionDaysLeft! === 0 ? 'Purge Now' : 'Grant Extension'}
+                                  </button>
+                               </div>
+                            </GlassCard>
+                         ))}
+                      </div>
+                   </div>
+
+                   <div className="p-10 rounded-[48px] border-t-4 border-t-[#FF5733] bg-[#0B0F19] border border-white/5 shadow-2xl relative overflow-hidden">
+                      <div className="absolute top-0 right-0 p-12 opacity-5">
+                         <TrendingDown className="w-40 h-40 text-[#FF5733]" />
+                      </div>
+                      <div className="flex items-center gap-5 mb-10 relative z-10">
+                         <div className="p-4 rounded-[20px] bg-[#FF5733]/10 text-[#FF5733]">
+                            <Trash2 className="w-7 h-7" />
+                         </div>
+                         <div>
+                            <h3 className="text-2xl font-black uppercase tracking-tighter text-white">Workspace Purge Ops</h3>
+                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mt-1 italic">Identify and eliminate dead capital from the lattice</p>
+                         </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-12 relative z-10">
+                         <div className="p-8 rounded-3xl bg-white/[0.02] border border-white/5">
+                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-4">Redundant Bloat</span>
+                            <div className="text-4xl font-black text-[#FF5733]">1.2 TB</div>
+                         </div>
+                         <div className="p-8 rounded-3xl bg-white/[0.02] border border-white/5">
+                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-4">Exposure Risks</span>
+                            <div className="text-4xl font-black text-white">04</div>
+                         </div>
+                         <div className="p-8 rounded-3xl bg-white/[0.02] border border-white/5">
+                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-4">Orphaned Nodes</span>
+                            <div className="text-4xl font-black text-white">12</div>
+                         </div>
+                      </div>
+
+                      <button className="w-full py-6 rounded-2xl bg-[#FF5733]/10 border border-[#FF5733]/30 text-[#FF5733] text-[11px] font-black uppercase tracking-[0.3em] hover:bg-[#FF5733] hover:text-black transition-all shadow-xl shadow-[#FF5733]/10">
+                         Simulate Global Cleanup Protocol
+                      </button>
+                   </div>
+                </Motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Context Sidebar Column */}
+          <div className="lg:col-span-4 space-y-10">
+            {/* AI Strategic Synthesis */}
+            <div className={`p-10 rounded-[48px] border relative overflow-hidden flex flex-col space-y-10 ${isDaylight ? 'bg-white border-slate-100 shadow-xl' : 'bg-gradient-to-br from-[#0B0F19] to-[#0D121F] border-white/10 shadow-2xl'}`}>
+               <div className="absolute -top-10 -right-10 w-40 h-40 bg-[#00F0FF]/5 blur-[80px] rounded-full" />
+               
+               <div className="relative z-10 space-y-8">
+                 <div className="flex items-center gap-4">
+                    <Sparkles className="w-6 h-6 text-[#00F0FF]" />
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">Oracle Synthesis</h3>
+                 </div>
+                 
+                 <div className="space-y-6">
+                    <p className="text-2xl font-black uppercase tracking-tighter leading-tight text-white">
+                      Synthesizing <span className="text-[#00F0FF]">Project Intelligence...</span>
+                    </p>
+                    <div className="p-6 rounded-3xl bg-white/5 border border-white/5 font-medium text-[12px] leading-relaxed text-slate-400 italic">
+                       "Alpha Strategy is heavily weighted toward M365 Excel. However, high-velocity discussion in Slack suggests a budget pivot is imminent. Recommend anchoring the 'Slack Pivot Thread' to the key resources."
+                    </div>
+                 </div>
+
+                 <button 
+                  onClick={() => {
+                    setOracleOpen(true);
+                    oracleSearch(`Summarize the delta between the Excel budget and the latest Slack pivots in ${selectedWorkspace.name}.`);
+                  }}
+                  className="w-full py-5 rounded-2xl bg-[#00F0FF] text-black text-[10px] font-black uppercase tracking-[0.3em] flex items-center justify-center gap-4 shadow-xl shadow-[#00F0FF]/20 hover:scale-105 transition-all"
+                 >
+                   <Cpu className="w-4 h-4" /> Deconstruct Delta
+                 </button>
+               </div>
+            </div>
+
+            {/* Anchored Providers */}
+            <div className="p-10 rounded-[48px] border border-white/5 bg-white/[0.01] space-y-10">
+               <div className="flex items-center justify-between px-2">
+                  <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">Universal Anchors</h3>
+                  <button className="p-2 rounded-lg hover:bg-white/5 text-slate-600 transition-colors"><MoreVertical className="w-4 h-4" /></button>
+               </div>
+               
+               <div className="space-y-4">
+                  {selectedWorkspace.linkedSources.map((source, i) => (
+                    <div key={i} className="flex items-center justify-between p-6 rounded-3xl bg-white/[0.03] border border-white/5 group hover:bg-white/5 transition-all cursor-pointer">
+                       <div className="flex items-center gap-5">
+                          <div className="p-3.5 rounded-2xl bg-black/60 border border-white/10 group-hover:border-[#00F0FF]/40 transition-colors">
+                             {source.provider === 'microsoft' ? <Share2 className="w-5 h-5 text-blue-500" /> : 
+                              source.provider === 'slack' ? <Slack className="w-5 h-5 text-[#E01E5A]" /> : 
+                              <Globe className="w-5 h-5 text-emerald-500" />}
+                          </div>
+                          <div>
+                             <p className="text-xs font-black uppercase tracking-tight text-white truncate max-w-[120px]">{source.name}</p>
+                             <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mt-1">Provider Node</p>
+                          </div>
+                       </div>
+                       <ArrowRight className="w-4 h-4 text-slate-700 group-hover:text-white group-hover:translate-x-1 transition-all" />
+                    </div>
+                  ))}
+                  <button className="w-full py-5 rounded-3xl border border-dashed border-white/10 text-[9px] font-black uppercase tracking-[0.3em] text-slate-600 hover:text-[#00F0FF] hover:border-[#00F0FF]/30 transition-all flex items-center justify-center gap-3">
+                     <Plus className="w-4 h-4" /> Sync New Anchor
+                  </button>
+               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <WorkspaceCreationWizard isOpen={isWizardOpen} onClose={() => setIsWizardOpen(false)} onComplete={handleCreateWorkspace} />
+      {selectedWorkspace && (
+        <>
+          <ResourceSynthesizer 
+            workspaceId={selectedWorkspace.id}
+            isOpen={isSynthesizerOpen}
+            onClose={() => setIsSynthesizerOpen(false)}
+          />
+          <ArtifactWizard 
+            workspace={selectedWorkspace} 
+            isOpen={!!editingArtifact} 
+            editArtifact={editingArtifact}
+            onClose={() => setEditingArtifact(null)} 
+          />
+        </>
+      )}
+    </div>
+  );
+};
