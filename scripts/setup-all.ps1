@@ -1,4 +1,4 @@
-# ============================================================================
+﻿# ============================================================================
 # Aethos Complete Setup - Master Script
 # ============================================================================
 # Purpose: Run all setup steps in sequence (interactive)
@@ -20,17 +20,17 @@ param(
 $ErrorActionPreference = "Stop"
 
 Write-Host ""
-Write-Host "═══════════════════════════════════════════════════════════" -ForegroundColor Cyan
-Write-Host "  🚀 AETHOS COMPLETE SETUP WIZARD" -ForegroundColor Cyan
-Write-Host "═══════════════════════════════════════════════════════════" -ForegroundColor Cyan
+Write-Host "â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•" -ForegroundColor Cyan
+Write-Host "  ðŸš€ AETHOS COMPLETE SETUP WIZARD" -ForegroundColor Cyan
+Write-Host "â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "This wizard will guide you through:" -ForegroundColor Gray
-Write-Host "  1. Git & GitHub setup" -ForegroundColor Gray
+Write-Host "  1. Git and GitHub setup" -ForegroundColor Gray
 Write-Host "  2. Supabase database setup" -ForegroundColor Gray
 Write-Host "  3. Environment configuration" -ForegroundColor Gray
-Write-Host "  4. Verification & testing" -ForegroundColor Gray
+Write-Host "  4. Verification and testing" -ForegroundColor Gray
 Write-Host ""
-Write-Host "⏱️  Estimated time: 10-15 minutes" -ForegroundColor Yellow
+Write-Host "â±ï¸  Estimated time: 10-15 minutes" -ForegroundColor Yellow
 Write-Host ""
 
 $continue = Read-Host "Ready to begin? (yes/no)"
@@ -46,20 +46,20 @@ $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $projectRoot = Split-Path -Parent $scriptDir
 
 # ============================================================================
-# STEP 1: GIT & GITHUB
+# STEP 1: GIT AND GITHUB
 # ============================================================================
 
 if (-not $SkipGit) {
-    Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
-    Write-Host "  STEP 1/4: Git & GitHub Setup" -ForegroundColor Cyan
-    Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
+    Write-Host "â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”" -ForegroundColor Cyan
+    Write-Host "  STEP 1/4: Git and GitHub Setup" -ForegroundColor Cyan
+    Write-Host "â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”" -ForegroundColor Cyan
     Write-Host ""
 
     # Check if Git is installed
     $gitInstalled = $null -ne (Get-Command git -ErrorAction SilentlyContinue)
 
     if (-not $gitInstalled) {
-        Write-Host "❌ Git is not installed!" -ForegroundColor Red
+        Write-Host "âŒ Git is not installed!" -ForegroundColor Red
         Write-Host ""
         Write-Host "Please install Git first:" -ForegroundColor Yellow
         Write-Host "  1. Download: https://git-scm.com/download/win" -ForegroundColor Gray
@@ -70,14 +70,14 @@ if (-not $SkipGit) {
         exit 1
     }
 
-    Write-Host "✓ Git is installed: $(git --version)" -ForegroundColor Green
+    Write-Host "âœ“ Git is installed: $(git --version)" -ForegroundColor Green
     Write-Host ""
 
     # Check if already a Git repo
     $gitRepoExists = Test-Path (Join-Path $projectRoot ".git")
 
     if ($gitRepoExists) {
-        Write-Host "✓ Git repository already initialized" -ForegroundColor Green
+        Write-Host "âœ“ Git repository already initialized" -ForegroundColor Green
         Write-Host ""
     } else {
         Write-Host "Initializing Git repository..." -ForegroundColor Yellow
@@ -85,7 +85,7 @@ if (-not $SkipGit) {
         git init
         git branch -m main
         Pop-Location
-        Write-Host "✓ Git repository initialized" -ForegroundColor Green
+        Write-Host "âœ“ Git repository initialized" -ForegroundColor Green
         Write-Host ""
     }
 
@@ -94,7 +94,7 @@ if (-not $SkipGit) {
     $gitUserEmail = git config user.email
 
     if (-not $gitUserName -or -not $gitUserEmail) {
-        Write-Host "📝 Configure Git identity:" -ForegroundColor Yellow
+        Write-Host "ðŸ“ Configure Git identity:" -ForegroundColor Yellow
         Write-Host ""
 
         if (-not $gitUserName) {
@@ -108,15 +108,15 @@ if (-not $SkipGit) {
         }
 
         Write-Host ""
-        Write-Host "✓ Git configured" -ForegroundColor Green
+        Write-Host "âœ“ Git configured" -ForegroundColor Green
         Write-Host ""
     } else {
-        Write-Host "✓ Git user configured: $gitUserName <$gitUserEmail>" -ForegroundColor Green
+        Write-Host "âœ“ Git user configured: $gitUserName <$gitUserEmail>" -ForegroundColor Green
         Write-Host ""
     }
 
     # GitHub instructions
-    Write-Host "📋 GitHub Setup Instructions:" -ForegroundColor Yellow
+    Write-Host "ðŸ“‹ GitHub Setup Instructions:" -ForegroundColor Yellow
     Write-Host ""
     Write-Host "After this wizard completes, you'll need to:" -ForegroundColor Gray
     Write-Host "  1. Create GitHub repository: github.com/new" -ForegroundColor Gray
@@ -136,12 +136,12 @@ if (-not $SkipGit) {
 # ============================================================================
 
 if (-not $SkipSupabase) {
-    Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
+    Write-Host "â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”" -ForegroundColor Cyan
     Write-Host "  STEP 2/4: Supabase Database Setup" -ForegroundColor Cyan
-    Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
+    Write-Host "â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”" -ForegroundColor Cyan
     Write-Host ""
 
-    Write-Host "⚠️  IMPORTANT: You need a Supabase project first!" -ForegroundColor Yellow
+    Write-Host "âš ï¸  IMPORTANT: You need a Supabase project first!" -ForegroundColor Yellow
     Write-Host ""
     Write-Host "If you don't have one yet:" -ForegroundColor Gray
     Write-Host "  1. Go to: supabase.com" -ForegroundColor Gray
@@ -154,20 +154,21 @@ if (-not $SkipSupabase) {
 
     if ($hasSupabase -eq "yes") {
         Write-Host ""
-        Write-Host "🚀 Running Supabase setup..." -ForegroundColor Yellow
+        Write-Host "ðŸš€ Running Supabase setup..." -ForegroundColor Yellow
         Write-Host ""
 
-        & "$scriptDir\setup-supabase.ps1"
+        $supabaseScript = Join-Path $scriptDir "setup-supabase.ps1"
+        & $supabaseScript
 
         if ($LASTEXITCODE -ne 0) {
             Write-Host ""
-            Write-Host "❌ Supabase setup failed!" -ForegroundColor Red
+            Write-Host "âŒ Supabase setup failed!" -ForegroundColor Red
             Write-Host "   You can complete this manually later." -ForegroundColor Yellow
             Write-Host ""
         }
     } else {
         Write-Host ""
-        Write-Host "⊘ Skipping Supabase setup" -ForegroundColor Yellow
+        Write-Host "âŠ˜ Skipping Supabase setup" -ForegroundColor Yellow
         Write-Host "   Run manually later: .\scripts\setup-supabase.ps1" -ForegroundColor Gray
         Write-Host ""
     }
@@ -181,28 +182,27 @@ if (-not $SkipSupabase) {
 # ============================================================================
 
 if (-not $SkipEnv) {
-    Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
+    Write-Host "â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”" -ForegroundColor Cyan
     Write-Host "  STEP 3/4: Environment Configuration" -ForegroundColor Cyan
-    Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
+    Write-Host "â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”" -ForegroundColor Cyan
     Write-Host ""
 
     $envPath = Join-Path $projectRoot ".env"
     $envExists = Test-Path $envPath
 
     if ($envExists) {
-        Write-Host "✓ .env file already exists" -ForegroundColor Green
+        Write-Host "âœ“ .env file already exists" -ForegroundColor Green
         Write-Host ""
         $recreate = Read-Host "Do you want to recreate it? (yes/no)"
 
         if ($recreate -eq "yes") {
             & "$scriptDir\create-env-file.ps1"
         } else {
-            Write-Host "⊘ Keeping existing .env file" -ForegroundColor Yellow
+            Write-Host "âŠ˜ Keeping existing .env file" -ForegroundColor Yellow
         }
     } else {
-        Write-Host "🚀 Creating .env file..." -ForegroundColor Yellow
+        Write-Host "ðŸš€ Creating .env file..." -ForegroundColor Yellow
         Write-Host ""
-
         & "$scriptDir\create-env-file.ps1"
     }
 
@@ -215,39 +215,40 @@ if (-not $SkipEnv) {
 # STEP 4: VERIFICATION
 # ============================================================================
 
-Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
+Write-Host "â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”" -ForegroundColor Cyan
 Write-Host "  STEP 4/4: Verification" -ForegroundColor Cyan
-Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
+Write-Host "â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”" -ForegroundColor Cyan
 Write-Host ""
 
-Write-Host "🔍 Running setup verification..." -ForegroundColor Yellow
+Write-Host "ðŸ” Running setup verification..." -ForegroundColor Yellow
 Write-Host ""
 
-& "$scriptDir\verify-setup.ps1"
+$verifyScript = Join-Path $scriptDir "verify-setup.ps1"
+& $verifyScript
 
 $verificationResult = $LASTEXITCODE
 
 Write-Host ""
-Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
+Write-Host "â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”" -ForegroundColor Cyan
 
 # ============================================================================
 # COMPLETION
 # ============================================================================
 
 Write-Host ""
-Write-Host "═══════════════════════════════════════════════════════════" -ForegroundColor Green
-Write-Host "  🎉 SETUP WIZARD COMPLETE!" -ForegroundColor Green
-Write-Host "═══════════════════════════════════════════════════════════" -ForegroundColor Green
+Write-Host "â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•" -ForegroundColor Green
+Write-Host "  ðŸŽ‰ SETUP WIZARD COMPLETE!" -ForegroundColor Green
+Write-Host "â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•" -ForegroundColor Green
 Write-Host ""
 
 if ($verificationResult -eq 0) {
-    Write-Host "✅ All checks passed! You're ready to code." -ForegroundColor Green
+    Write-Host "âœ… All checks passed! You're ready to code." -ForegroundColor Green
 } else {
-    Write-Host "⚠️  Some checks failed. Review the output above." -ForegroundColor Yellow
+    Write-Host "âš ï¸  Some checks failed. Review the output above." -ForegroundColor Yellow
 }
 
 Write-Host ""
-Write-Host "📋 Final Steps:" -ForegroundColor Cyan
+Write-Host "ðŸ“‹ Final Steps:" -ForegroundColor Cyan
 Write-Host ""
 
 # GitHub reminder
@@ -258,10 +259,10 @@ try {
 } catch {}
 
 if (-not $gitRemoteExists) {
-    Write-Host "1️⃣  Push to GitHub:" -ForegroundColor Yellow
-    Write-Host "   • Create repo: github.com/new" -ForegroundColor Gray
-    Write-Host "   • Name: aethos-platform (Private)" -ForegroundColor Gray
-    Write-Host "   • Then run:" -ForegroundColor Gray
+    Write-Host "1ï¸âƒ£  Push to GitHub:" -ForegroundColor Yellow
+    Write-Host "   â€¢ Create repo: github.com/new" -ForegroundColor Gray
+    Write-Host "   â€¢ Name: aethos-platform (Private)" -ForegroundColor Gray
+    Write-Host "   â€¢ Then run:" -ForegroundColor Gray
     Write-Host "     git remote add origin https://github.com/YOUR-USERNAME/aethos-platform.git" -ForegroundColor Cyan
     Write-Host "     git add ." -ForegroundColor Cyan
     Write-Host "     git commit -m 'Initial commit'" -ForegroundColor Cyan
@@ -272,24 +273,24 @@ if (-not $gitRemoteExists) {
 # Dependencies
 $nodeModulesExists = Test-Path (Join-Path $projectRoot "node_modules")
 if (-not $nodeModulesExists) {
-    Write-Host "2️⃣  Install Dependencies:" -ForegroundColor Yellow
+    Write-Host "2ï¸âƒ£  Install Dependencies:" -ForegroundColor Yellow
     Write-Host "   pnpm install" -ForegroundColor Cyan
     Write-Host ""
 }
 
 # Start coding
-Write-Host "3️⃣  Start Development:" -ForegroundColor Yellow
+Write-Host "3ï¸âƒ£  Start Development:" -ForegroundColor Yellow
 Write-Host "   pnpm dev" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "4️⃣  Open VS Code:" -ForegroundColor Yellow
+Write-Host "4ï¸âƒ£  Open VS Code:" -ForegroundColor Yellow
 Write-Host "   code ." -ForegroundColor Cyan
 Write-Host ""
 
-Write-Host "📚 Documentation:" -ForegroundColor Cyan
-Write-Host "   • README: ./README.md" -ForegroundColor Gray
-Write-Host "   • Guides: ./docs/" -ForegroundColor Gray
-Write-Host "   • Scripts: ./scripts/README.md" -ForegroundColor Gray
+Write-Host "ðŸ“š Documentation:" -ForegroundColor Cyan
+Write-Host "   â€¢ README: ./README.md" -ForegroundColor Gray
+Write-Host "   â€¢ Guides: ./docs/" -ForegroundColor Gray
+Write-Host "   â€¢ Scripts: ./scripts/README.md" -ForegroundColor Gray
 Write-Host ""
 
-Write-Host "🎯 Happy coding! Build something amazing." -ForegroundColor Green
+Write-Host "ðŸŽ¯ Happy coding! Build something amazing." -ForegroundColor Green
 Write-Host ""

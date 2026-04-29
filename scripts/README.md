@@ -1,24 +1,59 @@
-# 🛠️ Aethos Setup Scripts (Windows PowerShell)
+# 🛠️ Aethos Setup Scripts (Windows)
 
 **Automated setup scripts for Windows developers**
 
 ---
 
-## 🚀 Quick Start (The Easy Way)
+## 🚀 Quick Start (The Easiest Way)
+
+### **⭐ Just Double-Click This File:**
+
+```
+RUN_SETUP.bat
+```
+
+**No PowerShell errors! No security issues! Just works!**
+
+---
+
+## 🔧 Alternative Methods
+
+### **From Command Line:**
+
+```cmd
+RUN_SETUP.bat
+```
+
+OR with PowerShell bypass:
 
 ```powershell
-# Run the complete setup wizard (recommended)
-.\scripts\setup-all.ps1
+PowerShell -ExecutionPolicy Bypass -File .\scripts\setup-all.ps1
 ```
 
 This runs everything in sequence:
-1. Git & GitHub configuration
+1. Git and GitHub configuration
 2. Supabase database setup
 3. Environment file creation
-4. Verification & testing
+4. Verification and testing
 
 **Time:** ~10-15 minutes  
-**Difficulty:** Easy (interactive prompts guide you)
+**Difficulty:** ⭐ Very Easy (just double-click!)
+
+---
+
+## 📁 Batch File Wrappers (No PowerShell Issues)
+
+Every script has a `.bat` wrapper that bypasses all PowerShell security:
+
+| Batch File | PowerShell Script | Use When |
+|------------|-------------------|----------|
+| `RUN_SETUP.bat` (root folder) | `setup-all.ps1` | ⭐ First time setup |
+| `setup-all.bat` | `setup-all.ps1` | Complete wizard |
+| `setup-supabase.bat` | `setup-supabase.ps1` | Database setup only |
+| `create-env-file.bat` | `create-env-file.ps1` | Environment config only |
+| `verify-setup.bat` | `verify-setup.ps1` | Verification only |
+
+**Just double-click any `.bat` file - no execution policy errors!**
 
 ---
 
