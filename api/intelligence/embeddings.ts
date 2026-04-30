@@ -16,6 +16,7 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import OpenAI from 'openai';
 import { createClient } from '@supabase/supabase-js';
+import { XMLParser } from 'fast-xml-parser';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -28,16 +29,123 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || '' // Service role for backend operations
 );
 
-// Content extraction helpers (simplified - in production use libraries like pdf-parse, mammoth, etc.)
+type PdfParse = (buffer: Buffer) => Promise<{ text?: string }>;
+
+const MAX_EXTRACTED_CHARS = 500_000;
+
+async function downloadFile(fileUrl: string): Promise<Buffer> {
+  const response = await fetch(fileUrl);
+
+  if (!response.ok) {
+    throw new Error(`Failed to download file content: ${response.status} ${response.statusText}`);
+  }
+
+  const arrayBuffer = await response.arrayBuffer();
+  return Buffer.from(arrayBuffer);
+}
+
+function normalizeExtractedText(text: string): string {
+  return text
+    .replace(/\r\n/g, '\n')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+    .slice(0, MAX_EXTRACTED_CHARS);
+}
+
+function collectXmlText(value: unknown, output: string[]): void {
+  if (typeof value === 'string') {
+    const normalized = value.trim();
+    if (normalized) output.push(normalized);
+    return;
+  }
+
+  if (Array.isArray(value)) {
+    value.forEach((entry) => collectXmlText(entry, output));
+    return;
+  }
+
+  if (!value || typeof value !== 'object') return;
+
+  for (const [key, nestedValue] of Object.entries(value)) {
+    if (key === 'a:t' || key.endsWith(':t')) {
+      collectXmlText(nestedValue, output);
+    } else {
+      collectXmlText(nestedValue, output);
+    }
+  }
+}
+
+async function extractPowerPointText(fileBuffer: Buffer): Promise<string> {
+  const unzipper = await import('unzipper');
+  const directory = await unzipper.Open.buffer(fileBuffer);
+  const parser = new XMLParser({ ignoreAttributes: true });
+  const textParts: string[] = [];
+
+  const slideFiles = directory.files
+    .filter((file) => /^ppt\/slides\/slide\d+\.xml$/.test(file.path))
+    .sort((a, b) => a.path.localeCompare(b.path, undefined, { numeric: true }));
+
+  for (const file of slideFiles) {
+    const slideBuffer = await file.buffer();
+    const parsed = parser.parse(slideBuffer.toString('utf8'));
+    collectXmlText(parsed, textParts);
+  }
+
+  return normalizeExtractedText(textParts.join('\n'));
+}
+
 async function extractTextContent(fileUrl: string, mimeType: string): Promise<string> {
-  // In production, use appropriate libraries:
-  // - pdf-parse for PDFs
-  // - mammoth for Word docs
-  // - xlsx for Excel
-  // - node-unzipper for PowerPoint (extract XML)
-  
-  // For now, return placeholder
-  return `[Content extraction would happen here for ${mimeType}]\n\nThis is sample text content that would be extracted from the document at ${fileUrl}.`;
+  const normalizedMimeType = (mimeType || '').toLowerCase();
+  const fileBuffer = await downloadFile(fileUrl);
+  let extractedText = '';
+
+  if (normalizedMimeType.includes('pdf')) {
+    const pdfParseModule = await import('pdf-parse');
+    const pdfParse = (pdfParseModule.default || pdfParseModule) as PdfParse;
+    const data = await pdfParse(fileBuffer);
+    extractedText = data.text || '';
+  } else if (
+    normalizedMimeType.includes('word') ||
+    normalizedMimeType.includes('document') ||
+    normalizedMimeType.includes('officedocument.wordprocessingml')
+  ) {
+    const mammoth = await import('mammoth');
+    const result = await mammoth.extractRawText({ buffer: fileBuffer });
+    extractedText = result.value || '';
+  } else if (
+    normalizedMimeType.includes('spreadsheet') ||
+    normalizedMimeType.includes('excel') ||
+    normalizedMimeType.includes('officedocument.spreadsheetml')
+  ) {
+    const xlsx = await import('xlsx');
+    const workbook = xlsx.read(fileBuffer, { type: 'buffer' });
+    extractedText = workbook.SheetNames
+      .map((sheetName) => {
+        const sheet = workbook.Sheets[sheetName];
+        const sheetText = xlsx.utils.sheet_to_csv(sheet);
+        return sheetText ? `Sheet: ${sheetName}\n${sheetText}` : '';
+      })
+      .filter(Boolean)
+      .join('\n\n');
+  } else if (
+    normalizedMimeType.includes('presentation') ||
+    normalizedMimeType.includes('powerpoint') ||
+    normalizedMimeType.includes('officedocument.presentationml')
+  ) {
+    extractedText = await extractPowerPointText(fileBuffer);
+  } else if (normalizedMimeType.startsWith('text/') || normalizedMimeType.includes('json')) {
+    extractedText = fileBuffer.toString('utf8');
+  } else {
+    throw new Error(`Unsupported file type for content extraction: ${mimeType || 'unknown'}`);
+  }
+
+  const normalizedText = normalizeExtractedText(extractedText);
+  if (!normalizedText) {
+    throw new Error('No text content could be extracted from this file');
+  }
+
+  return normalizedText;
 }
 
 // Chunk text into smaller pieces for embedding
