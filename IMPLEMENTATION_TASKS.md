@@ -18,11 +18,11 @@
 
 ## 🔴 BLOCKING ISSUES (Must Fix Before Launch)
 
-### P0-1: Content Extraction Implementation ⚠️ IN PROGRESS
+### P0-1: Content Extraction Implementation ✅ COMPLETED (April 30, 2026)
 
 **File:** `/api/intelligence/embeddings.ts`  
-**Current Status:** Placeholder function (line 32-40)  
-**Issue:** Returns `[Content extraction would happen here...]` instead of real content
+**Current Status:** Implemented for PDF, Word, Excel, PowerPoint, plain text, and JSON  
+**Issue:** Previously returned `[Content extraction would happen here...]` instead of real content
 
 **What needs to be done:**
 1. Install content parsing libraries:
@@ -87,11 +87,11 @@
 
 ---
 
-### P0-2: Create Semantic Search Endpoint ❌ NOT STARTED
+### P0-2: Create Semantic Search Endpoint ✅ COMPLETED (April 30, 2026)
 
-**File:** `/api/intelligence/semantic-search.ts` (DOES NOT EXIST)  
-**Current Status:** Missing entirely  
-**Documentation Claims:** "✅ Complete" in BACKEND_V1_V4_COMPLETE.md (FALSE)
+**File:** `/api/intelligence/semantic-search.ts`  
+**Current Status:** Implemented with OpenAI embeddings and Supabase `semantic_search` RPC  
+**Documentation Claims:** Previously stale; endpoint and migration now exist
 
 **What needs to be done:**
 1. Create new file `/api/intelligence/semantic-search.ts`
@@ -206,11 +206,11 @@
 
 ---
 
-### P0-3: Create AI Summarization Endpoint ❌ NOT STARTED
+### P0-3: Create AI Summarization Endpoint ✅ COMPLETED (April 30, 2026)
 
-**File:** `/api/intelligence/summarize.ts` (DOES NOT EXIST)  
-**Current Status:** Missing entirely  
-**Documentation Claims:** "✅ Complete" (FALSE)
+**File:** `/api/intelligence/summarize.ts`  
+**Current Status:** Implemented with 24-hour summary cache and AI+ tenant gating  
+**Documentation Claims:** Previously stale; endpoint now exists
 
 **What needs to be done:**
 1. Create new file `/api/intelligence/summarize.ts`
@@ -314,11 +314,11 @@
 
 ---
 
-### P0-4: Fix OAuth Token Encryption 🔴 SECURITY CRITICAL
+### P0-4: Fix OAuth Token Encryption ✅ COMPLETED (April 30, 2026)
 
 **File:** `/api/providers/slack/connect.ts` (line 81)  
 **File:** `/api/providers/google/connect.ts` (likely same issue)  
-**Current Status:** Plain-text storage with comment "Should be encrypted in production"
+**Current Status:** OAuth tokens encrypted at rest with AES-256-GCM via `api/_lib/encryption.ts`
 
 **Security Issue:**
 ```typescript
@@ -407,10 +407,10 @@ refresh_token: tokenData.refresh_token,
 
 ---
 
-### P0-5: Connect Frontend to Backend APIs ⚠️ MAJOR WORK
+### P0-5: Connect Frontend to Backend APIs ⚠️ IN PROGRESS
 
 **Files:** Multiple frontend components  
-**Current Status:** Using `generateMockAssets()` and fake data  
+**Current Status:** Oracle metadata search now calls `/api/search/query`; remaining frontend surfaces still need API wiring  
 **Issue:** Customers would see fake data in production
 
 **Example Issue:**
