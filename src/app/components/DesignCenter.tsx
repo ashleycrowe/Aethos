@@ -31,7 +31,7 @@ import { useTheme } from '../context/ThemeContext';
 import { GlassDropdown } from './ui/GlassDropdown';
 import { TabBar } from './ui/TabBar';
 import { toast } from 'sonner';
-import { Button } from './ui/button';
+import { Button } from "@/components/ui/button";
 
 import { OperationalGrid } from './ui/OperationalGrid';
 

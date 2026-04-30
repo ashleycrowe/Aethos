@@ -15,6 +15,7 @@
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
+import { decryptSecret } from '../../_lib/encryption';
 
 const supabase = createClient(
   process.env.SUPABASE_URL || '',
@@ -88,7 +89,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(404).json({ error: 'Slack connection not found' });
     }
 
-    const accessToken = connection.access_token;
+    const accessToken = decryptSecret(connection.access_token);
+    if (!accessToken) {
+      return res.status(500).json({ error: 'Slack connection is missing an access token' });
+    }
 
     // Fetch channels
     const channels = await fetchSlackChannels(accessToken);

@@ -15,6 +15,7 @@
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
+import { decryptSecret, encryptSecret } from '../../_lib/encryption';
 
 const supabase = createClient(
   process.env.SUPABASE_URL || '',
@@ -99,15 +100,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Check if token needs refresh
-    let accessToken = connection.access_token;
+    let accessToken = decryptSecret(connection.access_token);
+    if (!accessToken) {
+      return res.status(500).json({ error: 'Google connection is missing an access token' });
+    }
+
     if (new Date(connection.expires_at) < new Date()) {
-      accessToken = await refreshAccessToken(connection.refresh_token);
+      const refreshToken = decryptSecret(connection.refresh_token);
+      if (!refreshToken) {
+        return res.status(500).json({ error: 'Google connection is missing a refresh token' });
+      }
+
+      accessToken = await refreshAccessToken(refreshToken);
       
       // Update token in database
       await supabase
         .from('provider_connections')
         .update({
-          access_token: accessToken,
+          access_token: encryptSecret(accessToken),
           expires_at: new Date(Date.now() + 3600 * 1000).toISOString(),
         })
         .eq('id', connectionId);

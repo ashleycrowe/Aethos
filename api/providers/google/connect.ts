@@ -16,6 +16,7 @@
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
+import { encryptSecret } from '../../_lib/encryption';
 
 const supabase = createClient(
   process.env.SUPABASE_URL || '',
@@ -94,8 +95,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           provider: 'google',
           workspace_id: userInfo.email.split('@')[1], // Domain as workspace ID
           workspace_name: `Google Workspace (${userInfo.email})`,
-          access_token: tokenData.access_token, // Should be encrypted in production
-          refresh_token: tokenData.refresh_token,
+          access_token: encryptSecret(tokenData.access_token),
+          refresh_token: encryptSecret(tokenData.refresh_token),
           expires_at: new Date(Date.now() + tokenData.expires_in * 1000).toISOString(),
           scope: tokenData.scope,
           connected_at: new Date().toISOString(),

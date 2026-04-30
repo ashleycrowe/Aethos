@@ -15,6 +15,7 @@
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
+import { encryptSecret } from '../../_lib/encryption';
 
 const supabase = createClient(
   process.env.SUPABASE_URL || '',
@@ -78,7 +79,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           provider: 'slack',
           workspace_id: tokenData.team.id,
           workspace_name: tokenData.team.name,
-          access_token: tokenData.access_token, // Should be encrypted in production
+          access_token: encryptSecret(tokenData.access_token),
           bot_user_id: tokenData.bot_user_id,
           scope: tokenData.scope,
           connected_at: new Date().toISOString(),
