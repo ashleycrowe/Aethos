@@ -51,6 +51,8 @@
 ### Planning & Governance
 - **MASTER-PROJECT-PLAN.md** - Overall project roadmap and milestones
 - **DECISION-LOG.md** - Architecture Decision Records (ADRs)
+- **../../PHASE_1_DEPLOYMENT_REVIEW.md** - Current Phase 1 readiness review
+- **../../V1_TESTABLE_QUEUE.md** - Active first-testable-V1 execution queue
 
 ---
 
@@ -76,13 +78,14 @@
 ## 📖 Master Documentation References
 
 **Primary References:**
-- Complete Design System: `/docs/MASTER_DESIGN_GUIDE.md`
+- Complete Design System: `/docs/AETHOS_DESIGN_SYSTEM.md`
 - Product Specification: `/docs/AETHOS_CONSOLIDATED_SPEC_V2.md`
-- Development Standards: `/docs/CONSOLIDATED_STANDARDS.md`
-- Implementation Roadmap: `/docs/V1_IMPLEMENTATION_ROADMAP.md`
+- Development Standards: `/docs/3-standards/`
+- Active V1 Queue: `/V1_TESTABLE_QUEUE.md`
+- Phase 1 Review: `/docs/PHASE_1_DEPLOYMENT_REVIEW.md`
 
 **Operational Guidelines:**
-- Project guidelines: `/Guidelines.md`
+- Project guidelines: `/guidelines/Guidelines.md`
 
 ---
 

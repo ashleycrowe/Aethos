@@ -3,7 +3,7 @@
 
 ---
 **Document Owner:** Aethos Tech Lead
-**Last Updated:** 2026-02-27
+**Last Updated:** 2026-04-30
 **Status:** Active
 **Location:** `/docs/3-standards/DECISION-LOG.md`
 
@@ -511,3 +511,61 @@ Consolidates reporting into a single "Command and Control" interface, allowing a
 **Owner:** Aethos Tech Lead & Product Team  
 **Authority:** MANDATORY reference for all strategic discussions  
 **Last Updated:** 2026-02-27 (Moved to /docs/3-standards/)
+
+---
+
+## 2026-04-30 Addendum
+
+### Decision DEC-DEP-001: Frontend-Only Vercel Deployment For Initial Launch
+**Date:** 2026-04-30  
+**Status:** Approved  
+**Category:** Deployment  
+**Impact:** High  
+**Decision Owner:** Engineering Lead
+
+**Context:** The repository currently contains a root `api/` directory with many Vercel-style serverless function files. Vercel will detect and deploy these functions by default, but the backend still has unresolved Phase 1 blockers around schema consistency, auth/tenant validation, and test coverage.
+
+**Decision:** For the initial Vercel deployment, exclude `api/` via `.vercelignore` and deploy the Vite frontend only. Re-enable API deployment after the backend P0 queue is complete.
+
+**Rationale:**
+- Allows the frontend to go live today.
+- Avoids shipping unfinished service-role API endpoints.
+- Avoids Vercel function deployment limits and backend TypeScript checks blocking the first static deployment.
+- Keeps backend hardening tracked explicitly in `V1_TESTABLE_QUEUE.md`.
+
+**Rollback / Future Change:** Remove `api/` from `.vercelignore` after schema, auth, and tests are hardened, or move the backend into a separate Vercel project/function architecture.
+
+**References:**
+- `/.vercelignore`
+- `/V1_TESTABLE_QUEUE.md`
+- `/docs/PHASE_1_DEPLOYMENT_REVIEW.md`
+
+---
+
+### Decision DEC-DEV-001: V1 Testable Queue As Active Execution Tracker
+**Date:** 2026-04-30  
+**Status:** Approved  
+**Category:** Development Process  
+**Impact:** High  
+**Decision Owner:** Engineering Lead
+
+**Context:** `IMPLEMENTATION_TASKS.md` is useful as a broad production-readiness backlog, but it mixes completed items, future phases, implementation examples, and beta blockers. The project needs a smaller queue focused on the first testable V1 deployment.
+
+**Decision:** Use `V1_TESTABLE_QUEUE.md` as the active execution tracker for Phase 1 work. Keep `IMPLEMENTATION_TASKS.md` as the broader readiness backlog and use this decision log for architecture, security, schema, and product-scope decisions.
+
+**Rationale:**
+- Keeps short-cycle engineering work visible and repo-local.
+- Prevents Phase 1 tasks from being buried in future V1.5-V4 roadmap items.
+- Gives Codex and human contributors a single current checklist.
+- Preserves larger production-readiness context without letting it drive every sprint.
+
+**Maintenance Rules:**
+- Update `V1_TESTABLE_QUEUE.md` when starting, completing, or re-prioritizing Phase 1 work.
+- Move durable decisions into this decision log.
+- Keep `IMPLEMENTATION_TASKS.md` for broader launch readiness and historical task context.
+- Keep docs honest: distinguish implemented, partial, gated, and deferred work.
+
+**References:**
+- `/V1_TESTABLE_QUEUE.md`
+- `/docs/PHASE_1_DEPLOYMENT_REVIEW.md`
+- `/IMPLEMENTATION_TASKS.md`

@@ -1,0 +1,3 @@
+# Frontend-only Phase 1 deployment.
+# Exclude Vercel serverless functions until the API contract is hardened.
+api/

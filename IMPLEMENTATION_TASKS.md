@@ -5,6 +5,8 @@
 **Timeline:** 3-4 weeks  
 **Last Updated:** April 29, 2026
 
+> **Active Phase 1 queue:** Use `/V1_TESTABLE_QUEUE.md` for the current first-testable-V1 execution checklist. This file remains the broader production-readiness backlog.
+
 ---
 
 ## 📊 Overall Progress
