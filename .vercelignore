@@ -1,3 +1,1 @@
-# Frontend-only deployment toggle.
-# Remove `api/` for the live backend deployment test now that P0 API hardening is complete.
-api/
+
