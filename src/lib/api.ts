@@ -45,6 +45,98 @@ async function request<T>(path: string, options: RequestInit = {}, accessToken?:
   return response.json();
 }
 
+export interface WorkspaceListRequest {
+  tenantId: string;
+  accessToken?: string | null;
+}
+
+export interface WorkspaceDetailRequest {
+  tenantId: string;
+  workspaceId: string;
+  accessToken?: string | null;
+}
+
+export interface CreateWorkspaceRequest {
+  tenantId: string;
+  userId: string;
+  name: string;
+  description?: string;
+  icon?: string;
+  color?: string;
+  tags?: string[];
+  autoSyncEnabled?: boolean;
+  syncRules?: Record<string, unknown>;
+  accessToken?: string | null;
+}
+
+export interface WorkspaceListResponse {
+  success: boolean;
+  workspaces: Array<{
+    id: string;
+    name: string;
+    description?: string;
+    icon?: string;
+    color: string;
+    tags: string[];
+    autoSyncEnabled: boolean;
+    syncRules?: any;
+    itemCount: number;
+    createdAt: string;
+    updatedAt: string;
+    lastSyncAt?: string;
+  }>;
+}
+
+export interface WorkspaceDetailResponse {
+  success: boolean;
+  workspace: {
+    id: string;
+    name: string;
+    description?: string;
+    icon?: string;
+    color: string;
+    tags: string[];
+    autoSyncEnabled: boolean;
+    syncRules?: any;
+    items: Array<{
+      id: string;
+      fileId: string;
+      addedBy: string;
+      addedMethod: string;
+      pinned: boolean;
+      addedAt: string;
+      file: any; // File details
+    }>;
+    stats: {
+      totalItems: number;
+      pinnedItems: number;
+      totalSizeBytes: number;
+      avgIntelligenceScore: number;
+    };
+    createdAt: string;
+    updatedAt: string;
+    lastSyncAt?: string;
+  };
+}
+
+export interface CreateWorkspaceResponse {
+  success: boolean;
+  workspace: {
+    id: string;
+    name: string;
+    description?: string;
+    icon?: string;
+    color: string;
+    tags?: string[];
+    auto_sync_enabled?: boolean;
+    sync_rules?: Record<string, unknown>;
+    created_at?: string;
+    updated_at?: string;
+    last_sync_at?: string;
+  };
+  syncedCount: number;
+}
+
 export async function searchFiles<T = unknown>({
   accessToken,
   ...body
@@ -54,6 +146,50 @@ export async function searchFiles<T = unknown>({
     {
       method: 'POST',
       body: JSON.stringify(body),
+    },
+    accessToken
+  );
+}
+
+export async function listWorkspaces({
+  accessToken,
+  ...body
+}: WorkspaceListRequest): Promise<WorkspaceListResponse> {
+  return request<WorkspaceListResponse>(
+    '/workspaces/list',
+    {
+      method: 'POST',
+      body: JSON.stringify(body),
+    },
+    accessToken
+  );
+}
+
+export async function createWorkspace({
+  accessToken,
+  ...body
+}: CreateWorkspaceRequest): Promise<CreateWorkspaceResponse> {
+  return request<CreateWorkspaceResponse>(
+    '/workspaces/create',
+    {
+      method: 'POST',
+      body: JSON.stringify(body),
+    },
+    accessToken
+  );
+}
+
+export async function getWorkspaceDetail({
+  accessToken,
+  ...body
+}: WorkspaceDetailRequest): Promise<WorkspaceDetailResponse> {
+  return request<WorkspaceDetailResponse>(
+    `/workspaces/${body.workspaceId}`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        tenantId: body.tenantId
+      }),
     },
     accessToken
   );

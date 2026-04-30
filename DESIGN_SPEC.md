@@ -767,6 +767,13 @@ xl: 1280px  /* Desktops */
 - Sidebar collapses on mobile
 - Tables become cards on mobile
 
+**Responsive Rules:**
+- Mobile-first Tailwind only: default classes apply to mobile (< 768px); use `md:`, `lg:`, and `xl:` only for scaling up.
+- Use Tailwind `@container` queries for modular cards, list items, and embedded widgets so components resize correctly inside Teams/iframe containers.
+- Maintain minimum 44x44px touch targets for all buttons, links, dropdowns, and interactive icons on mobile.
+- Reduce backdrop-blur intensity by ~50% on mobile breakpoint styles to preserve scroll performance and battery life.
+- Favor stacked vertical layouts, compact spacing, and simplified mobile chrome before expanding to desktop.
+
 ---
 
 ## ✅ Accessibility Requirements

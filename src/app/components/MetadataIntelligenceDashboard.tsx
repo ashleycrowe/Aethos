@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { 
-  Brain, TrendingUp, AlertCircle, CheckCircle, FileQuestion, 
+import React, { useState, useEffect } from 'react';
+import { motion } from 'motion/react';
+import {
+  Brain, TrendingUp, AlertCircle, CheckCircle, FileQuestion,
   FolderOpen, Sparkles, ArrowRight, Download, Settings, Zap, Info
 } from 'lucide-react';
-import { GlassCard } from './GlassCard';
 
 interface MetadataQuality {
   totalFiles: number;
@@ -40,28 +40,28 @@ interface ImprovementOpportunity {
 
 export const MetadataIntelligenceDashboard: React.FC = () => {
   const [selectedView, setSelectedView] = useState<'overview' | 'categories' | 'opportunities'>('overview');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isDemoMode, setIsDemoMode] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Mock data - in production, this would come from API
-  const intelligenceScore = 68;
-  
-  const sourceQuality: MetadataQuality = {
+  // State for real data from API
+  const [intelligenceScore, setIntelligenceScore] = useState(68);
+  const [sourceQuality, setSourceQuality] = useState<MetadataQuality>({
     totalFiles: 4567,
-    filesWithDescriptions: 548, // 12%
-    filesWithTags: 365, // 8%
-    filesWithMeaningfulNames: 502, // 11%
+    filesWithDescriptions: 548,
+    filesWithTags: 365,
+    filesWithMeaningfulNames: 502,
     avgNameLength: 18
-  };
-
-  const enrichmentStatus: EnrichmentStatus = {
-    filesCategorized: 4293, // 94%
-    departmentsInferred: 3973, // 87%
-    keywordsGenerated: 4567, // 100%
-    timePeriodsExtracted: 3471, // 76%
+  });
+  const [enrichmentStatus, setEnrichmentStatus] = useState<EnrichmentStatus>({
+    filesCategorized: 4293,
+    departmentsInferred: 3973,
+    keywordsGenerated: 4567,
+    timePeriodsExtracted: 3471,
     avgConfidenceScore: 0.84,
     filesNowDiscoverable: 3456
-  };
-
-  const categories: CategoryBreakdown[] = [
+  });
+  const [categories, setCategories] = useState<CategoryBreakdown[]>([
     { category: 'Financial Planning', count: 1234, percentage: 31, color: '#00F0FF' },
     { category: 'HR Documents', count: 567, percentage: 14, color: '#FF5733' },
     { category: 'Engineering', count: 432, percentage: 11, color: '#9B59B6' },
@@ -70,9 +70,8 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
     { category: 'Operations', count: 245, percentage: 6, color: '#2ECC71' },
     { category: 'Legal', count: 189, percentage: 5, color: '#F39C12' },
     { category: 'Uncategorized', count: 643, percentage: 16, color: '#95A5A6' }
-  ];
-
-  const opportunities: ImprovementOpportunity[] = [
+  ]);
+  const [opportunities, setOpportunities] = useState<ImprovementOpportunity[]>([
     {
       priority: 'high',
       title: 'Low Confidence Files',
@@ -97,7 +96,108 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
       action: 'Consider reorganizing source systems',
       icon: <FolderOpen className="w-5 h-5" />
     }
-  ];
+  ]);
+
+  // Fetch data from API on component mount
+  useEffect(() => {
+    const fetchIntelligenceMetrics = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        // Get tenant ID from somewhere - for now using a placeholder
+        // In real app, this would come from auth context or URL params
+        const tenantId = '00000000-0000-0000-0000-000000000101'; // Test tenant
+
+        const response = await fetch('/api/intelligence/metrics', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ tenantId }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`API request failed: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        // Update state with real data
+        setIntelligenceScore(data.intelligenceScore);
+        setSourceQuality(data.sourceQuality);
+        setEnrichmentStatus(data.enrichmentStatus);
+        setCategories(data.categories);
+        setOpportunities(data.opportunities);
+
+      } catch (err) {
+        console.warn('Failed to fetch intelligence metrics, falling back to demo data:', err);
+        setError(err instanceof Error ? err.message : 'Unknown error');
+        setIsDemoMode(true);
+        // Keep the mock data that's already set in state
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchIntelligenceMetrics();
+  }, []);
+
+  // Mock data - kept for fallback
+  const mockData = {
+    intelligenceScore: 68,
+    sourceQuality: {
+      totalFiles: 4567,
+      filesWithDescriptions: 548,
+      filesWithTags: 365,
+      filesWithMeaningfulNames: 502,
+      avgNameLength: 18
+    },
+    enrichmentStatus: {
+      filesCategorized: 4293,
+      departmentsInferred: 3973,
+      keywordsGenerated: 4567,
+      timePeriodsExtracted: 3471,
+      avgConfidenceScore: 0.84,
+      filesNowDiscoverable: 3456
+    },
+    categories: [
+      { category: 'Financial Planning', count: 1234, percentage: 31, color: '#00F0FF' },
+      { category: 'HR Documents', count: 567, percentage: 14, color: '#FF5733' },
+      { category: 'Engineering', count: 432, percentage: 11, color: '#9B59B6' },
+      { category: 'Sales', count: 389, percentage: 10, color: '#3498DB' },
+      { category: 'Marketing', count: 301, percentage: 8, color: '#E74C3C' },
+      { category: 'Operations', count: 245, percentage: 6, color: '#2ECC71' },
+      { category: 'Legal', count: 189, percentage: 5, color: '#F39C12' },
+      { category: 'Uncategorized', count: 643, percentage: 16, color: '#95A5A6' }
+    ],
+    opportunities: [
+      {
+        priority: 'high',
+        title: 'Low Confidence Files',
+        description: '456 files with confidence <0.5',
+        count: 456,
+        action: 'Enable Content Reading for better results',
+        icon: <AlertCircle className="w-5 h-5" />
+      },
+      {
+        priority: 'medium',
+        title: 'Generic File Names',
+        description: '2,347 files named "Document1", "Untitled", etc.',
+        count: 2347,
+        action: 'Low discoverability - consider renaming',
+        icon: <FileQuestion className="w-5 h-5" />
+      },
+      {
+        priority: 'low',
+        title: 'No Path Context',
+        description: '890 files in root folders',
+        count: 890,
+        action: 'Consider reorganizing source systems',
+        icon: <FolderOpen className="w-5 h-5" />
+      }
+    ]
+  };
 
   const getScoreColor = (score: number): string => {
     if (score >= 80) return 'text-[#00F0FF]';
@@ -114,44 +214,105 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
 
   const getPriorityColor = (priority: string): string => {
     switch (priority) {
-      case 'high': return 'bg-[#FF5733]/20 border-[#FF5733]/50 text-[#FF5733]';
-      case 'medium': return 'bg-[#F39C12]/20 border-[#F39C12]/50 text-[#F39C12]';
-      case 'low': return 'bg-[#00F0FF]/20 border-[#00F0FF]/50 text-[#00F0FF]';
-      default: return 'bg-slate-500/20 border-slate-500/50 text-slate-400';
+      case 'high': return 'border-[#FF5733]';
+      case 'medium': return 'border-[#F39C12]';
+      case 'low': return 'border-[#00F0FF]';
+      default: return 'border-[#95A5A6]';
     }
   };
 
   return (
-    <div className="h-full overflow-y-auto custom-scrollbar">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+      className="h-full overflow-y-auto"
+    >
       <div className="space-y-6 pb-10">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.1 }}
+          className="flex items-center justify-between"
+        >
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#00F0FF]/20 to-[#9B59B6]/20 
-              flex items-center justify-center backdrop-blur-xl border border-[#00F0FF]/30">
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              className="w-12 h-12 rounded-xl bg-[rgba(20,24,36,0.7)] backdrop-blur-[20px]
+                border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.3),inset_0_1px_1px_rgba(255,255,255,0.1)]
+                flex items-center justify-center"
+            >
               <Brain className="w-6 h-6 text-[#00F0FF]" />
-            </div>
+            </motion.div>
             <div>
-              <h1 className="text-2xl font-bold text-white">Metadata Intelligence</h1>
-              <p className="text-sm text-slate-400">AI-powered enrichment & discovery analytics</p>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-bold text-white font-['Inter']">Metadata Intelligence</h1>
+                {isDemoMode && (
+                  <motion.span
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="px-2 py-1 text-xs font-medium rounded-full bg-[#F39C12]/20 text-[#F39C12] border border-[#F39C12]/30"
+                  >
+                    Demo Mode
+                  </motion.span>
+                )}
+              </div>
+              <p className="text-sm text-[#A0A8B8]">AI-powered enrichment & discovery analytics</p>
+              {isDemoMode && (
+                <p className="text-xs text-[#6B7280] mt-1">
+                  Showing sample data - API not available in production
+                </p>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <button className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 
-              hover:bg-white/10 transition-all text-white flex items-center gap-2">
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="px-4 py-2 rounded-lg bg-[rgba(20,24,36,0.7)] backdrop-blur-[20px]
+                border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.3),inset_0_1px_1px_rgba(255,255,255,0.1)]
+                hover:border-white/20 transition-all duration-200 text-white flex items-center gap-2"
+            >
               <Download className="w-4 h-4" />
               Export Report
-            </button>
-            <button className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#00F0FF] to-[#9B59B6] 
-              hover:opacity-90 transition-all text-white font-medium flex items-center gap-2">
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#00F0FF] to-[#9B59B6]
+                hover:opacity-90 transition-all duration-200 text-white font-medium flex items-center gap-2"
+            >
               <Settings className="w-4 h-4" />
               AI Settings
-            </button>
+            </motion.button>
           </div>
-        </div>
+        </motion.div>
 
-        {/* Intelligence Score Card */}
-        <GlassCard className="p-8">
+        {/* Loading State */}
+        {isLoading && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex items-center justify-center py-12"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-6 h-6 border-2 border-[#00F0FF]/30 border-t-[#00F0FF] rounded-full animate-spin"></div>
+              <span className="text-[#A0A8B8]">Loading intelligence metrics...</span>
+            </div>
+          </motion.div>
+        )}
+
+        {!isLoading && (
+          <>
+            {/* Intelligence Score Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.2 }}
+          className="bg-[rgba(20,24,36,0.7)] backdrop-blur-[20px] border border-white/10
+            rounded-xl p-8 shadow-[0_8px_32px_rgba(0,0,0,0.3),inset_0_1px_1px_rgba(255,255,255,0.1)]"
+        >
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
@@ -223,10 +384,15 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
               style={{ width: `${intelligenceScore}%` }}
             />
           </div>
-        </GlassCard>
-
-        {/* Tab Navigation */}
-        <div className="flex gap-2 p-1 bg-white/5 rounded-lg border border-white/10 w-fit">
+          </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.3 }}
+          className="flex gap-2 p-1 bg-[rgba(20,24,36,0.7)] backdrop-blur-[20px]
+            border border-white/10 rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.3),inset_0_1px_1px_rgba(255,255,255,0.1)]
+            w-fit"
+        >
           <button
             onClick={() => setSelectedView('overview')}
             className={`px-6 py-2 rounded-md transition-all font-medium ${
@@ -257,13 +423,17 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
           >
             Opportunities
           </button>
-        </div>
-
-        {/* Content based on selected view */}
+          </motion.div>
         {selectedView === 'overview' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Source Metadata Quality */}
-            <GlassCard className="p-6">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.4, delay: 0.4 }}
+              className="bg-[rgba(20,24,36,0.7)] backdrop-blur-[20px] border border-white/10
+                rounded-xl p-6 shadow-[0_8px_32px_rgba(0,0,0,0.3),inset_0_1px_1px_rgba(255,255,255,0.1)]"
+            >
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-semibold text-white">Source Metadata Quality</h3>
                 <div className="w-8 h-8 rounded-lg bg-[#FF5733]/20 flex items-center justify-center">
@@ -331,10 +501,16 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
                   Without Aethos, 89% of your files are unsearchable
                 </p>
               </div>
-            </GlassCard>
+            </motion.div>
 
             {/* Aethos Enrichment Status */}
-            <GlassCard className="p-6">
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.4, delay: 0.5 }}
+              className="bg-[rgba(20,24,36,0.7)] backdrop-blur-[20px] border border-white/10
+                rounded-xl p-6 shadow-[0_8px_32px_rgba(0,0,0,0.3),inset_0_1px_1px_rgba(255,255,255,0.1)]"
+            >
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-semibold text-white">Aethos Enrichment Impact</h3>
                 <div className="w-8 h-8 rounded-lg bg-[#00F0FF]/20 flex items-center justify-center">
@@ -417,12 +593,18 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
                   Aethos made {enrichmentStatus.filesNowDiscoverable.toLocaleString()} files discoverable
                 </p>
               </div>
-            </GlassCard>
+            </motion.div>
           </div>
         )}
 
         {selectedView === 'categories' && (
-          <GlassCard className="p-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.3 }}
+            className="bg-[rgba(20,24,36,0.7)] backdrop-blur-[20px] border border-white/10
+              rounded-xl p-6 shadow-[0_8px_32px_rgba(0,0,0,0.3),inset_0_1px_1px_rgba(255,255,255,0.1)]"
+          >
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-semibold text-white">Category Breakdown</h3>
               <button className="text-sm text-[#00F0FF] hover:underline flex items-center gap-1">
@@ -508,15 +690,20 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
                 enable Content Reading for better results
               </p>
             </div>
-          </GlassCard>
+          </motion.div>
         )}
 
         {selectedView === 'opportunities' && (
           <div className="space-y-4">
             {opportunities.map((opp, index) => (
-              <GlassCard 
+              <motion.div
                 key={index}
-                className={`p-6 border-l-4 ${getPriorityColor(opp.priority)}`}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.3 + index * 0.1 }}
+                className={`bg-[rgba(20,24,36,0.7)] backdrop-blur-[20px] border border-white/10
+                  rounded-xl p-6 shadow-[0_8px_32px_rgba(0,0,0,0.3),inset_0_1px_1px_rgba(255,255,255,0.1)]
+                  border-l-4 ${getPriorityColor(opp.priority)}`}
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -558,11 +745,17 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
                     )}
                   </div>
                 </div>
-              </GlassCard>
+              </motion.div>
             ))}
 
             {/* Summary Card */}
-            <GlassCard className="p-6 bg-gradient-to-br from-[#00F0FF]/10 to-[#9B59B6]/10">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.6 }}
+              className="bg-[rgba(20,24,36,0.8)] backdrop-blur-[24px] border border-white/20
+                rounded-xl p-6 shadow-[0_16px_48px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.15)]"
+            >
               <div className="flex items-start justify-between">
                 <div>
                   <h3 className="text-lg font-semibold text-white mb-2">Want Better Results?</h3>
@@ -590,10 +783,12 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
                   <ArrowRight className="w-5 h-5" />
                 </button>
               </div>
-            </GlassCard>
+            </motion.div>
           </div>
         )}
+        </>
+        )}
       </div>
-    </div>
+    </motion.div>
   );
 };

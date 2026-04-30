@@ -38,9 +38,10 @@ This file is the short-cycle engineering queue. Keep `IMPLEMENTATION_TASKS.md` a
 - [ ] Add a shared API auth/tenant validation helper for Vercel functions.
 - [ ] Apply auth/tenant validation to V1 endpoints: discovery, search, workspaces, remediation, intelligence.
 - [ ] Add remediation dry-run mode and make dry-run the default UI path for first tester sessions.
-- [ ] Wire `IntelligenceDashboard` to real discovery/search metrics.
-- [ ] Wire `WorkspaceEngine` to real workspace creation/list/detail APIs.
-- [ ] Add workspace list/detail endpoints if the frontend needs them.
+- [x] Wire `IntelligenceDashboard` to real discovery/search metrics.
+- [x] Wire `WorkspaceEngine` to real workspace creation/list/detail APIs.
+- [ ] Refactor existing UI components (`IntelligenceDashboard`, `WorkspaceEngine`, `DesignCenter`) to meet Mobile-First standards.
+- [x] Add workspace list/detail endpoints if the frontend needs them.
 - [ ] Gate non-V1 prototype modules behind feature flags or hide them from the default nav.
 - [ ] Turn global demo mode into an explicit environment-controlled setting.
 - [ ] Add Vitest configuration and smoke tests for the V1 happy path.
