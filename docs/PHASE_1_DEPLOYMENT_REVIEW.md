@@ -127,15 +127,21 @@ After the frontend is live, re-enable backend deployment only after the P0 API/s
 
 ## Code Splitting Recommendation
 
-Code splitting is recommended, but it should follow the V1 scope/gating pass. The current production build creates a large initial JavaScript chunk because `App.tsx` imports nearly every major screen eagerly.
+Code splitting has received a first implementation pass. `App.tsx` now lazy-loads major tab content and forensic overlays, and `vite.config.ts` defines stable vendor chunks for React, platform SDKs, charts, motion, MUI, and Radix.
 
-The first code-splitting pass should:
+Completed:
 
-- Keep providers, layout shell, sidebar, and active V1 screen fallback eager.
-- Convert tab content components to `React.lazy`.
-- Wrap `renderContent()` output in `Suspense`.
-- Lazy-load prototype and non-V1 screens only when explicitly opened.
-- Re-run production build and check chunk output.
+- Providers, layout shell, sidebar, and active V1 shell remain eager.
+- Tab content components are lazy loaded.
+- Dynamic content is wrapped in `Suspense`.
+- Prototype and non-V1 screens load only when opened.
+- Production build no longer emits the large chunk warning.
+
+Future tuning:
+
+- Gate non-V1 routes before beta.
+- Consider removing heavy unused libraries after the V1 surface is narrowed.
+- Add route-level smoke tests after navigation is stable.
 
 ---
 

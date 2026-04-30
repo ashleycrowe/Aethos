@@ -50,13 +50,13 @@ This file is the short-cycle engineering queue. Keep `IMPLEMENTATION_TASKS.md` a
 ## P1 - Important Before Beta
 
 - [ ] Re-enable Vercel API deployment after backend P0 hardening.
-- [ ] Implement route/component code splitting in `src/app/App.tsx`.
+- [x] Implement route/component code splitting in `src/app/App.tsx`.
 - [ ] Add consistent API error envelopes and status codes.
-- [ ] Add loading, error, and empty state audit for V1 screens.
-- [ ] Update inaccurate docs that still claim full V1-V4 production readiness.
-- [ ] Create `BETA_TESTING_GUIDE.md`.
-- [ ] Add seed data or fixture scripts for a local test tenant.
-- [ ] Add CI command documentation for build and test verification.
+- [x] Add loading, error, and empty state audit for V1 screens.
+- [x] Update inaccurate docs that still claim full V1-V4 production readiness.
+- [x] Create `BETA_TESTING_GUIDE.md`.
+- [x] Add seed data or fixture scripts for a local test tenant.
+- [x] Add CI command documentation for build and test verification.
 
 ---
 

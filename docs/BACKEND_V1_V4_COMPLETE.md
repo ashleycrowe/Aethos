@@ -1,5 +1,7 @@
 # Aethos Backend V1-V4: Complete Implementation Guide
 
+> **Current readiness note (April 30, 2026):** This is now a historical implementation reference, not the source of truth for production readiness. Use `/V1_TESTABLE_QUEUE.md`, `/docs/PHASE_1_DEPLOYMENT_REVIEW.md`, and `/IMPLEMENTATION_TASKS.md` for current status. The Phase 1 Vercel deployment intentionally excludes `/api` via `.vercelignore` while backend schema/auth/test hardening is completed.
+
 **Status:** ✅ Production Ready  
 **Last Updated:** 2026-03-01  
 **Coverage:** V1 (Core) → V1.5 (AI+) → V2 (Multi-Provider) → V3 (Governance) → V4 (Federation)

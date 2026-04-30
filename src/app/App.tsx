@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { Suspense, lazy, useState, useEffect } from 'react';
 import { motion as Motion, AnimatePresence } from 'motion/react';
 import { AethosProvider, useAethos } from './context/AethosContext';
 import { SettingsProvider } from './context/SettingsContext';
@@ -13,35 +13,56 @@ import { Toaster } from 'sonner';
 
 // Components
 import { Sidebar } from './components/Sidebar';
-import { VoyagerWorkbench } from './components/VoyagerWorkbench';
-import { WasteMeter } from './components/WasteMeter';
-import { WorkspaceEngine } from './components/WorkspaceEngine';
-import { OperationalPulse } from './components/OperationalPulse';
-import { IdentityEngine } from './components/IdentityEngine';
-import { PeopleCenter } from './components/PeopleCenter';
-import { AdminCenter } from './components/AdminCenter';
-import { ColdTierVault } from './components/ColdTierVault';
-import { DecisionIntegrity } from './components/DecisionIntegrity';
-import { DesignCenter } from './components/DesignCenter';
-import { PrototypeLab } from './components/PrototypeLab';
-import { ReportingCenter } from './components/ReportingCenter';
-import { IntelligenceStream } from './components/IntelligenceStream';
-import { IntelligenceDashboard } from './components/IntelligenceDashboard';
-import { PulseBridge } from './components/PulseBridge';
-import { WorkInstagram } from './components/WorkInstagram';
-import { UniversalArchivalConsole } from './components/UniversalArchivalConsole';
-import { RemediationCenter } from './components/RemediationCenter';
-import { OracleSearchBridgeV2 } from './components/OracleSearchBridgeV2';
-import { ForensicLab } from './components/ForensicLab';
-import { LatticeDeconstruction } from './components/LatticeDeconstruction';
-import { MetadataIntelligenceDashboard } from './components/MetadataIntelligenceDashboard';
-import { TagManagementDemo } from './components/TagManagementDemo';
-import { TagManagementFlowDemo } from './components/TagManagementFlowDemo';
 import { VersionToggle } from './components/VersionToggle';
 import { Search, Bell, Settings } from 'lucide-react';
 
-// Document Control Module
-import { DocumentControlProvider, DocumentControlHome } from './modules/document-control';
+const AdminCenter = lazy(() => import('./components/AdminCenter').then((module) => ({ default: module.AdminCenter })));
+const DesignCenter = lazy(() => import('./components/DesignCenter').then((module) => ({ default: module.DesignCenter })));
+const DocumentControlModule = lazy(() =>
+  import('./modules/document-control').then((module) => ({
+    default: () => (
+      <module.DocumentControlProvider demoMode={true}>
+        <module.DocumentControlHome />
+      </module.DocumentControlProvider>
+    ),
+  }))
+);
+const ForensicLab = lazy(() => import('./components/ForensicLab').then((module) => ({ default: module.ForensicLab })));
+const IntelligenceDashboard = lazy(() =>
+  import('./components/IntelligenceDashboard').then((module) => ({ default: module.IntelligenceDashboard }))
+);
+const LatticeDeconstruction = lazy(() =>
+  import('./components/LatticeDeconstruction').then((module) => ({ default: module.LatticeDeconstruction }))
+);
+const OracleSearchBridgeV2 = lazy(() =>
+  import('./components/OracleSearchBridgeV2').then((module) => ({ default: module.OracleSearchBridgeV2 }))
+);
+const PeopleCenter = lazy(() => import('./components/PeopleCenter').then((module) => ({ default: module.PeopleCenter })));
+const PrototypeLab = lazy(() => import('./components/PrototypeLab').then((module) => ({ default: module.PrototypeLab })));
+const PulseBridge = lazy(() => import('./components/PulseBridge').then((module) => ({ default: module.PulseBridge })));
+const RemediationCenter = lazy(() =>
+  import('./components/RemediationCenter').then((module) => ({ default: module.RemediationCenter }))
+);
+const ReportingCenter = lazy(() => import('./components/ReportingCenter').then((module) => ({ default: module.ReportingCenter })));
+const TagManagementDemo = lazy(() =>
+  import('./components/TagManagementDemo').then((module) => ({ default: module.TagManagementDemo }))
+);
+const TagManagementFlowDemo = lazy(() =>
+  import('./components/TagManagementFlowDemo').then((module) => ({ default: module.TagManagementFlowDemo }))
+);
+const VoyagerWorkbench = lazy(() =>
+  import('./components/VoyagerWorkbench').then((module) => ({ default: module.VoyagerWorkbench }))
+);
+const WorkspaceEngine = lazy(() => import('./components/WorkspaceEngine').then((module) => ({ default: module.WorkspaceEngine })));
+
+const ViewLoadingFallback = () => (
+  <div className="h-full min-h-[320px] flex flex-col items-center justify-center text-center">
+    <div className="w-10 h-10 border-2 border-[#00F0FF] border-t-transparent rounded-full animate-spin mb-5" />
+    <p className="text-[10px] font-black uppercase tracking-[0.35em] text-slate-500">
+      Loading Intelligence Layer
+    </p>
+  </div>
+);
 
 const Layout: React.FC = () => {
   const [activeTab, setActiveTab] = useState('insights');
@@ -168,7 +189,9 @@ const Layout: React.FC = () => {
 
         {/* Dynamic Viewport */}
         <div className="flex-1 p-10 pt-4 overflow-y-auto custom-scrollbar relative z-10">
-          {renderContent()}
+          <Suspense fallback={<ViewLoadingFallback />}>
+            {renderContent()}
+          </Suspense>
         </div>
 
         {/* Global Ambient Decorative Blur */}
@@ -213,18 +236,22 @@ const GlobalOverlays = () => {
     <>
       <AnimatePresence>
         {state.isForensicLabOpen && state.forensicContext.type === 'node' && (
-          <ForensicLab 
-            isOpen={true} 
-            onClose={() => setForensicLabOpen(false)}
-            label={state.forensicContext.label}
-          />
+          <Suspense fallback={null}>
+            <ForensicLab 
+              isOpen={true} 
+              onClose={() => setForensicLabOpen(false)}
+              label={state.forensicContext.label}
+            />
+          </Suspense>
         )}
         {state.isForensicLabOpen && (state.forensicContext.type === 'universal' || state.forensicContext.type === 'workspace') && (
-          <LatticeDeconstruction 
-            isOpen={true} 
-            onClose={() => setForensicLabOpen(false)}
-            label={state.forensicContext.label}
-          />
+          <Suspense fallback={null}>
+            <LatticeDeconstruction 
+              isOpen={true} 
+              onClose={() => setForensicLabOpen(false)}
+              label={state.forensicContext.label}
+            />
+          </Suspense>
         )}
       </AnimatePresence>
     </>
