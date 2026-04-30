@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { isDemoModeEnabled } from '@/app/config/demoMode';
 import { useAuth } from '@/app/context/AuthContext';
+import { useVersion } from '@/app/context/VersionContext';
 
 interface MetadataQuality {
   totalFiles: number;
@@ -42,6 +43,7 @@ interface ImprovementOpportunity {
 
 export const MetadataIntelligenceDashboard: React.FC = () => {
   const { tenantId, getAccessToken } = useAuth();
+  const { isDemoMode: globalDemoMode } = useVersion();
   const [selectedView, setSelectedView] = useState<'overview' | 'categories' | 'opportunities'>('overview');
   const [isLoading, setIsLoading] = useState(true);
   const [isDemoMode, setIsDemoMode] = useState(isDemoModeEnabled());
@@ -104,13 +106,14 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
   // Fetch data from API on component mount
   useEffect(() => {
     const fetchIntelligenceMetrics = async () => {
-      if (isDemoModeEnabled()) {
+      if (globalDemoMode) {
         setIsDemoMode(true);
         setIsLoading(false);
         return;
       }
 
       try {
+        setIsDemoMode(false);
         setIsLoading(true);
         setError(null);
 
@@ -152,7 +155,7 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
     };
 
     fetchIntelligenceMetrics();
-  }, [tenantId, getAccessToken]);
+  }, [tenantId, getAccessToken, globalDemoMode]);
 
   // Mock data - kept for fallback
   const mockData = {

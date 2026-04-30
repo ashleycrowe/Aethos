@@ -12,6 +12,7 @@
  */
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { DEMO_MODE_STORAGE_KEY } from '@/app/config/demoMode';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -452,7 +453,7 @@ export const VersionProvider: React.FC<VersionProviderProps> = ({
   });
   
   const [isDemoMode, setDemoMode] = useState<boolean>(() => {
-    const saved = localStorage.getItem('aethos_demo_mode');
+    const saved = localStorage.getItem(DEMO_MODE_STORAGE_KEY);
     return saved !== null ? saved === 'true' : demoMode;
   });
 
@@ -465,7 +466,7 @@ export const VersionProvider: React.FC<VersionProviderProps> = ({
 
   // Persist demo mode to localStorage
   useEffect(() => {
-    localStorage.setItem('aethos_demo_mode', String(isDemoMode));
+    localStorage.setItem(DEMO_MODE_STORAGE_KEY, String(isDemoMode));
   }, [isDemoMode]);
 
   const value: VersionContextValue = {

@@ -52,6 +52,7 @@ import { ResourceSynthesizer } from './ResourceSynthesizer';
 import { useTheme } from '@/app/context/ThemeContext';
 import { useOracle } from '@/app/context/OracleContext';
 import { useUser } from '@/app/context/UserContext';
+import { useVersion } from '@/app/context/VersionContext';
 import { PulseCommunicator } from './PulseCommunicator';
 import { PulseFeedItem } from './PulseFeedItem';
 import { toast } from 'sonner';
@@ -115,6 +116,7 @@ export const WorkspaceEngine = () => {
   const { setIsOpen: setOracleOpen, search: oracleSearch } = useOracle();
   const { user } = useUser();
   const { tenantId, userId, getAccessToken } = useAuth();
+  const { isDemoMode: globalDemoMode } = useVersion();
   const activeTenantId = tenantId || TEST_TENANT_ID;
 
   // API state management
@@ -139,7 +141,7 @@ export const WorkspaceEngine = () => {
   // Fetch workspaces from API on component mount
   useEffect(() => {
     const fetchWorkspaces = async () => {
-      if (isDemoModeEnabled()) {
+      if (globalDemoMode) {
         setIsDemoMode(true);
         setIsLoading(false);
         if (!selectedWorkspaceId && workspaces.length > 0) {
@@ -178,7 +180,7 @@ export const WorkspaceEngine = () => {
     };
 
     fetchWorkspaces();
-  }, [activeTenantId]);
+  }, [activeTenantId, globalDemoMode]);
 
   // Fetch workspace details when selected workspace changes
   useEffect(() => {

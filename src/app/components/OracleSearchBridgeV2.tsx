@@ -117,7 +117,7 @@ const demoSearchResults: SearchFileResult[] = [
 export const OracleSearchBridgeV2 = () => {
   const { isDaylight } = useTheme();
   const { tenantId, getAccessToken } = useAuth();
-  const { version } = useVersion();
+  const { version, isDemoMode: globalDemoMode } = useVersion();
   const hasAISearch = useFeature('aiContentSearch');
   const hasSemanticSearch = useFeature('semanticSearch');
   const { 
@@ -143,13 +143,17 @@ export const OracleSearchBridgeV2 = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    setIsDemoMode(globalDemoMode);
+  }, [globalDemoMode]);
+
+  useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [history, results?.answer]);
 
   const runMetadataSearch = async (searchQuery: string) => {
-    if (isDemoModeEnabled()) {
+    if (globalDemoMode) {
       setSearchError(null);
       setIsDemoMode(true);
       setMetadataResults(demoSearchResults);
