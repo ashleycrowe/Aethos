@@ -40,16 +40,18 @@ import {
   AlertCircle,
   Settings as SettingsIcon
 } from 'lucide-react';
-import { createWorkspace, getWorkspaceDetail, listWorkspaces } from '../../lib/api';
-import { useAethos } from '../context/AethosContext';
-import { PinnedArtifact, SyncRule, Workspace } from '../types/aethos.types';
+import { createWorkspace, getWorkspaceDetail, listWorkspaces } from '@/lib/api';
+import { isDemoModeEnabled } from '@/app/config/demoMode';
+import { useAethos } from '@/app/context/AethosContext';
+import { useAuth } from '@/app/context/AuthContext';
+import { PinnedArtifact, SyncRule, Workspace } from '@/app/types/aethos.types';
 import { WorkspaceCreationWizard } from './WorkspaceCreationWizard';
 import { WorkspaceSyncManager } from './WorkspaceSyncManager';
 import { ArtifactWizard } from './ArtifactWizard';
 import { ResourceSynthesizer } from './ResourceSynthesizer';
-import { useTheme } from '../context/ThemeContext';
-import { useOracle } from '../context/OracleContext';
-import { useUser } from '../context/UserContext';
+import { useTheme } from '@/app/context/ThemeContext';
+import { useOracle } from '@/app/context/OracleContext';
+import { useUser } from '@/app/context/UserContext';
 import { PulseCommunicator } from './PulseCommunicator';
 import { PulseFeedItem } from './PulseFeedItem';
 import { toast } from 'sonner';
@@ -112,10 +114,12 @@ export const WorkspaceEngine = () => {
   const { isDaylight } = useTheme();
   const { setIsOpen: setOracleOpen, search: oracleSearch } = useOracle();
   const { user } = useUser();
+  const { tenantId, userId, getAccessToken } = useAuth();
+  const activeTenantId = tenantId || TEST_TENANT_ID;
 
   // API state management
   const [isLoading, setIsLoading] = useState(true);
-  const [isDemoMode, setIsDemoMode] = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(isDemoModeEnabled());
   const [apiWorkspaces, setApiWorkspaces] = useState<Workspace[]>([]);
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string | null>(null);
   const [isWizardOpen, setIsWizardOpen] = useState(false);
@@ -135,10 +139,20 @@ export const WorkspaceEngine = () => {
   // Fetch workspaces from API on component mount
   useEffect(() => {
     const fetchWorkspaces = async () => {
+      if (isDemoModeEnabled()) {
+        setIsDemoMode(true);
+        setIsLoading(false);
+        if (!selectedWorkspaceId && workspaces.length > 0) {
+          setSelectedWorkspaceId(workspaces[0].id);
+        }
+        return;
+      }
+
       try {
         setIsLoading(true);
 
-        const response = await listWorkspaces({ tenantId: TEST_TENANT_ID });
+        const accessToken = await getAccessToken();
+        const response = await listWorkspaces({ tenantId: activeTenantId, accessToken });
 
         if (response.success) {
           const normalizedWorkspaces = response.workspaces.map(toWorkspace);
@@ -164,7 +178,7 @@ export const WorkspaceEngine = () => {
     };
 
     fetchWorkspaces();
-  }, []);
+  }, [activeTenantId]);
 
   // Fetch workspace details when selected workspace changes
   useEffect(() => {
@@ -173,8 +187,9 @@ export const WorkspaceEngine = () => {
 
       try {
         const response = await getWorkspaceDetail({
-          tenantId: TEST_TENANT_ID,
-          workspaceId: selectedWorkspaceId
+          tenantId: activeTenantId,
+          workspaceId: selectedWorkspaceId,
+          accessToken: await getAccessToken(),
         });
 
         if (response.success) {
@@ -190,7 +205,7 @@ export const WorkspaceEngine = () => {
     };
 
     fetchWorkspaceDetail();
-  }, [selectedWorkspaceId, isDemoMode]);
+  }, [selectedWorkspaceId, isDemoMode, activeTenantId]);
 
   const handleSync = async () => {
     setIsSyncing(true);
@@ -210,8 +225,8 @@ export const WorkspaceEngine = () => {
 
       if (!isDemoMode) {
         const response = await createWorkspace({
-          tenantId: TEST_TENANT_ID,
-          userId: user.id,
+          tenantId: activeTenantId,
+          userId: userId || user.id,
           name: data.name,
           description: data.description,
           icon: 'Target',
@@ -219,6 +234,7 @@ export const WorkspaceEngine = () => {
           tags,
           autoSyncEnabled: data.contentMethod !== 'manual',
           syncRules: data.syncRules?.[0] as Record<string, unknown> | undefined,
+          accessToken: await getAccessToken(),
         });
 
         const normalizedWorkspace = toWorkspace({

@@ -1,3 +1,5 @@
+import { DEMO_MODE_MESSAGE, isDemoModeEnabled } from '@/app/config/demoMode';
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 export interface SearchFilesRequest {
@@ -25,6 +27,10 @@ export interface SearchFilesResponse<T = unknown> {
 }
 
 async function request<T>(path: string, options: RequestInit = {}, accessToken?: string | null): Promise<T> {
+  if (isDemoModeEnabled()) {
+    throw new Error(DEMO_MODE_MESSAGE);
+  }
+
   const headers = new Headers(options.headers);
   headers.set('Content-Type', 'application/json');
 

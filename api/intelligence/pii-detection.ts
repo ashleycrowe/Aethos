@@ -14,16 +14,11 @@
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import OpenAI from 'openai';
-import { createClient } from '@supabase/supabase-js';
+import { requireApiContext, supabase } from '../_lib/apiAuth';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-
-const supabase = createClient(
-  process.env.SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-);
 
 // PII Detection Patterns
 const PII_PATTERNS = {
@@ -79,15 +74,15 @@ async function detectPIIWithAI(text: string): Promise<string[]> {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+  const context = await requireApiContext(req, res, { methods: ['POST'] });
+  if (!context) return;
 
   try {
-    const { fileId, artifactId, tenantId } = req.body;
+    const { tenantId } = context;
+    const { fileId, artifactId } = req.body;
     const targetFileId = fileId || artifactId;
 
-    if (!targetFileId || !tenantId) {
+    if (!targetFileId) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 

@@ -1,0 +1,70 @@
+import { describe, expect, it } from 'vitest';
+
+function request(overrides: Record<string, unknown>) {
+  return {
+    headers: {},
+    body: {},
+    query: {},
+    ...overrides,
+  } as any;
+}
+
+function unsignedJwt(payload: Record<string, unknown>) {
+  const encodedPayload = Buffer.from(JSON.stringify(payload))
+    .toString('base64url');
+  return `header.${encodedPayload}.signature`;
+}
+
+describe('apiAuth request parsing', () => {
+  it('extracts bearer tokens from authorization headers', async () => {
+    process.env.SUPABASE_URL = 'https://example.supabase.co';
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key';
+
+    const req = request({
+      headers: {
+        authorization: 'Bearer test-token-123',
+      },
+    });
+
+    const { getBearerToken } = await import('./apiAuth');
+    expect(getBearerToken(req)).toBe('test-token-123');
+  });
+
+  it('reads tenant and user IDs from body before query params', async () => {
+    process.env.SUPABASE_URL = 'https://example.supabase.co';
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key';
+
+    const req = request({
+      body: {
+        tenantId: 'tenant-from-body',
+        userId: 'user-from-body',
+      },
+      query: {
+        tenantId: 'tenant-from-query',
+        userId: 'user-from-query',
+      },
+    });
+
+    const { getRequestTenantId, getRequestUserId } = await import('./apiAuth');
+    expect(getRequestTenantId(req)).toBe('tenant-from-body');
+    expect(getRequestUserId(req)).toBe('user-from-body');
+  });
+
+  it('extracts the Microsoft tenant ID from JWT tid claims', async () => {
+    process.env.SUPABASE_URL = 'https://example.supabase.co';
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key';
+
+    const token = unsignedJwt({
+      tid: 'microsoft-tenant-123',
+      oid: 'microsoft-user-456',
+    });
+
+    const { decodeJwtPayload, getTokenTenantId } = await import('./apiAuth');
+
+    expect(decodeJwtPayload(token)).toMatchObject({
+      tid: 'microsoft-tenant-123',
+      oid: 'microsoft-user-456',
+    });
+    expect(getTokenTenantId(token)).toBe('microsoft-tenant-123');
+  });
+});

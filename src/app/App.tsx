@@ -9,6 +9,7 @@ import { OperationalMeritProvider } from '@/app/context/OperationalMeritContext'
 import { UserProvider } from '@/app/context/UserContext';
 import { VersionProvider, useVersion } from '@/app/context/VersionContext';
 import { AuthProvider } from '@/app/context/AuthContext';
+import { isDemoModeEnabled } from '@/app/config/demoMode';
 import { Toaster } from 'sonner';
 
 // Components
@@ -21,7 +22,7 @@ const DesignCenter = lazy(() => import('@/app/components/DesignCenter').then((mo
 const DocumentControlModule = lazy(() =>
   import('@/app/modules/document-control').then((module) => ({
     default: () => (
-      <module.DocumentControlProvider demoMode={true}>
+      <module.DocumentControlProvider demoMode={isDemoModeEnabled()}>
         <module.DocumentControlHome />
       </module.DocumentControlProvider>
     ),
@@ -55,6 +56,40 @@ const VoyagerWorkbench = lazy(() =>
 );
 const WorkspaceEngine = lazy(() => import('@/app/components/WorkspaceEngine').then((module) => ({ default: module.WorkspaceEngine })));
 
+const V1_CORE_TABS = new Set(['oracle', 'insights', 'nexus', 'archival']);
+
+const COMING_SOON_LABELS: Record<string, string> = {
+  admin: 'Admin Center',
+  design: 'Design Center',
+  documents: 'Document Control',
+  lab: 'Prototype Lab',
+  people: 'People Center',
+  pulse: 'Pulse Bridge',
+  reports: 'Reporting Center',
+  'tag-demo': 'Tag Management',
+  'tag-flow-demo': 'Tag Flow',
+  voyager: 'Constellation',
+};
+
+const ComingSoonView = ({ tab }: { tab: string }) => (
+  <div className="flex min-h-[420px] items-center justify-center px-4 text-center">
+    <div className="max-w-xl rounded-[32px] border border-white/10 bg-[#0B0F19]/80 p-8 shadow-2xl backdrop-blur-2xl sm:p-10">
+      <div className="mx-auto mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-[#00F0FF]/20 bg-[#00F0FF]/10 text-[#00F0FF]">
+        <Settings className="h-5 w-5" />
+      </div>
+      <p className="mb-3 text-[10px] font-black uppercase tracking-[0.35em] text-[#00F0FF]">
+        Coming Soon
+      </p>
+      <h2 className="mb-4 text-2xl font-black uppercase tracking-tight text-white">
+        {COMING_SOON_LABELS[tab] || 'This Module'}
+      </h2>
+      <p className="text-sm leading-relaxed text-slate-400">
+        This surface is gated for the first V1 walkthrough. The live path is Search, Intelligence, Workspace, and Remediation.
+      </p>
+    </div>
+  </div>
+);
+
 const ViewLoadingFallback = () => (
   <div className="h-full min-h-[320px] flex flex-col items-center justify-center text-center">
     <div className="w-10 h-10 border-2 border-[#00F0FF] border-t-transparent rounded-full animate-spin mb-5" />
@@ -85,6 +120,10 @@ const Layout: React.FC = () => {
   }, [version, activeTab]);
 
   const renderContent = () => {
+    if (!V1_CORE_TABS.has(activeTab)) {
+      return <ComingSoonView tab={activeTab} />;
+    }
+
     switch (activeTab) {
       case 'oracle':
         return <OracleSearchBridgeV2 />;
@@ -199,9 +238,11 @@ const Layout: React.FC = () => {
 };
 
 export default function App() {
+  const demoMode = isDemoModeEnabled();
+
   return (
     <ThemeProvider>
-      <VersionProvider defaultVersion="V1" demoMode={true}>
+      <VersionProvider defaultVersion="V1" demoMode={demoMode}>
         <AuthProvider>
           <AethosProvider>
             <UserProvider>

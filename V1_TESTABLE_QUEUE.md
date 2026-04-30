@@ -33,18 +33,18 @@ This file is the short-cycle engineering queue. Keep `IMPLEMENTATION_TASKS.md` a
 ## P0 - Required For First Testable V1
 
 - [x] Add frontend-only `.vercelignore` for initial Vercel deployment.
-- [ ] Resolve `files` vs `artifacts` schema drift across migrations and APIs.
-- [ ] Standardize backend Supabase environment variables on `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`.
-- [ ] Add a shared API auth/tenant validation helper for Vercel functions.
-- [ ] Apply auth/tenant validation to V1 endpoints: discovery, search, workspaces, remediation, intelligence.
-- [ ] Add remediation dry-run mode and make dry-run the default UI path for first tester sessions.
+- [x] Resolve `files` vs `artifacts` schema drift across migrations and APIs.
+- [x] Standardize backend Supabase environment variables on `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`.
+- [x] Add a shared API auth/tenant validation helper for Vercel functions.
+- [x] Apply auth/tenant validation to V1 endpoints: discovery, search, workspaces, remediation, intelligence.
+- [x] Add remediation dry-run mode and make dry-run the default UI path for first tester sessions.
 - [x] Wire `IntelligenceDashboard` to real discovery/search metrics.
 - [x] Wire `WorkspaceEngine` to real workspace creation/list/detail APIs.
-- [ ] Refactor existing UI components (`IntelligenceDashboard`, `WorkspaceEngine`, `DesignCenter`) to meet Mobile-First standards.
+- [x] Refactor existing UI components (`IntelligenceDashboard`, `WorkspaceEngine`, `DesignCenter`) to meet Mobile-First standards.
 - [x] Add workspace list/detail endpoints if the frontend needs them.
-- [ ] Gate non-V1 prototype modules behind feature flags or hide them from the default nav.
-- [ ] Turn global demo mode into an explicit environment-controlled setting.
-- [ ] Add Vitest configuration and smoke tests for the V1 happy path.
+- [x] Gate non-V1 prototype modules behind feature flags or hide them from the default nav.
+- [x] Turn global demo mode into an explicit environment-controlled setting.
+- [x] Add Vitest configuration and smoke tests for the V1 happy path.
 
 ---
 

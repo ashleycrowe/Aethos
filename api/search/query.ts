@@ -12,12 +12,7 @@
  */
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-);
+import { requireApiContext, sendApiError, supabase } from '../_lib/apiAuth';
 
 function sanitizeIlikeTerm(value: string) {
   return value.replace(/[%_,]/g, ' ').trim();
@@ -27,12 +22,10 @@ export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+  const context = await requireApiContext(req, res, { methods: ['POST'] });
+  if (!context) return;
 
   const {
-    tenantId,
     query = '',
     filters = {},
     sortBy = 'relevance',
@@ -40,9 +33,10 @@ export default async function handler(
     page = 1,
     pageSize = 50,
   } = req.body;
+  const { tenantId } = context;
 
   if (!tenantId) {
-    return res.status(400).json({ error: 'Missing tenant ID' });
+    return sendApiError(res, 400, 'Missing tenant ID');
   }
 
   try {

@@ -29,9 +29,90 @@
 | DEC-TEC-007 | Tailwind CSS v4 Adoption | 2026-02-26 | **ASSUMED** | Medium |
 | DEC-STR-008 | AppSource Submission Timing | 2026-02-26 | **PENDING** | High |
 | DEC-BUS-001 | Pricing Model ($499/mo per tenant) | 2026-02-26 | **APPROVED - REFERENCE PRICING** | Critical |
+| DEC-TEC-008 | Canonical Files Schema | 2026-04-30 | Approved | Critical |
+| DEC-SEC-001 | Golden API Auth Helper | 2026-04-30 | Approved | Critical |
+| DEC-SEC-002 | Self-Serve Microsoft Tenant Enrollment | 2026-04-30 | Approved | Critical |
 
 ---
 
+## APPROVED IMPLEMENTATION DECISIONS
+
+### Decision DEC-TEC-008: Canonical Files Schema
+**Date:** 2026-04-30  
+**Status:** Approved  
+**Category:** Technical  
+**Impact:** Critical  
+**Decision Owner:** Engineering
+
+**Context:**  
+The V1 schema creates `files`, while later V1.5+ and V2+ APIs/migrations introduced `artifacts` and `workspace_artifacts`. This drift made discovery, search, workspace sync, semantic search, retention, and analytics unable to agree on a single source of truth.
+
+**Decision:**  
+Standardize the backend database model on `files` and `workspace_items` for V1 through V4. Public/product language may still use "artifact" as a UX term, but database tables, migrations, and server queries use `files`, `file_id`, `file_ids`, and `file_count`.
+
+**Implementation Notes:**
+- Server Supabase environment variables are `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`.
+- Frontend Supabase client configuration remains `VITE_SUPABASE_URL` because it is intentionally browser-exposed.
+- V1.5 content intelligence tables now reference `files(id)` through `file_id`.
+- Orphan detection uses `find_orphaned_files` and `workspace_items`.
+
+**Rationale:**
+1. V1 discovery writes M365 metadata to `files`.
+2. Search and workspaces are first-testable-V1 requirements and already depend on `files`.
+3. Keeping one canonical table prevents future endpoint and migration split-brain.
+
+---
+
+### Decision DEC-SEC-001: Golden API Auth Helper
+**Date:** 2026-04-30  
+**Status:** Approved  
+**Category:** Security  
+**Impact:** Critical  
+**Decision Owner:** Engineering
+
+**Context:**  
+Vercel API routes were each handling method checks, Supabase clients, tenant IDs, and auth tokens independently. That is risky in a multi-tenant app because one endpoint drift can bypass tenant isolation.
+
+**Decision:**  
+Create `api/_lib/apiAuth.ts` as the shared API helper for V1 endpoints. Discovery, search, workspace, remediation, and intelligence endpoints must use it for method enforcement, authorization token presence, tenant lookup, and optional user-to-tenant validation.
+
+**Implementation Notes:**
+- The helper exports the server-side Supabase client configured with `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`.
+- The helper accepts bearer tokens from `Authorization` headers and legacy `accessToken` body values where needed for discovery.
+- Endpoint-specific business logic runs only after tenant validation passes.
+- Remediation defaults to dry-run execution. Dry-run requests create a `remediation_actions` audit row with `metadata.dry_run = true` and do not mutate provider or file records; live execution requires `dryRun: false` after helper validation.
+
+**Rationale:**
+1. Multi-tenant safety has to be centralized, not copied by hand.
+2. First tester sessions need consistent error envelopes and predictable fallbacks.
+3. Future auth hardening can happen in one helper instead of every endpoint.
+
+---
+
+### Decision DEC-SEC-002: Self-Serve Microsoft Tenant Enrollment
+**Date:** 2026-04-30  
+**Status:** Approved  
+**Category:** Security  
+**Impact:** Critical  
+**Decision Owner:** Engineering
+
+**Context:**  
+Aethos V1 uses a product-led, self-serve Microsoft authentication model. The Azure app registration is multitenant, so the app must not hardcode a customer tenant ID at login time.
+
+**Decision:**  
+Use `https://login.microsoftonline.com/organizations` as the MSAL authority. On authenticated API requests, extract the Microsoft `tid` claim from the bearer token and resolve or just-in-time provision the corresponding Supabase tenant using `tenants.microsoft_tenant_id`.
+
+**Implementation Notes:**
+- `VITE_MICROSOFT_TENANT_ID` is not required for frontend login.
+- `api/auth/session.ts` provisions the tenant/user through the shared Golden Helper using the service-role backend path.
+- `api/_lib/apiAuth.ts` rejects requests when a provided internal tenant UUID conflicts with the Microsoft token `tid`.
+
+**Rationale:**
+1. Self-serve onboarding should work for any eligible Microsoft organization.
+2. Tenant isolation remains anchored to the Microsoft tenant claim and the internal Supabase tenant UUID.
+3. Backend service-role provisioning avoids relying on browser-side RLS bypass behavior.
+
+---
 ## 🚨 ASSUMED DECISIONS (REQUIRE TEAM VERIFICATION)
 
 These decisions have been made provisionally and require formal team verification before proceeding.
@@ -523,7 +604,7 @@ Consolidates reporting into a single "Command and Control" interface, allowing a
 **Impact:** High  
 **Decision Owner:** Engineering Lead
 
-**Context:** The repository currently contains a root `api/` directory with many Vercel-style serverless function files. Vercel will detect and deploy these functions by default, but the backend still has unresolved Phase 1 blockers around schema consistency, auth/tenant validation, and test coverage.
+**Context:** The repository currently contains a root `api/` directory with many Vercel-style serverless function files. Vercel will detect and deploy these functions by default. At the time of the initial frontend-only deploy, backend blockers remained around schema consistency, auth/tenant validation, and test coverage.
 
 **Decision:** For the initial Vercel deployment, exclude `api/` via `.vercelignore` and deploy the Vite frontend only. Re-enable API deployment after the backend P0 queue is complete.
 
@@ -533,7 +614,7 @@ Consolidates reporting into a single "Command and Control" interface, allowing a
 - Avoids Vercel function deployment limits and backend TypeScript checks blocking the first static deployment.
 - Keeps backend hardening tracked explicitly in `V1_TESTABLE_QUEUE.md`.
 
-**Rollback / Future Change:** Remove `api/` from `.vercelignore` after schema, auth, and tests are hardened, or move the backend into a separate Vercel project/function architecture.
+**Rollback / Future Change:** As of 2026-04-30, schema, auth, dry-run remediation, demo-mode, and smoke-test P0 hardening are complete. Remove `api/` from `.vercelignore` for the live backend deployment test, or move the backend into a separate Vercel project/function architecture if deployment constraints appear.
 
 **References:**
 - `/.vercelignore`
@@ -569,3 +650,4 @@ Consolidates reporting into a single "Command and Control" interface, allowing a
 - `/V1_TESTABLE_QUEUE.md`
 - `/docs/PHASE_1_DEPLOYMENT_REVIEW.md`
 - `/IMPLEMENTATION_TASKS.md`
+

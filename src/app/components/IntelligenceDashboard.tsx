@@ -17,13 +17,13 @@ import {
   Loader2
 } from 'lucide-react';
 import { motion as Motion, AnimatePresence } from 'motion/react';
-import { useTheme } from '../context/ThemeContext';
-import { useFeature, useVersion } from '../context/VersionContext';
-import { GlassCard } from './GlassCard';
-import { IntelligenceStream } from './IntelligenceStream';
-import { MetadataIntelligenceDashboard } from './MetadataIntelligenceDashboard';
-import { IdentityEngine } from './IdentityEngine';
-import { DiscoveryScanSimulation } from './DiscoveryScanSimulation';
+import { useTheme } from '@/app/context/ThemeContext';
+import { useFeature, useVersion } from '@/app/context/VersionContext';
+import { GlassCard } from '@/app/components/GlassCard';
+import { IntelligenceStream } from '@/app/components/IntelligenceStream';
+import { MetadataIntelligenceDashboard } from '@/app/components/MetadataIntelligenceDashboard';
+import { IdentityEngine } from '@/app/components/IdentityEngine';
+import { DiscoveryScanSimulation } from '@/app/components/DiscoveryScanSimulation';
 import { toast } from 'sonner';
 
 type IntelligenceView = 'dashboard' | 'stream' | 'metadata' | 'identity';
@@ -53,9 +53,9 @@ export const IntelligenceDashboard = () => {
   };
 
   return (
-    <div className="flex flex-col h-full space-y-6">
+    <div className="flex flex-col h-full space-y-5 md:space-y-6">
       {/* Header with View Tabs */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 md:gap-6">
         <div className="space-y-2">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-[#00F0FF]/10 text-[#00F0FF] shadow-[0_0_15px_rgba(0,240,255,0.2)]">
@@ -65,7 +65,7 @@ export const IntelligenceDashboard = () => {
               Intelligence Center
             </h2>
           </div>
-          <h1 className={`text-4xl font-black uppercase tracking-tighter ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
+          <h1 className={`text-2xl sm:text-3xl lg:text-4xl font-black uppercase tracking-tight leading-tight ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
             Operational <span className="text-[#00F0FF]">Intelligence</span>
           </h1>
           <p className="text-xs text-[#94A3B8] italic">
@@ -74,14 +74,14 @@ export const IntelligenceDashboard = () => {
         </div>
 
         {/* View Tabs */}
-        <div className={`flex items-center gap-1 p-1 rounded-xl ${
+        <div className={`grid grid-cols-2 sm:flex sm:items-center gap-1 p-1 rounded-xl w-full lg:w-auto ${
           isDaylight ? 'bg-slate-100' : 'bg-white/5 border border-white/10'
         }`}>
           {views.map((view) => (
             <button
               key={view.id}
               onClick={() => setActiveView(view.id)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+              className={`min-h-[44px] justify-center px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
                 activeView === view.id
                   ? 'bg-[#00F0FF] text-[#0B0F19]'
                   : isDaylight
@@ -186,14 +186,14 @@ const OverviewDashboard = () => {
   const providerStatus = allProviders.filter(p => !p.version || p.version === 'V1' || p.enabled);
 
   return (
-    <div className="space-y-8 pb-10">
+    <div className="space-y-6 md:space-y-8 pb-10">
       {/* Discovery Scan Simulation */}
       <DiscoveryScanSimulation />
 
       {/* Key Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
         {metrics.map((metric) => (
-          <GlassCard key={metric.id} className="p-6 relative overflow-hidden">
+          <GlassCard key={metric.id} className="p-5 md:p-6 relative overflow-hidden">
             <div 
               className="absolute top-0 right-0 w-32 h-32 blur-[60px] opacity-20 rounded-full"
               style={{ backgroundColor: metric.color }}
@@ -213,7 +213,7 @@ const OverviewDashboard = () => {
                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">
                   {metric.label}
                 </p>
-                <p className={`text-3xl font-black tracking-tight ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
+                <p className={`text-2xl md:text-3xl font-black tracking-tight ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
                   {metric.value}
                 </p>
                 <p className="text-[9px] text-slate-500 mt-2 italic">
@@ -225,10 +225,10 @@ const OverviewDashboard = () => {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8">
         {/* Recent Activity */}
         <div className="xl:col-span-2">
-          <GlassCard className="p-8">
+          <GlassCard className="p-5 md:p-8">
             <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 mb-6 flex items-center justify-between">
               Recent Activity
               <Activity className="w-4 h-4 text-[#00F0FF]" />
@@ -269,7 +269,7 @@ const OverviewDashboard = () => {
 
         {/* Provider Status */}
         <div>
-          <GlassCard className="p-8">
+          <GlassCard className="p-5 md:p-8">
             <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 mb-6 flex items-center justify-between">
               Provider Status
               <Database className="w-4 h-4 text-[#00F0FF]" />
@@ -282,7 +282,7 @@ const OverviewDashboard = () => {
                     isDaylight ? 'bg-slate-50/50' : 'bg-white/[0.02]'
                   }`}
                 >
-                  <div className="flex items-center justify-between mb-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
                     <span className={`text-xs font-bold ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
                       {provider.name}
                     </span>
@@ -293,7 +293,7 @@ const OverviewDashboard = () => {
                       </span>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div className="flex items-center gap-2">
                       <FileText className="w-3 h-3 text-slate-500" />
                       <span className="text-[10px] text-slate-500 uppercase tracking-widest font-black">
@@ -315,12 +315,12 @@ const OverviewDashboard = () => {
       </div>
 
       {/* Quick Actions */}
-      <GlassCard className="p-8">
+      <GlassCard className="p-5 md:p-8">
         <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 mb-6">
           Quick Actions
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button className="p-6 rounded-2xl bg-[#00F0FF]/5 border border-[#00F0FF]/20 hover:bg-[#00F0FF]/10 transition-all text-left group">
+          <button className="min-h-[44px] p-5 md:p-6 rounded-2xl bg-[#00F0FF]/5 border border-[#00F0FF]/20 hover:bg-[#00F0FF]/10 transition-all text-left group">
             <Brain className="w-6 h-6 text-[#00F0FF] mb-4 group-hover:scale-110 transition-transform" />
             <p className={`text-sm font-bold mb-2 ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
               Enrich Metadata
@@ -330,7 +330,7 @@ const OverviewDashboard = () => {
             </p>
           </button>
 
-          <button className="p-6 rounded-2xl bg-[#A855F7]/5 border border-[#A855F7]/20 hover:bg-[#A855F7]/10 transition-all text-left group">
+          <button className="min-h-[44px] p-5 md:p-6 rounded-2xl bg-[#A855F7]/5 border border-[#A855F7]/20 hover:bg-[#A855F7]/10 transition-all text-left group">
             <Fingerprint className="w-6 h-6 text-[#A855F7] mb-4 group-hover:scale-110 transition-transform" />
             <p className={`text-sm font-bold mb-2 ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
               Reconcile Identities
@@ -340,7 +340,7 @@ const OverviewDashboard = () => {
             </p>
           </button>
 
-          <button className="p-6 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 hover:bg-emerald-500/10 transition-all text-left group">
+          <button className="min-h-[44px] p-5 md:p-6 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 hover:bg-emerald-500/10 transition-all text-left group">
             <TrendingUp className="w-6 h-6 text-emerald-500 mb-4 group-hover:scale-110 transition-transform" />
             <p className={`text-sm font-bold mb-2 ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
               Review Waste

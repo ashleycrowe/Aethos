@@ -46,6 +46,7 @@ import {
 } from 'lucide-react';
 import { motion as Motion, AnimatePresence } from 'motion/react';
 import { searchFiles } from '@/lib/api';
+import { isDemoModeEnabled } from '@/app/config/demoMode';
 import { useAuth } from '@/app/context/AuthContext';
 import { useTheme } from '@/app/context/ThemeContext';
 import { useOracle } from '@/app/context/OracleContext';
@@ -137,7 +138,7 @@ export const OracleSearchBridgeV2 = () => {
   const [aiSearchMode, setAISearchMode] = useState(false); // V1.5+ feature
   const [metadataResults, setMetadataResults] = useState<SearchFileResult[]>([]);
   const [searchError, setSearchError] = useState<string | null>(null);
-  const [isDemoMode, setIsDemoMode] = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(isDemoModeEnabled());
   const [isSearchingFiles, setIsSearchingFiles] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -148,6 +149,13 @@ export const OracleSearchBridgeV2 = () => {
   }, [history, results?.answer]);
 
   const runMetadataSearch = async (searchQuery: string) => {
+    if (isDemoModeEnabled()) {
+      setSearchError(null);
+      setIsDemoMode(true);
+      setMetadataResults(demoSearchResults);
+      return;
+    }
+
     try {
       setIsSearchingFiles(true);
       setSearchError(null);

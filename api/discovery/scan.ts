@@ -9,7 +9,7 @@
  */
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { createClient } from '@supabase/supabase-js';
+import { requireApiContext, supabase } from '../_lib/apiAuth';
 import {
   getAllSharePointSites,
   getFilesInSite,
@@ -19,25 +19,17 @@ import {
   hasExternalShare,
 } from '../../src/lib/microsoftGraph';
 
-// Initialize Supabase client (server-side)
-const supabase = createClient(
-  process.env.SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || '' // Use service role key for server-side
-);
-
 export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
-  // Only allow POST requests
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+  const context = await requireApiContext(req, res, { methods: ['POST'] });
+  if (!context) return;
 
-  const { accessToken, tenantId, userId, scanType = 'full' } = req.body;
-
-  if (!accessToken || !tenantId) {
-    return res.status(400).json({ error: 'Missing required parameters' });
+  const { accessToken, tenantId, userId } = context;
+  const { scanType = 'full' } = req.body;
+  if (!accessToken) {
+    return res.status(401).json({ success: false, error: 'Missing authorization token' });
   }
 
   // Create a discovery scan record

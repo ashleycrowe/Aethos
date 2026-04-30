@@ -4,6 +4,8 @@ import {
   Brain, TrendingUp, AlertCircle, CheckCircle, FileQuestion,
   FolderOpen, Sparkles, ArrowRight, Download, Settings, Zap, Info
 } from 'lucide-react';
+import { isDemoModeEnabled } from '@/app/config/demoMode';
+import { useAuth } from '@/app/context/AuthContext';
 
 interface MetadataQuality {
   totalFiles: number;
@@ -39,9 +41,10 @@ interface ImprovementOpportunity {
 }
 
 export const MetadataIntelligenceDashboard: React.FC = () => {
+  const { tenantId, getAccessToken } = useAuth();
   const [selectedView, setSelectedView] = useState<'overview' | 'categories' | 'opportunities'>('overview');
   const [isLoading, setIsLoading] = useState(true);
-  const [isDemoMode, setIsDemoMode] = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(isDemoModeEnabled());
   const [error, setError] = useState<string | null>(null);
 
   // State for real data from API
@@ -101,20 +104,28 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
   // Fetch data from API on component mount
   useEffect(() => {
     const fetchIntelligenceMetrics = async () => {
+      if (isDemoModeEnabled()) {
+        setIsDemoMode(true);
+        setIsLoading(false);
+        return;
+      }
+
       try {
         setIsLoading(true);
         setError(null);
 
         // Get tenant ID from somewhere - for now using a placeholder
         // In real app, this would come from auth context or URL params
-        const tenantId = '00000000-0000-0000-0000-000000000101'; // Test tenant
+        const activeTenantId = tenantId || '00000000-0000-0000-0000-000000000101'; // Test tenant
+        const accessToken = await getAccessToken();
 
         const response = await fetch('/api/intelligence/metrics', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
           },
-          body: JSON.stringify({ tenantId }),
+          body: JSON.stringify({ tenantId: activeTenantId }),
         });
 
         if (!response.ok) {
@@ -141,7 +152,7 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
     };
 
     fetchIntelligenceMetrics();
-  }, []);
+  }, [tenantId, getAccessToken]);
 
   // Mock data - kept for fallback
   const mockData = {

@@ -14,26 +14,21 @@
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import OpenAI from 'openai';
-import { createClient } from '@supabase/supabase-js';
+import { requireApiContext, supabase } from '../_lib/apiAuth';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-const supabase = createClient(
-  process.env.SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-);
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+  const context = await requireApiContext(req, res, { methods: ['POST'] });
+  if (!context) return;
 
   try {
-    const { query, tenantId, limit = 10, threshold = 0.7 } = req.body;
+    const { tenantId } = context;
+    const { query, limit = 10, threshold = 0.7 } = req.body;
 
-    if (!query || !tenantId) {
+    if (!query) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 

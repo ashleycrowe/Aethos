@@ -27,7 +27,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { useTheme } from '@/app/context/ThemeContext';
 import { useUser } from '@/app/context/UserContext';
-import { useVersion, useFeature } from '@/app/context/VersionContext';
+import { useVersion } from '@/app/context/VersionContext';
 
 interface SidebarProps {
   activeTab: string;
@@ -49,8 +49,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const { isDaylight } = useTheme();
   const { user } = useUser();
   const { version } = useVersion();
-  const hasMultiProvider = useFeature('multiProviderDiscovery');
-  const hasPulse = useFeature('communicationBridge');
   const [toolsExpanded, setToolsExpanded] = React.useState(true);
 
   const handleMouseEnter = () => {
@@ -65,26 +63,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
   };
 
-  // VERSION-AWARE MENU: Filter based on active version
+  // V1 walkthrough menu: keep only the testable core modules visible.
   const allMenuItems = [
     {
       label: 'Core',
       items: [
         { id: 'oracle', icon: Cpu, label: 'Oracle Search', description: 'Cross-platform intelligent search', minVersion: 'V1' },
-        { id: 'voyager', icon: Eye, label: 'Constellation', description: 'Enterprise data universe map', minVersion: 'V2' }, // V2+ only
         { id: 'nexus', icon: LayoutGrid, label: 'Nexus', description: 'Virtual workspace bridge', minVersion: 'V1' },
         { id: 'insights', icon: Sparkles, label: 'Intelligence', description: 'Consolidated insights & metadata', minVersion: 'V1' },
-        { id: 'pulse', icon: Zap, label: 'Pulse', description: 'Communication bridge', minVersion: 'V2' }, // V2+ only
-        { id: 'people', icon: Users, label: 'People', description: 'Directory & identity', minVersion: 'V2' }, // V2+ only
       ]
     },
     {
       label: 'Tools',
       collapsible: true,
       items: [
-        { id: 'documents', icon: FileCheck, label: 'Documents', description: 'Document Control & Compliance', minVersion: 'V1' },
         { id: 'archival', icon: Archive, label: 'Remediation', description: 'Archival & cleanup protocols', minVersion: 'V1' },
-        { id: 'reports', icon: BarChart3, label: 'Reports', description: 'Analytics & dashboards', minVersion: 'V1' },
       ]
     }
   ];

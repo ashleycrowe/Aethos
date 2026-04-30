@@ -15,19 +15,13 @@
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import OpenAI from 'openai';
-import { createClient } from '@supabase/supabase-js';
 import { XMLParser } from 'fast-xml-parser';
+import { requireApiContext, supabase } from '../_lib/apiAuth';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-
-// Initialize Supabase client
-const supabase = createClient(
-  process.env.SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || '' // Service role for backend operations
-);
 
 type PdfParse = (buffer: Buffer) => Promise<{ text?: string }>;
 
@@ -185,15 +179,15 @@ async function generateEmbedding(text: string): Promise<number[]> {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+  const context = await requireApiContext(req, res, { methods: ['POST'] });
+  if (!context) return;
 
   try {
-    const { fileId, artifactId, tenantId, fileUrl, mimeType } = req.body;
+    const { tenantId } = context;
+    const { fileId, artifactId, fileUrl, mimeType } = req.body;
     const targetFileId = fileId || artifactId;
 
-    if (!targetFileId || !tenantId || !fileUrl) {
+    if (!targetFileId || !fileUrl) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 

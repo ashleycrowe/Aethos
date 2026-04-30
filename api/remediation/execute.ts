@@ -11,36 +11,44 @@
  */
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { createClient } from '@supabase/supabase-js';
+import { requireApiContext, sendApiError, supabase } from '../_lib/apiAuth';
 import {
   archiveFile,
   deleteFile,
   revokeExternalLinks,
 } from '../../src/lib/microsoftGraph';
 
-const supabase = createClient(
-  process.env.SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-);
-
 export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+  const context = await requireApiContext(req, res, { methods: ['POST'] });
+  if (!context) return;
 
-  const { accessToken, tenantId, userId, action, fileIds } = req.body;
+  const { tenantId, userId, accessToken } = context;
+  const { action, fileIds, dryRun = true } = req.body;
+  const isDryRun = dryRun !== false;
 
-  if (!accessToken || !tenantId || !action || !fileIds || fileIds.length === 0) {
-    return res.status(400).json({ error: 'Missing required parameters' });
+  if (!action || !Array.isArray(fileIds) || fileIds.length === 0) {
+    return sendApiError(res, 400, 'Missing required parameters');
   }
 
   // Validate action type
   if (!['archive', 'delete', 'revoke_links'].includes(action)) {
-    return res.status(400).json({ error: 'Invalid action type' });
+    return sendApiError(res, 400, 'Invalid action type');
   }
+
+  const { data: files, error: filesError } = await supabase
+    .from('files')
+    .select('*')
+    .in('id', fileIds)
+    .eq('tenant_id', tenantId);
+
+  if (filesError) {
+    return sendApiError(res, 500, 'Failed to fetch files from database');
+  }
+
+  const matchedFiles = files || [];
 
   // Create remediation action record
   const { data: actionRecord, error: actionError } = await supabase
@@ -51,27 +59,53 @@ export default async function handler(
       file_ids: fileIds,
       file_count: fileIds.length,
       executed_by: userId,
-      status: 'in_progress',
+      status: isDryRun ? 'completed' : 'in_progress',
+      completed_at: isDryRun ? new Date().toISOString() : null,
+      success_count: isDryRun ? matchedFiles.length : 0,
+      failed_count: isDryRun ? Math.max(0, fileIds.length - matchedFiles.length) : 0,
+      errors: isDryRun && matchedFiles.length !== fileIds.length
+        ? [{ error: 'Some requested files were not found for this tenant' }]
+        : [],
+      metadata: {
+        dry_run: isDryRun,
+        intent_logged: true,
+        requested_file_count: fileIds.length,
+        matched_file_count: matchedFiles.length,
+        preview: matchedFiles.slice(0, 10).map((file) => ({
+          id: file.id,
+          name: file.name,
+          provider_id: file.provider_id,
+        })),
+      },
     })
     .select()
     .single();
 
   if (actionError) {
-    return res.status(500).json({ error: 'Failed to create action record' });
+    return sendApiError(res, 500, 'Failed to create action record');
   }
 
   const actionId = actionRecord.id;
 
   try {
-    // Get file details from database
-    const { data: files, error: filesError } = await supabase
-      .from('files')
-      .select('*')
-      .in('id', fileIds)
-      .eq('tenant_id', tenantId);
+    if (isDryRun) {
+      return res.status(200).json({
+        success: true,
+        dryRun: true,
+        actionId,
+        message: 'Remediation intent logged. No provider or file mutations were executed.',
+        results: {
+          successCount: matchedFiles.length,
+          failedCount: Math.max(0, fileIds.length - matchedFiles.length),
+          errors: matchedFiles.length !== fileIds.length
+            ? [{ error: 'Some requested files were not found for this tenant' }]
+            : [],
+        },
+      });
+    }
 
-    if (filesError || !files) {
-      throw new Error('Failed to fetch files from database');
+    if (!accessToken) {
+      return sendApiError(res, 401, 'Missing authorization token');
     }
 
     let successCount = 0;
@@ -79,7 +113,7 @@ export default async function handler(
     const errors: any[] = [];
 
     // Execute action on each file
-    for (const file of files) {
+    for (const file of matchedFiles) {
       try {
         // Extract driveId and fileId from metadata
         const driveId = file.metadata?.parentReference?.driveId || file.raw_api_response?.parentReference?.driveId;

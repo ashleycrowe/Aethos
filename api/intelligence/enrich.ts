@@ -8,13 +8,8 @@
  */
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-);
+import { requireApiContext, supabase } from '../_lib/apiAuth';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -24,15 +19,11 @@ export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+  const context = await requireApiContext(req, res, { methods: ['POST'] });
+  if (!context) return;
 
-  const { tenantId, fileIds, batchSize = 10 } = req.body;
-
-  if (!tenantId) {
-    return res.status(400).json({ error: 'Missing tenant ID' });
-  }
+  const { tenantId } = context;
+  const { fileIds, batchSize = 10 } = req.body;
 
   if (!process.env.OPENAI_API_KEY) {
     return res.status(503).json({ 

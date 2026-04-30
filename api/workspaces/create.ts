@@ -9,24 +9,16 @@
  */
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-);
+import { requireApiContext, supabase } from '../_lib/apiAuth';
 
 export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+  const context = await requireApiContext(req, res, { methods: ['POST'] });
+  if (!context) return;
 
   const {
-    tenantId,
-    userId,
     name,
     description,
     icon,
@@ -35,6 +27,7 @@ export default async function handler(
     autoSyncEnabled = true,
     syncRules = {},
   } = req.body;
+  const { tenantId, userId } = context;
 
   if (!tenantId || !userId || !name) {
     return res.status(400).json({ error: 'Missing required parameters' });

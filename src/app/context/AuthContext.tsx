@@ -18,17 +18,19 @@ import {
   AuthenticationResult,
   InteractionRequiredAuthError,
 } from '@azure/msal-browser';
-import { supabase, setTenantContext } from '../../lib/supabase';
-import { getCurrentUser } from '../../lib/microsoftGraph';
+import { supabase, setTenantContext } from '@/lib/supabase';
+import { getCurrentUser } from '@/lib/microsoftGraph';
+import { isDemoModeEnabled } from '@/app/config/demoMode';
 import { toast } from 'sonner';
+
+const MICROSOFT_AUTHORITY = 'https://login.microsoftonline.com/organizations';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 // MSAL Configuration
 const msalConfig = {
   auth: {
     clientId: import.meta.env.VITE_MICROSOFT_CLIENT_ID || '',
-    authority: `https://login.microsoftonline.com/${
-      import.meta.env.VITE_MICROSOFT_TENANT_ID || 'common'
-    }`,
+    authority: MICROSOFT_AUTHORITY,
     redirectUri: window.location.origin,
   },
   cache: {
@@ -39,8 +41,7 @@ const msalConfig = {
 
 // Check if MSAL is configured
 const isMsalConfigured = !!(
-  import.meta.env.VITE_MICROSOFT_CLIENT_ID &&
-  import.meta.env.VITE_MICROSOFT_TENANT_ID
+  import.meta.env.VITE_MICROSOFT_CLIENT_ID
 );
 
 // Initialize MSAL instance
@@ -85,6 +86,38 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
+
+function getMicrosoftTenantId(response: AuthenticationResult): string | null {
+  return (
+    response.tenantId ||
+    (response.account as AccountInfo & { tenantId?: string })?.tenantId ||
+    ((response.idTokenClaims as Record<string, unknown> | undefined)?.tid as string | undefined) ||
+    null
+  );
+}
+
+async function provisionSessionViaApi(accessToken: string): Promise<{ tenantId: string; userId?: string } | null> {
+  const response = await fetch(`${API_BASE_URL}/auth/session`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({}),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Session provisioning failed: ${response.status}`);
+  }
+
+  const data = await response.json();
+  if (!data?.success || !data.tenantId) return null;
+
+  return {
+    tenantId: data.tenantId,
+    userId: data.userId,
+  };
+}
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -151,7 +184,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
    */
   const handlePostLogin = async (response: AuthenticationResult) => {
     try {
-      // Check if Supabase is configured
+      // Get full user details from Microsoft Graph
+      const graphUser = await getCurrentUser(response.accessToken);
+      const microsoftTenantId = getMicrosoftTenantId(response);
+
+      if (!microsoftTenantId) {
+        throw new Error('Microsoft tenant ID was not present in the authentication response');
+      }
+
+      if (!isDemoModeEnabled()) {
+        try {
+          const session = await provisionSessionViaApi(response.accessToken);
+          if (session) {
+            setTenantIdState(session.tenantId);
+            if (session.userId) setUserId(session.userId);
+            localStorage.setItem('aethos_tenant_id', session.tenantId);
+            if (session.userId) localStorage.setItem('aethos_user_id', session.userId);
+
+            toast.success('Logged in successfully!', {
+              description: `Welcome back, ${graphUser.displayName}`,
+            });
+            return;
+          }
+        } catch (sessionError) {
+          console.warn('Backend session provisioning unavailable; falling back to browser Supabase flow:', sessionError);
+        }
+      }
+
+      // Check if Supabase is configured for local/frontend-only fallback.
       if (!supabase) {
         console.warn('Supabase not configured - skipping database operations');
         toast.success('Logged in successfully!', {
@@ -160,42 +220,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         return;
       }
 
-      // Get full user details from Microsoft Graph
-      const graphUser = await getCurrentUser(response.accessToken);
+      const tenantName = graphUser.companyName || graphUser.displayName + '\'s Organization';
 
-      // Check if tenant exists in Supabase
-      const { data: existingTenant } = await supabase
+      // Just-in-time tenant provisioning for multitenant self-serve signups.
+      const { data: tenant, error: tenantError } = await supabase
         .from('tenants')
-        .select('*')
-        .eq('microsoft_tenant_id', response.tenantId)
-        .single();
-
-      let tenant;
-
-      if (!existingTenant) {
-        // Create new tenant
-        const { data: newTenant, error: tenantError } = await supabase
-          .from('tenants')
-          .insert({
-            name: graphUser.companyName || graphUser.displayName + '\'s Organization',
-            microsoft_tenant_id: response.tenantId,
+        .upsert(
+          {
+            name: tenantName,
+            microsoft_tenant_id: microsoftTenantId,
             subscription_tier: 'v1',
             status: 'active',
-          })
-          .select()
-          .single();
+            metadata: {
+              enrollment: 'jit',
+              source: 'AuthContext',
+              enrolled_at: new Date().toISOString(),
+            },
+          },
+          { onConflict: 'microsoft_tenant_id' }
+        )
+        .select()
+        .single();
 
-        if (tenantError) {
-          console.error('Error creating tenant:', tenantError);
-          throw tenantError;
-        }
+      if (tenantError || !tenant) {
+        console.error('Error provisioning tenant:', tenantError);
+        throw tenantError || new Error('Unable to provision tenant');
+      }
 
-        tenant = newTenant;
+      if (tenant.created_at === tenant.updated_at) {
         toast.success('Welcome to Aethos!', {
           description: 'Your organization has been set up.',
         });
-      } else {
-        tenant = existingTenant;
       }
 
       // Check if user exists in Supabase
@@ -208,6 +263,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       let dbUser;
 
       if (!existingUser) {
+        const { count: tenantUserCount } = await supabase
+          .from('users')
+          .select('id', { count: 'exact', head: true })
+          .eq('tenant_id', tenant.id);
+
         // Create new user
         const { data: newUser, error: userError } = await supabase
           .from('users')
@@ -216,8 +276,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             email: graphUser.mail || graphUser.userPrincipalName,
             name: graphUser.displayName,
             microsoft_id: response.account.homeAccountId,
-            role: 'admin', // First user is admin
+            role: tenantUserCount === 0 ? 'admin' : 'user',
             last_login: new Date().toISOString(),
+            metadata: {
+              enrollment: 'jit',
+              source: 'AuthContext',
+            },
           })
           .select()
           .single();

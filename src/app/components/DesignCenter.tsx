@@ -27,12 +27,12 @@ import {
   Moon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useTheme } from '../context/ThemeContext';
-import { GlassDropdown } from './ui/GlassDropdown';
-import { TabBar } from './ui/TabBar';
+import { useTheme } from '@/app/context/ThemeContext';
+import { GlassDropdown } from '@/app/components/ui/GlassDropdown';
+import { TabBar } from '@/app/components/ui/TabBar';
 import { toast } from 'sonner';
-import { Button } from './ui/Button';
-import { OperationalGrid } from './ui/OperationalGrid';
+import { Button } from '@/app/components/ui/Button';
+import { OperationalGrid } from '@/app/components/ui/OperationalGrid';
 
 export const DesignCenter = () => {
   const { isDaylight, toggleDaylight, brand, updateBrand } = useTheme();
@@ -43,7 +43,7 @@ export const DesignCenter = () => {
     {
       id: 1,
       name: 'Legacy_Project_Titan_Archive.zip',
-      meta: '12.4 GB • MICROSOFT',
+      meta: '12.4 GB - MICROSOFT',
       status: 'COLD',
       archived: '12 days ago',
       retention: 18,
@@ -54,7 +54,7 @@ export const DesignCenter = () => {
     {
       id: 2,
       name: 'Sales_Records_2022_Internal.csv',
-      meta: '4.2 GB • GOOGLE',
+      meta: '4.2 GB - GOOGLE',
       status: 'COLD',
       archived: '24 days ago',
       retention: 6,
@@ -65,7 +65,7 @@ export const DesignCenter = () => {
     {
       id: 3,
       name: '#private-legacy-support-channel',
-      meta: '890 MB • SLACK',
+      meta: '890 MB - SLACK',
       status: 'VAULT',
       archived: '45 days ago',
       retention: 0,
@@ -100,17 +100,17 @@ export const DesignCenter = () => {
   ];
 
   return (
-    <div className="space-y-12 animate-in fade-in duration-700 pb-24">
+    <div className="space-y-8 md:space-y-12 animate-in fade-in duration-700 pb-24">
       {/* Design Center Header */}
-      <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-10">
-        <div className="space-y-6">
-          <div className="flex items-center gap-4">
-             <div className={`p-3 rounded-2xl ${isDaylight ? 'bg-slate-900 text-white' : 'bg-[#00F0FF]/10 text-[#00F0FF]'}`}>
+      <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-6 md:gap-10">
+        <div className="space-y-5 md:space-y-6">
+          <div className="flex items-center gap-3 md:gap-4">
+             <div className={`p-3 rounded-2xl shrink-0 ${isDaylight ? 'bg-slate-900 text-white' : 'bg-[#00F0FF]/10 text-[#00F0FF]'}`}>
                <Sparkles className="w-6 h-6" />
              </div>
-             <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">System Prototype • Lab Environment</h2>
+             <h2 className="text-[10px] font-black uppercase tracking-[0.28em] sm:tracking-[0.4em] text-slate-500 leading-relaxed">System Prototype - Lab Environment</h2>
           </div>
-          <h1 className={`text-fluid-3xl font-black uppercase tracking-tighter leading-[0.8] ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
+          <h1 className={`text-4xl sm:text-5xl lg:text-fluid-3xl font-black uppercase tracking-tight sm:tracking-tighter leading-tight sm:leading-[0.9] lg:leading-[0.8] ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
             Design<br /><span className="text-[#00F0FF]">Architecture</span>
           </h1>
           <p className={`text-sm ${isDaylight ? 'text-slate-500' : 'text-slate-400'} max-w-xl italic font-medium leading-relaxed`}>
@@ -121,7 +121,7 @@ export const DesignCenter = () => {
         <div className="flex flex-wrap gap-4 shrink-0">
           <button 
             onClick={toggleDaylight}
-            className={`flex items-center gap-4 px-10 py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] shadow-2xl transition-all ${
+            className={`flex min-h-[44px] w-full sm:w-auto items-center justify-center gap-3 sm:gap-4 px-5 sm:px-10 py-4 sm:py-5 rounded-2xl font-black uppercase tracking-[0.16em] sm:tracking-[0.2em] text-[10px] shadow-2xl transition-all ${
               isDaylight ? 'bg-slate-900 text-white' : 'bg-white text-black hover:bg-[#00F0FF] transition-all'
             }`}
           >
@@ -142,23 +142,23 @@ export const DesignCenter = () => {
       <div className="min-h-[60vh]">
         <AnimatePresence mode="wait">
           {activeTab === 'atoms' && (
-            <motion.div key="atoms" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-12">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+            <motion.div key="atoms" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-8 md:space-y-12">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-10">
                 {/* Palette */}
-                <div className={`p-10 rounded-[48px] border ${isDaylight ? 'bg-white border-slate-100' : 'bg-[#0B0F19] border-white/5'}`}>
-                  <h3 className="text-xl font-black uppercase tracking-tighter mb-10 text-white">Color Palette</h3>
-                  <div className="space-y-6">
+                <div className={`p-6 md:p-10 rounded-[32px] md:rounded-[48px] border ${isDaylight ? 'bg-white border-slate-100' : 'bg-[#0B0F19] border-white/5'}`}>
+                  <h3 className={`text-lg md:text-xl font-black uppercase tracking-tight sm:tracking-tighter mb-8 md:mb-10 ${isDaylight ? 'text-slate-900' : 'text-white'}`}>Color Palette</h3>
+                  <div className="space-y-5 md:space-y-6">
                     {[
                       { label: 'Space Black', hex: '#0B0F19', desc: 'Primary Background' },
                       { label: 'Starlight Cyan', hex: '#00F0FF', desc: 'Primary Action / Growth' },
                       { label: 'Supernova Orange', hex: '#FF5733', desc: 'Alert / Waste / Risk' },
                       { label: 'Cosmic Slate', hex: '#1E293B', desc: 'Secondary / Border' },
                     ].map((color) => (
-                      <div key={color.hex} className="flex items-center gap-6 group">
-                        <div className="w-16 h-16 rounded-2xl shadow-xl border border-white/10" style={{ backgroundColor: color.hex }} />
-                        <div>
-                          <p className="text-xs font-black uppercase tracking-widest text-white">{color.label}</p>
-                          <p className="text-[10px] font-mono text-slate-500 mt-1 uppercase tracking-widest">{color.hex} • {color.desc}</p>
+                      <div key={color.hex} className="flex items-center gap-4 md:gap-6 group min-w-0">
+                        <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl shadow-xl border border-white/10 shrink-0" style={{ backgroundColor: color.hex }} />
+                        <div className="min-w-0">
+                          <p className={`text-xs font-black uppercase tracking-widest ${isDaylight ? 'text-slate-900' : 'text-white'}`}>{color.label}</p>
+                          <p className="text-[10px] font-mono text-slate-500 mt-1 uppercase tracking-widest leading-relaxed break-words">{color.hex} - {color.desc}</p>
                         </div>
                       </div>
                     ))}
@@ -166,12 +166,12 @@ export const DesignCenter = () => {
                 </div>
 
                 {/* Typography */}
-                <div className={`p-10 rounded-[48px] border ${isDaylight ? 'bg-white border-slate-100' : 'bg-[#0B0F19] border-white/5'}`}>
-                  <h3 className="text-xl font-black uppercase tracking-tighter mb-10 text-white">Typography Scale</h3>
-                  <div className="space-y-8">
+                <div className={`p-6 md:p-10 rounded-[32px] md:rounded-[48px] border ${isDaylight ? 'bg-white border-slate-100' : 'bg-[#0B0F19] border-white/5'}`}>
+                  <h3 className={`text-lg md:text-xl font-black uppercase tracking-tight sm:tracking-tighter mb-8 md:mb-10 ${isDaylight ? 'text-slate-900' : 'text-white'}`}>Typography Scale</h3>
+                  <div className="space-y-6 md:space-y-8">
                     <div className="space-y-2">
                       <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Fluid 3XL / Heading</span>
-                      <p className="text-4xl font-black uppercase tracking-tighter leading-tight text-white">Aethos Architecture</p>
+                      <p className={`text-3xl sm:text-4xl font-black uppercase tracking-tight sm:tracking-tighter leading-tight ${isDaylight ? 'text-slate-900' : 'text-white'}`}>Aethos Architecture</p>
                     </div>
                     <div className="space-y-2">
                       <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Body Large</span>
@@ -181,7 +181,7 @@ export const DesignCenter = () => {
                     </div>
                     <div className="space-y-2">
                       <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">UI Labels</span>
-                      <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">Integrity Check • Live</p>
+                      <p className="text-[10px] font-black uppercase tracking-[0.28em] sm:tracking-[0.4em] text-slate-500">Integrity Check - Live</p>
                     </div>
                   </div>
                 </div>
@@ -190,11 +190,11 @@ export const DesignCenter = () => {
           )}
 
           {activeTab === 'components' && (
-            <motion.div key="components" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-12">
-              <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
+            <motion.div key="components" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-8 md:space-y-12">
+              <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 md:gap-10">
                 {/* Interactive Controls */}
-                <div className="xl:col-span-4 space-y-10">
-                  <div className={`p-8 rounded-[40px] border space-y-8 ${isDaylight ? 'bg-white border-slate-100' : 'bg-[#0B0F19] border-white/5 shadow-2xl'}`}>
+                <div className="xl:col-span-4 space-y-6 md:space-y-10">
+                  <div className={`p-5 md:p-8 rounded-[28px] md:rounded-[40px] border space-y-6 md:space-y-8 ${isDaylight ? 'bg-white border-slate-100' : 'bg-[#0B0F19] border-white/5 shadow-2xl'}`}>
                     <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">Cinematic Dropdown</h3>
                     <GlassDropdown 
                       label="Select Sensitivity"
@@ -204,7 +204,7 @@ export const DesignCenter = () => {
                     />
                   </div>
 
-                  <div className={`p-8 rounded-[40px] border space-y-8 ${isDaylight ? 'bg-white border-slate-100' : 'bg-[#0B0F19] border-white/5 shadow-2xl'}`}>
+                  <div className={`p-5 md:p-8 rounded-[28px] md:rounded-[40px] border space-y-6 md:space-y-8 ${isDaylight ? 'bg-white border-slate-100' : 'bg-[#0B0F19] border-white/5 shadow-2xl'}`}>
                     <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">Atomic Buttons</h3>
                     <div className="space-y-4">
                       <Button className="w-full h-14 bg-[#00F0FF] text-black hover:bg-[#00F0FF]/90 font-black uppercase tracking-widest text-[10px] rounded-2xl border-none">
@@ -219,22 +219,22 @@ export const DesignCenter = () => {
                     </div>
                   </div>
 
-                  <div className={`p-8 rounded-[40px] border space-y-8 ${isDaylight ? 'bg-white border-slate-100' : 'bg-[#0B0F19] border-white/5 shadow-2xl'}`}>
+                  <div className={`p-5 md:p-8 rounded-[28px] md:rounded-[40px] border space-y-6 md:space-y-8 ${isDaylight ? 'bg-white border-slate-100' : 'bg-[#0B0F19] border-white/5 shadow-2xl'}`}>
                     <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">Operational Search</h3>
                     <div className="relative group">
                       <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                       <input 
                         readOnly
                         placeholder="Ask the Oracle..."
-                        className="w-full py-4 pl-12 pr-4 rounded-2xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest outline-none text-white"
+                        className="w-full min-h-[44px] py-4 pl-12 pr-4 rounded-2xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest outline-none text-white"
                       />
                     </div>
                   </div>
                 </div>
 
                 {/* Navigation & Grid Components */}
-                <div className="xl:col-span-8 space-y-10">
-                   <div className={`p-10 rounded-[48px] border space-y-10 ${isDaylight ? 'bg-white border-slate-100' : 'bg-[#0B0F19] border-white/5 shadow-2xl'}`}>
+                <div className="xl:col-span-8 space-y-6 md:space-y-10">
+                   <div className={`p-5 md:p-10 rounded-[32px] md:rounded-[48px] border space-y-8 md:space-y-10 ${isDaylight ? 'bg-white border-slate-100' : 'bg-[#0B0F19] border-white/5 shadow-2xl'}`}>
                       <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">Operational Grid System</h3>
                       
                       <OperationalGrid 
@@ -245,13 +245,13 @@ export const DesignCenter = () => {
                         renderCell={(item, key) => {
                           if (key === 'artifact') {
                             return (
-                              <div className="flex items-center gap-4">
+                              <div className="flex items-center gap-3 md:gap-4 min-w-0">
                                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
                                   isDaylight ? 'bg-slate-100' : 'bg-white/5'
                                 }`}>
                                   <Database className={`w-5 h-5 ${isDaylight ? 'text-slate-400' : 'text-slate-500'}`} />
                                 </div>
-                                <div>
+                                <div className="min-w-0">
                                   <p className={`text-[11px] font-black uppercase tracking-tight mb-0.5 ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
                                     {item.name}
                                   </p>
@@ -306,9 +306,9 @@ export const DesignCenter = () => {
                         }}
                       />
 
-                      <div className="space-y-8 pt-6 border-t border-white/5">
+                      <div className="space-y-6 md:space-y-8 pt-6 border-t border-white/5">
                         <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Navigation Variants</p>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-8">
                            <TabBar 
                               variant="glass"
                               items={navItems.slice(0, 3)}
@@ -325,21 +325,21 @@ export const DesignCenter = () => {
                       </div>
                    </div>
 
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      <div className={`p-8 rounded-[48px] border relative overflow-hidden flex flex-col h-full group ${isDaylight ? 'bg-white border-slate-100 shadow-sm' : 'bg-[#0B0F19] border-white/5 shadow-2xl'}`}>
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-8">
+                      <div className={`p-5 md:p-8 rounded-[32px] md:rounded-[48px] border relative overflow-hidden flex flex-col h-full group ${isDaylight ? 'bg-white border-slate-100 shadow-sm' : 'bg-[#0B0F19] border-white/5 shadow-2xl'}`}>
                         <div className="flex justify-between items-start mb-8">
                           <div className="p-3 rounded-2xl bg-[#00F0FF]/10 text-[#00F0FF]">
                             <Cpu className="w-6 h-6" />
                           </div>
                         </div>
-                        <h4 className="text-xl font-black uppercase tracking-tighter text-white mb-4">Universal Card</h4>
+                        <h4 className={`text-lg md:text-xl font-black uppercase tracking-tight sm:tracking-tighter mb-4 ${isDaylight ? 'text-slate-900' : 'text-white'}`}>Universal Card</h4>
                         <p className="text-[11px] text-slate-400 leading-relaxed mb-8 flex-1">Standard container for intelligence artifacts.</p>
                         <Button className="w-full h-12 bg-white/5 border border-white/10 text-[#00F0FF] hover:bg-[#00F0FF] hover:text-black text-[9px] font-black uppercase tracking-widest border-none">
                           Deconstruct Intelligence
                         </Button>
                       </div>
 
-                      <div className={`p-8 rounded-[48px] border relative overflow-hidden flex flex-col h-full border-t-4 border-t-[#FF5733] ${isDaylight ? 'bg-white border-slate-100 shadow-sm' : 'bg-[#0B0F19] border-white/5 shadow-2xl'}`}>
+                      <div className={`p-5 md:p-8 rounded-[32px] md:rounded-[48px] border relative overflow-hidden flex flex-col h-full border-t-4 border-t-[#FF5733] ${isDaylight ? 'bg-white border-slate-100 shadow-sm' : 'bg-[#0B0F19] border-white/5 shadow-2xl'}`}>
                         <div className="flex items-center gap-4 mb-10">
                           <div className="p-3 rounded-2xl bg-[#FF5733]/10 text-[#FF5733]">
                             <TrendingDown className="w-6 h-6" />
@@ -365,11 +365,11 @@ export const DesignCenter = () => {
           )}
 
           {activeTab === 'standards' && (
-            <motion.div key="standards" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-10">
-              <div className={`p-12 rounded-[48px] border ${isDaylight ? 'bg-white border-slate-100' : 'bg-[#0B0F19] border-white/5 shadow-2xl'} max-w-4xl`}>
-                <h3 className="text-2xl font-black uppercase tracking-tighter mb-12 text-white">Aethos Core Guidelines</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                  <div className="space-y-8">
+            <motion.div key="standards" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8 md:space-y-10">
+              <div className={`p-6 md:p-12 rounded-[32px] md:rounded-[48px] border ${isDaylight ? 'bg-white border-slate-100' : 'bg-[#0B0F19] border-white/5 shadow-2xl'} max-w-4xl`}>
+                <h3 className={`text-xl md:text-2xl font-black uppercase tracking-tight sm:tracking-tighter mb-8 md:mb-12 ${isDaylight ? 'text-slate-900' : 'text-white'}`}>Aethos Core Guidelines</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+                  <div className="space-y-6 md:space-y-8">
                     <div className="space-y-4">
                       <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] flex items-center gap-3">
                         <Target className="w-4 h-4" /> Operational Clarity
@@ -387,7 +387,7 @@ export const DesignCenter = () => {
                       </p>
                     </div>
                   </div>
-                  <div className="space-y-8">
+                  <div className="space-y-6 md:space-y-8">
                     <div className="space-y-4">
                       <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] flex items-center gap-3">
                         <Shield className="w-4 h-4" /> Primary Action
@@ -412,10 +412,10 @@ export const DesignCenter = () => {
 
           {activeTab === 'feedback' && (
             <motion.div key="feedback" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="max-w-2xl">
-              <div className={`p-12 rounded-[48px] border ${isDaylight ? 'bg-white border-slate-100 shadow-sm' : 'bg-[#0B0F19] border-white/5 shadow-2xl'}`}>
+              <div className={`p-6 md:p-12 rounded-[32px] md:rounded-[48px] border ${isDaylight ? 'bg-white border-slate-100 shadow-sm' : 'bg-[#0B0F19] border-white/5 shadow-2xl'}`}>
                 <div className="flex items-center gap-4 mb-8">
-                  <MessageSquare className="w-6 h-6 text-[#00F0FF]" />
-                  <h3 className="text-xl font-black uppercase tracking-tighter text-white">Lab Feedback Loop</h3>
+                  <MessageSquare className="w-6 h-6 text-[#00F0FF] shrink-0" />
+                  <h3 className={`text-lg md:text-xl font-black uppercase tracking-tight sm:tracking-tighter ${isDaylight ? 'text-slate-900' : 'text-white'}`}>Lab Feedback Loop</h3>
                 </div>
                 <p className={`text-sm ${isDaylight ? 'text-slate-500' : 'text-slate-400'} mb-10 leading-relaxed italic`}>
                   Found an inconsistency? Submit a design request directly to the system architect.
@@ -427,14 +427,14 @@ export const DesignCenter = () => {
                       value={suggestion}
                       onChange={(e) => setSuggestion(e.target.value)}
                       placeholder="e.g. The backdrop blur on dropdowns could be 4px stronger in cosmic mode..."
-                      className={`w-full min-h-[200px] p-6 rounded-3xl border outline-none text-sm leading-relaxed transition-all ${
+                      className={`w-full min-h-[180px] md:min-h-[200px] p-5 md:p-6 rounded-3xl border outline-none text-sm leading-relaxed transition-all ${
                         isDaylight ? 'bg-slate-50 border-slate-200' : 'bg-black/40 border-white/5 text-white focus:border-[#00F0FF]/50'
                       }`}
                     />
                   </div>
                   <button 
                     type="submit"
-                    className={`w-full py-5 rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-4 transition-all ${
+                    className={`w-full min-h-[44px] py-4 md:py-5 rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-3 md:gap-4 transition-all ${
                       isDaylight ? 'bg-slate-900 text-white shadow-xl shadow-slate-200' : 'bg-[#00F0FF] text-black shadow-lg shadow-[#00F0FF]/20'
                     }`}
                   >
