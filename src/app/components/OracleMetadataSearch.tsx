@@ -35,64 +35,76 @@ import {
 } from 'lucide-react';
 import { motion as Motion, AnimatePresence } from 'motion/react';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 import { Asset, ProviderType } from '../types/aethos.types';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { toast } from 'sonner';
-
-// Mock data generator
-const generateMockAssets = (): Asset[] => {
-  const providers: ProviderType[] = ['microsoft', 'google', 'slack', 'box', 'local'];
-  const types = ['file', 'folder', 'site', 'channel', 'page'] as const;
-  const fileNames = [
-    'Q1 Budget Review', 'Marketing Strategy 2026', 'Product Roadmap', 
-    'Client Presentation', 'Annual Report', 'Team Meeting Notes',
-    'Design System Guide', 'API Documentation', 'Security Audit',
-    'Employee Handbook', 'Sales Pipeline', 'Revenue Forecast'
-  ];
-  const locations = [
-    'Finance Team > Budget', 'Marketing > Strategy', 'Product > Roadmap',
-    'Sales > Presentations', 'HR > Policies', 'Engineering > Docs'
-  ];
-  const userTagOptions = ['q1-2026', 'budget', 'marketing', 'product', 'security', 'hr', 'sales', 'engineering'];
-  const enrichedTagOptions = ['financial-planning', 'strategic-initiative', 'customer-facing', 'internal-process', 'compliance', 'technical-spec'];
-
-  return Array.from({ length: 50 }, (_, i) => ({
-    id: `asset-${i}`,
-    tenantId: 'tenant-123',
-    sourceProvider: providers[i % providers.length],
-    sourceId: `src-${i}`,
-    sourceUrl: `https://example.com/asset-${i}`,
-    name: `${fileNames[i % fileNames.length]} ${Math.floor(i / fileNames.length) + 1}`,
-    type: types[i % types.length],
-    mimeType: i % 3 === 0 ? 'application/pdf' : i % 3 === 1 ? 'application/vnd.ms-excel' : 'text/plain',
-    sizeBytes: Math.floor(Math.random() * 50000000),
-    authorEmail: `user${i % 5}@company.com`,
-    authorName: `User ${i % 5}`,
-    modifiedByEmail: `modifier${i % 3}@company.com`,
-    createdDate: new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28)).toISOString(),
-    modifiedDate: new Date(2025 + Math.floor(i / 25), Math.floor(Math.random() * 12), Math.floor(Math.random() * 28)).toISOString(),
-    lastAccessedDate: new Date(2026, 1, Math.floor(Math.random() * 27)).toISOString(),
-    locationPath: locations[i % locations.length],
-    parentId: i % 3 === 0 ? `parent-${Math.floor(i / 3)}` : undefined,
-    isSharedExternally: i % 4 === 0,
-    shareCount: Math.floor(Math.random() * 20),
-    permissionType: ['private', 'team', 'org', 'public'][i % 4] as any,
-    userTags: Array.from({ length: Math.floor(Math.random() * 3) }, () => userTagOptions[Math.floor(Math.random() * userTagOptions.length)]),
-    enrichedTags: Array.from({ length: Math.floor(Math.random() * 3) }, () => enrichedTagOptions[Math.floor(Math.random() * enrichedTagOptions.length)]),
-    enrichedTitle: i % 3 === 0 ? `[Enriched] ${fileNames[i % fileNames.length]}` : undefined,
-    intelligenceScore: Math.floor(Math.random() * 100),
-    isOrphaned: i % 7 === 0,
-    isDuplicate: i % 8 === 0,
-    isStale: i % 6 === 0,
-    lastSyncedAt: new Date().toISOString(),
-    syncStatus: 'active'
-  }));
-};
+import { searchFiles } from '../../lib/api';
 
 type SortOption = 'relevance' | 'date-desc' | 'date-asc' | 'size-desc' | 'size-asc' | 'score-desc' | 'score-asc';
 
+type SearchFileResult = {
+  id: string;
+  tenant_id: string;
+  provider: ProviderType;
+  provider_id: string;
+  provider_type?: string | null;
+  name: string;
+  path?: string | null;
+  url?: string | null;
+  size_bytes?: number | null;
+  mime_type?: string | null;
+  created_at?: string | null;
+  modified_at?: string | null;
+  last_accessed_at?: string | null;
+  owner_email?: string | null;
+  owner_name?: string | null;
+  is_stale?: boolean | null;
+  is_orphaned?: boolean | null;
+  is_duplicate?: boolean | null;
+  has_external_share?: boolean | null;
+  external_user_count?: number | null;
+  intelligence_score?: number | null;
+  ai_tags?: string[] | null;
+  ai_suggested_title?: string | null;
+  metadata?: Record<string, any> | null;
+};
+
+function mapSearchResultToAsset(result: SearchFileResult): Asset {
+  return {
+    id: result.id,
+    tenantId: result.tenant_id,
+    sourceProvider: result.provider,
+    sourceId: result.provider_id,
+    sourceUrl: result.url || '',
+    name: result.name,
+    type: result.provider_type === 'folder' ? 'folder' : 'file',
+    mimeType: result.mime_type || undefined,
+    sizeBytes: result.size_bytes || 0,
+    authorEmail: result.owner_email || undefined,
+    authorName: result.owner_name || undefined,
+    createdDate: result.created_at || new Date().toISOString(),
+    modifiedDate: result.modified_at || result.created_at || new Date().toISOString(),
+    lastAccessedDate: result.last_accessed_at || undefined,
+    locationPath: result.path || '/',
+    isSharedExternally: !!result.has_external_share,
+    shareCount: result.external_user_count || 0,
+    permissionType: result.has_external_share ? 'public' : 'private',
+    userTags: result.metadata?.user_tags || [],
+    enrichedTags: result.ai_tags || [],
+    enrichedTitle: result.ai_suggested_title || undefined,
+    intelligenceScore: result.intelligence_score || 0,
+    isOrphaned: !!result.is_orphaned,
+    isDuplicate: !!result.is_duplicate,
+    isStale: !!result.is_stale,
+    lastSyncedAt: new Date().toISOString(),
+    syncStatus: 'active',
+  };
+}
+
 export const OracleMetadataSearch = () => {
   const { isDaylight } = useTheme();
+  const { tenantId, getAccessToken } = useAuth();
   
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -110,10 +122,79 @@ export const OracleMetadataSearch = () => {
   const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false);
   
   // Results state
-  const [allAssets] = useState<Asset[]>(generateMockAssets());
-  const [filteredAssets, setFilteredAssets] = useState<Asset[]>(allAssets);
+  const [allAssets, setAllAssets] = useState<Asset[]>([]);
+  const [filteredAssets, setFilteredAssets] = useState<Asset[]>([]);
+  const [isLoadingAssets, setIsLoadingAssets] = useState(false);
+  const [assetError, setAssetError] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>('relevance');
   const [selectedAssets, setSelectedAssets] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!tenantId) {
+      setAllAssets([]);
+      setFilteredAssets([]);
+      return;
+    }
+
+    const timeoutId = window.setTimeout(async () => {
+      try {
+        setIsLoadingAssets(true);
+        setAssetError(null);
+
+        const filters: Record<string, unknown> = {
+          ...(selectedProviders.length === 1 ? { provider: selectedProviders[0] } : {}),
+          ...(selectedTags.length > 0 ? { tags: selectedTags } : {}),
+          ...(showStaleOnly ? { isStale: true } : {}),
+          ...(showOrphanedOnly ? { isOrphaned: true } : {}),
+          minRiskScore: intelligenceRange[0],
+          maxRiskScore: intelligenceRange[1],
+        };
+
+        if (permissionFilter.includes('public')) {
+          filters.hasExternalShare = true;
+        }
+
+        const token = await getAccessToken();
+        const response = await searchFiles<SearchFileResult>({
+          tenantId,
+          query: searchQuery,
+          filters,
+          sortBy:
+            sortBy === 'size-desc' || sortBy === 'size-asc'
+              ? 'size'
+              : sortBy === 'score-desc' || sortBy === 'score-asc'
+                ? 'intelligence'
+                : sortBy === 'date-desc' || sortBy === 'date-asc'
+                  ? 'modified'
+                  : 'relevance',
+          sortOrder: sortBy.endsWith('asc') ? 'asc' : 'desc',
+          pageSize: 50,
+          accessToken: token,
+        });
+
+        const assets = response.results.map(mapSearchResultToAsset);
+        setAllAssets(showDuplicatesOnly ? assets.filter((asset) => asset.isDuplicate) : assets);
+      } catch (error: any) {
+        setAssetError(error.message || 'Unable to load indexed assets');
+        setAllAssets([]);
+      } finally {
+        setIsLoadingAssets(false);
+      }
+    }, 250);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [
+    tenantId,
+    searchQuery,
+    selectedProviders,
+    selectedTags,
+    showStaleOnly,
+    showOrphanedOnly,
+    showDuplicatesOnly,
+    permissionFilter,
+    intelligenceRange,
+    sortBy,
+  ]);
   
   // Apply filters
   useEffect(() => {
@@ -602,7 +683,43 @@ export const OracleMetadataSearch = () => {
       
       {/* Results Grid */}
       <div className="flex-1 overflow-auto">
-        {filteredAssets.length === 0 ? (
+        {!tenantId ? (
+          <div className={`flex flex-col items-center justify-center py-20 rounded-2xl ${
+            isDaylight ? 'bg-slate-50' : 'bg-white/5'
+          }`}>
+            <Database className="w-16 h-16 text-[#94A3B8] mb-4" />
+            <p className={`text-lg font-semibold mb-2 ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
+              Connect Your Workspace
+            </p>
+            <p className="text-[#94A3B8] text-sm">
+              Sign in to search indexed metadata from your tenant.
+            </p>
+          </div>
+        ) : isLoadingAssets ? (
+          <div className={`flex flex-col items-center justify-center py-20 rounded-2xl ${
+            isDaylight ? 'bg-slate-50' : 'bg-white/5'
+          }`}>
+            <div className="w-10 h-10 border-2 border-[#00F0FF] border-t-transparent rounded-full animate-spin mb-4" />
+            <p className={`text-lg font-semibold mb-2 ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
+              Loading Indexed Assets
+            </p>
+            <p className="text-[#94A3B8] text-sm">
+              Querying the metadata layer...
+            </p>
+          </div>
+        ) : assetError ? (
+          <div className={`flex flex-col items-center justify-center py-20 rounded-2xl ${
+            isDaylight ? 'bg-slate-50' : 'bg-white/5'
+          }`}>
+            <AlertCircle className="w-16 h-16 text-[#FF5733] mb-4" />
+            <p className={`text-lg font-semibold mb-2 ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
+              Search Failed
+            </p>
+            <p className="text-[#94A3B8] text-sm">
+              {assetError}
+            </p>
+          </div>
+        ) : filteredAssets.length === 0 ? (
           <div className={`flex flex-col items-center justify-center py-20 rounded-2xl ${
             isDaylight ? 'bg-slate-50' : 'bg-white/5'
           }`}>
