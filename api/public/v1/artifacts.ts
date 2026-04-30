@@ -81,13 +81,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Handle different HTTP methods
     if (req.method === 'GET') {
-      // List artifacts or get single artifact
+      // List artifacts (public naming) backed by canonical files table
       const { id } = req.query;
 
       if (id) {
         // Get single artifact
         const { data: artifact, error } = await supabase
-          .from('artifacts')
+          .from('files')
           .select('*')
           .eq('id', id)
           .eq('tenant_id', tenantId)
@@ -103,7 +103,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const { limit = 100, offset = 0, provider, tags } = req.query;
 
         let query = supabase
-          .from('artifacts')
+          .from('files')
           .select('*', { count: 'exact' })
           .eq('tenant_id', tenantId);
 
@@ -113,7 +113,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         if (tags) {
           const tagArray = (tags as string).split(',');
-          query = query.contains('tags', tagArray);
+          query = query.contains('ai_tags', tagArray);
         }
 
         const { data: artifacts, error, count } = await query
@@ -144,17 +144,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       let searchQuery = supabase
-        .from('artifacts')
+        .from('files')
         .select('*')
         .eq('tenant_id', tenantId)
-        .or(`name.ilike.%${query}%,enriched_name.ilike.%${query}%`);
+        .or(`name.ilike.%${query}%,ai_suggested_title.ilike.%${query}%`);
 
       if (filters.provider) {
         searchQuery = searchQuery.eq('provider', filters.provider);
       }
 
       if (filters.tags && filters.tags.length > 0) {
-        searchQuery = searchQuery.contains('tags', filters.tags);
+        searchQuery = searchQuery.contains('ai_tags', filters.tags);
       }
 
       const { data: results, error } = await searchQuery.limit(limit);

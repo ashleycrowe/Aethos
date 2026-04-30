@@ -45,14 +45,77 @@ import {
   Info
 } from 'lucide-react';
 import { motion as Motion, AnimatePresence } from 'motion/react';
-import { useTheme } from '../context/ThemeContext';
-import { useOracle } from '../context/OracleContext';
-import { useFeature, useVersion } from '../context/VersionContext';
-import { GlassCard } from './GlassCard';
+import { searchFiles } from '@/lib/api';
+import { useAuth } from '@/app/context/AuthContext';
+import { useTheme } from '@/app/context/ThemeContext';
+import { useOracle } from '@/app/context/OracleContext';
+import { useFeature, useVersion } from '@/app/context/VersionContext';
+import { GlassCard } from '@/app/components/GlassCard';
 import { toast } from 'sonner';
+
+type SearchFileResult = {
+  id: string;
+  name: string;
+  path?: string | null;
+  url?: string | null;
+  provider?: string | null;
+  provider_type?: string | null;
+  mime_type?: string | null;
+  size_bytes?: number | null;
+  modified_at?: string | null;
+  owner_email?: string | null;
+  intelligence_score?: number | null;
+  ai_tags?: string[] | null;
+  ai_category?: string | null;
+  has_external_share?: boolean | null;
+  is_stale?: boolean | null;
+};
+
+const TEST_TENANT_ID = '00000000-0000-0000-0000-000000000101';
+
+const demoSearchResults: SearchFileResult[] = [
+  {
+    id: 'demo-budget-q1',
+    name: 'Q1 Budget Variance Review.xlsx',
+    path: '/Finance/Planning/Q1',
+    provider: 'microsoft',
+    provider_type: 'file',
+    mime_type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    modified_at: '2026-04-18T14:15:00Z',
+    owner_email: 'finance.ops@example.com',
+    intelligence_score: 88,
+    ai_tags: ['budget', 'q1-2026', 'variance'],
+  },
+  {
+    id: 'demo-exposure-audit',
+    name: 'External Sharing Audit - April.pdf',
+    path: '/Security/Reviews',
+    provider: 'microsoft',
+    provider_type: 'file',
+    mime_type: 'application/pdf',
+    modified_at: '2026-04-22T09:30:00Z',
+    owner_email: 'security@example.com',
+    intelligence_score: 74,
+    ai_tags: ['security', 'external-sharing'],
+    has_external_share: true,
+  },
+  {
+    id: 'demo-onboarding',
+    name: 'Aethos Onboarding Buddy Map.docx',
+    path: '/People/Onboarding',
+    provider: 'microsoft',
+    provider_type: 'file',
+    mime_type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    modified_at: '2026-04-10T17:45:00Z',
+    owner_email: 'people@example.com',
+    intelligence_score: 81,
+    ai_tags: ['onboarding', 'people'],
+  },
+];
 
 export const OracleSearchBridgeV2 = () => {
   const { isDaylight } = useTheme();
+  const { tenantId, getAccessToken } = useAuth();
   const { version } = useVersion();
   const hasAISearch = useFeature('aiContentSearch');
   const hasSemanticSearch = useFeature('semanticSearch');
@@ -72,6 +135,10 @@ export const OracleSearchBridgeV2 = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(false);
   const [aiSearchMode, setAISearchMode] = useState(false); // V1.5+ feature
+  const [metadataResults, setMetadataResults] = useState<SearchFileResult[]>([]);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [isDemoMode, setIsDemoMode] = useState(false);
+  const [isSearchingFiles, setIsSearchingFiles] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -80,16 +147,45 @@ export const OracleSearchBridgeV2 = () => {
     }
   }, [history, results?.answer]);
 
+  const runMetadataSearch = async (searchQuery: string) => {
+    try {
+      setIsSearchingFiles(true);
+      setSearchError(null);
+      setIsDemoMode(false);
+
+      const token = await getAccessToken();
+      const response = await searchFiles<SearchFileResult>({
+        tenantId: tenantId || TEST_TENANT_ID,
+        query: searchQuery,
+        pageSize: 8,
+        accessToken: token,
+      });
+
+      setMetadataResults(response.results || []);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Search API unreachable';
+      setSearchError(message);
+      setIsDemoMode(true);
+      setMetadataResults(demoSearchResults);
+      toast.warning('Search API unavailable - showing demo results');
+    } finally {
+      setIsSearchingFiles(false);
+    }
+  };
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!localQuery.trim()) return;
-    search(localQuery);
+    const nextQuery = localQuery.trim();
+    search(nextQuery);
+    void runMetadataSearch(nextQuery);
     setLocalQuery('');
   };
 
   const executeCommand = (cmd: string) => {
     setLocalQuery(cmd);
     search(cmd);
+    void runMetadataSearch(cmd);
     setShowQuickActions(false);
   };
 
@@ -120,17 +216,17 @@ export const OracleSearchBridgeV2 = () => {
   ];
 
   return (
-    <div className="flex flex-col h-full max-w-[1800px] mx-auto px-4">
+    <div className="flex flex-col h-full max-w-[1800px] mx-auto px-2 sm:px-4">
       {/* Compact Header */}
       <div className="flex-shrink-0 pb-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           {/* Left: Title */}
           <div className="flex items-center gap-4">
             <div className="p-2 rounded-xl bg-[#00F0FF]/10 text-[#00F0FF] shadow-[0_0_15px_rgba(0,240,255,0.2)]">
               <Cpu className="w-5 h-5" />
             </div>
             <div>
-              <h1 className={`text-2xl font-black uppercase tracking-tighter ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
+              <h1 className={`text-2xl font-black uppercase tracking-tight ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
                 Oracle <span className="text-[#00F0FF]">Search</span>
               </h1>
               <p className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-500 mt-0.5">
@@ -140,7 +236,13 @@ export const OracleSearchBridgeV2 = () => {
           </div>
 
           {/* Right: Status + Filter Button */}
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            {isDemoMode && (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#F39C12]/30 bg-[#F39C12]/10 text-[#F39C12] text-[9px] font-black uppercase tracking-widest">
+                <Info className="w-3.5 h-3.5" />
+                Demo Mode
+              </div>
+            )}
             {/* Federation Status Badges */}
             {Object.entries(federationStatus).map(([provider, state]) => (
               state !== 'none' && (
@@ -174,14 +276,14 @@ export const OracleSearchBridgeV2 = () => {
       </div>
 
       {/* Main Content Area - Full Width Chat */}
-      <div className="flex-1 flex gap-6 min-h-0">
+      <div className="flex-1 flex flex-col lg:flex-row gap-4 lg:gap-6 min-h-0">
         {/* Primary Conversation Interface */}
         <div className={`flex flex-col min-h-0 transition-all ${showFilters ? 'flex-[2]' : 'flex-1'}`}>
           <GlassCard className="flex-1 flex flex-col p-0 overflow-hidden bg-[#0B0F19]/60 border-white/10 relative">
             {/* Scrollable Conversation Feed */}
-            <div 
+            <div
               ref={scrollRef}
-              className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar scroll-smooth"
+              className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-8 custom-scrollbar scroll-smooth"
             >
               {history.length === 0 && !results && (
                 <div className="h-full flex flex-col items-center justify-center text-center space-y-8 py-20">
@@ -197,7 +299,7 @@ export const OracleSearchBridgeV2 = () => {
                   </div>
                   
                   {/* Quick Action Grid */}
-                  <div className="grid grid-cols-2 gap-4 w-full max-w-2xl">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-2xl">
                     {quickActions.map(action => (
                       <button
                         key={action.id}
@@ -231,7 +333,7 @@ export const OracleSearchBridgeV2 = () => {
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="grid grid-cols-2 gap-3 w-full max-w-2xl overflow-hidden"
+                    className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-2xl overflow-hidden"
                       >
                         {universalCommands.map(cmd => (
                           <button 
@@ -259,7 +361,7 @@ export const OracleSearchBridgeV2 = () => {
                     key={msg.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className={`flex gap-6 ${msg.role === 'assistant' ? '' : 'flex-row-reverse'}`}
+                  className={`flex gap-4 sm:gap-6 ${msg.role === 'assistant' ? '' : 'flex-row-reverse'}`}
                   >
                     <div className={`w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center border transition-all ${
                       msg.role === 'assistant' 
@@ -270,7 +372,7 @@ export const OracleSearchBridgeV2 = () => {
                     </div>
                     
                     <div className={`flex-1 space-y-4 ${msg.role === 'assistant' ? '' : 'text-right'}`}>
-                      <div className={`inline-block p-6 rounded-3xl text-sm leading-relaxed max-w-[85%] ${
+                      <div className={`inline-block p-4 sm:p-6 rounded-3xl text-sm leading-relaxed max-w-[92%] sm:max-w-[85%] ${
                         msg.role === 'assistant' 
                           ? 'bg-white/5 border border-white/10 text-slate-200' 
                           : 'bg-[#00F0FF] text-black font-bold shadow-xl shadow-[#00F0FF]/10'
@@ -353,10 +455,78 @@ export const OracleSearchBridgeV2 = () => {
                   </Motion.div>
                 )}
               </AnimatePresence>
+
+              {(metadataResults.length > 0 || isSearchingFiles || searchError) && (
+                <div className="space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div>
+                      <h3 className="text-[10px] font-black uppercase tracking-[0.35em] text-slate-500">
+                        Indexed Metadata Results
+                      </h3>
+                      {searchError && (
+                        <p className="mt-2 text-[10px] font-bold text-[#F39C12]">
+                          Search API fallback active: {searchError}
+                        </p>
+                      )}
+                    </div>
+                    {isSearchingFiles && (
+                      <div className="text-[9px] font-black uppercase tracking-widest text-[#00F0FF]">
+                        Querying Supabase...
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                    {metadataResults.map((item) => (
+                      <a
+                        key={item.id}
+                        href={item.url || '#'}
+                        target={item.url ? '_blank' : undefined}
+                        rel={item.url ? 'noopener noreferrer' : undefined}
+                        className="group rounded-2xl border border-white/10 bg-white/[0.04] p-4 sm:p-5 transition-all hover:border-[#00F0FF]/40 hover:bg-[#00F0FF]/5"
+                      >
+                        <div className="flex items-start gap-4">
+                          <div className="mt-1 rounded-xl border border-[#00F0FF]/20 bg-[#00F0FF]/10 p-2.5 text-[#00F0FF]">
+                            {getSourceIcon(item.mime_type || item.provider_type || 'file')}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-start justify-between gap-3">
+                              <h4 className="line-clamp-2 text-sm font-black uppercase tracking-tight text-white">
+                                {item.name}
+                              </h4>
+                              <span className="shrink-0 text-[10px] font-black text-[#00F0FF]">
+                                {item.intelligence_score ?? 0}
+                              </span>
+                            </div>
+                            <p className="mt-2 truncate text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                              {item.provider || 'microsoft'} / {item.path || 'Indexed file'}
+                            </p>
+                            <div className="mt-4 flex flex-wrap gap-2">
+                              {(item.ai_tags || []).slice(0, 4).map((tag) => (
+                                <span
+                                  key={tag}
+                                  className="rounded-full border border-[#00F0FF]/20 bg-[#00F0FF]/10 px-2.5 py-1 text-[8px] font-black uppercase tracking-widest text-[#00F0FF]"
+                                >
+                                  {tag}
+                                </span>
+                              ))}
+                              {item.has_external_share && (
+                                <span className="rounded-full border border-[#FF5733]/30 bg-[#FF5733]/10 px-2.5 py-1 text-[8px] font-black uppercase tracking-widest text-[#FF5733]">
+                                  External
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Input Terminal Area */}
-            <div className="p-8 border-t border-white/5 bg-[#0B0F19]/80 backdrop-blur-xl">
+            <div className="p-4 sm:p-6 lg:p-8 border-t border-white/5 bg-[#0B0F19]/80 backdrop-blur-sm md:backdrop-blur-xl">
               {/* V1.5+ FEATURE: AI Search Mode Toggle */}
               {hasAISearch && (
                 <div className="mb-6 flex items-center justify-between p-4 rounded-2xl bg-gradient-to-r from-[#00F0FF]/10 to-purple-500/10 border border-[#00F0FF]/20">
@@ -399,7 +569,7 @@ export const OracleSearchBridgeV2 = () => {
               
               <form onSubmit={handleSearch} className="relative group">
                 <div className={`absolute -inset-1 rounded-3xl blur transition-all duration-500 opacity-0 group-focus-within:opacity-30 ${status === 'idle' ? 'bg-[#00F0FF]' : 'bg-yellow-500'}`} />
-                <div className="relative flex items-center gap-4 bg-[#0B0F19] border border-white/10 rounded-2xl p-2 pl-6 focus-within:border-[#00F0FF]/50 transition-all">
+                <div className="relative flex items-center gap-3 sm:gap-4 bg-[#0B0F19] border border-white/10 rounded-2xl p-2 pl-4 sm:pl-6 focus-within:border-[#00F0FF]/50 transition-all">
                   <Command className={`w-5 h-5 ${status === 'idle' ? 'text-slate-500' : 'text-[#00F0FF] animate-spin'}`} />
                   <input 
                     value={localQuery}
@@ -418,8 +588,8 @@ export const OracleSearchBridgeV2 = () => {
                 </div>
               </form>
               
-              <div className="flex items-center justify-between mt-6">
-                <div className="flex items-center gap-6">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between mt-6">
+                <div className="flex flex-wrap items-center gap-4 sm:gap-6">
                   <button 
                     onClick={clearHistory}
                     className="text-[9px] font-black text-slate-500 hover:text-[#FF5733] uppercase tracking-widest flex items-center gap-2 transition-colors"
@@ -454,9 +624,9 @@ export const OracleSearchBridgeV2 = () => {
               animate={{ width: 360, opacity: 1 }}
               exit={{ width: 0, opacity: 0 }}
               transition={{ duration: 0.3, ease: 'easeInOut' }}
-              className="overflow-hidden"
+              className="overflow-hidden w-full lg:w-auto"
             >
-              <div className="w-[360px] space-y-6 h-full overflow-y-auto custom-scrollbar pr-2">
+              <div className="w-full lg:w-[360px] space-y-6 h-full overflow-y-auto custom-scrollbar lg:pr-2">
                 <GlassCard className="p-6 space-y-6">
                   <div className="flex items-center justify-between">
                     <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">Advanced Filters</h3>

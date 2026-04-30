@@ -8,7 +8,7 @@
  * WORKFLOW:
  * 1. Convert user query to embedding
  * 2. Search for similar embeddings using pgvector
- * 3. Return relevant content chunks with source artifacts
+ * 3. Return relevant content chunks with source files
  * 4. Rank by relevance score
  */
 
@@ -70,21 +70,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       throw error;
     }
 
-    // Enrich results with artifact metadata
-    const artifactIds = [...new Set(results.map((r: any) => r.artifact_id))];
+    // Enrich results with file metadata
+    const fileIds = [...new Set(results.map((r: any) => r.file_id))];
     
-    const { data: artifacts } = await supabase
-      .from('artifacts')
-      .select('id, name, enriched_name, path, owner, provider, tags, last_modified')
-      .in('id', artifactIds)
+    const { data: files } = await supabase
+      .from('files')
+      .select('id, name, ai_suggested_title, path, owner_email, provider, ai_tags, modified_at')
+      .in('id', fileIds)
       .eq('tenant_id', tenantId);
 
-    // Combine results with artifact metadata
+    // Combine results with file metadata
     const enrichedResults = results.map((result: any) => {
-      const artifact = artifacts?.find((a) => a.id === result.artifact_id);
+      const file = files?.find((a) => a.id === result.file_id);
       return {
         ...result,
-        artifact,
+        file,
       };
     });
 

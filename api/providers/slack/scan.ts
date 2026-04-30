@@ -10,7 +10,7 @@
  * 2. Fetch channels list
  * 3. Fetch file attachments
  * 4. Detect inactive channels (90+ days no activity)
- * 5. Store metadata in artifacts table
+ * 5. Store metadata in files table
  */
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
@@ -100,11 +100,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Fetch files
     const files = await fetchSlackFiles(accessToken);
 
-    // Process channels and store as artifacts
+    // Process channels and store as files
     const now = Date.now();
     const NINETY_DAYS_MS = 90 * 24 * 60 * 60 * 1000;
 
-    const channelArtifacts = channels.map((channel) => {
+    const channelFiles = channels.map((channel) => {
       const lastActivity = channel.updated || channel.created;
       const isStale = (now - lastActivity * 1000) > NINETY_DAYS_MS;
 
@@ -112,36 +112,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         tenant_id: tenantId,
         provider: 'slack',
         provider_id: channel.id,
+        provider_type: 'slack_channel',
         name: `#${channel.name}`,
-        enriched_name: `Slack Channel: ${channel.name}`,
-        artifact_type: 'slack_channel',
+        ai_suggested_title: `Slack Channel: ${channel.name}`,
         path: `/slack/${connection.workspace_name}/${channel.name}`,
         size_bytes: 0, // Channels don't have size
-        is_archived: channel.is_archived,
         is_stale: isStale,
-        last_modified: new Date(lastActivity * 1000).toISOString(),
+        modified_at: new Date(lastActivity * 1000).toISOString(),
         metadata: {
+          is_archived: channel.is_archived,
           num_members: channel.num_members,
           workspace_id: connection.workspace_id,
         },
-        tags: channel.is_archived ? ['archived'] : [],
+        ai_tags: channel.is_archived ? ['archived'] : [],
         created_at: new Date().toISOString(),
       };
     });
 
-    // Process files and store as artifacts
-    const fileArtifacts = files.map((file) => ({
+    // Process files and store as files
+    const indexedSlackFiles = files.map((file) => ({
       tenant_id: tenantId,
       provider: 'slack',
       provider_id: file.id,
+      provider_type: 'slack_file',
       name: file.name,
-      enriched_name: file.name,
-      artifact_type: 'slack_file',
+      ai_suggested_title: file.name,
       path: `/slack/${connection.workspace_name}/files/${file.name}`,
       size_bytes: file.size,
       mime_type: file.mimetype,
-      owner: file.user,
-      last_modified: new Date(file.created * 1000).toISOString(),
+      owner_email: file.user,
+      modified_at: new Date(file.created * 1000).toISOString(),
       metadata: {
         url: file.url_private,
         channels: file.channels || [],
@@ -150,15 +150,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       created_at: new Date().toISOString(),
     }));
 
-    // Insert all artifacts into database
-    const allArtifacts = [...channelArtifacts, ...fileArtifacts];
+    // Insert all files into database
+    const allFiles = [...channelFiles, ...indexedSlackFiles];
 
     const { error: insertError } = await supabase
-      .from('artifacts')
-      .upsert(allArtifacts, { onConflict: 'tenant_id,provider,provider_id' });
+      .from('files')
+      .upsert(allFiles, { onConflict: 'tenant_id,provider,provider_id' });
 
     if (insertError) {
-      console.error('Error inserting artifacts:', insertError);
+      console.error('Error inserting files:', insertError);
       throw insertError;
     }
 
@@ -169,8 +169,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .eq('id', connectionId);
 
     // Calculate statistics
-    const inactiveChannels = channelArtifacts.filter((c) => c.is_stale).length;
-    const totalStorageBytes = fileArtifacts.reduce((sum, f) => sum + f.size_bytes, 0);
+    const inactiveChannels = channelFiles.filter((c) => c.is_stale).length;
+    const totalStorageBytes = indexedSlackFiles.reduce((sum, f) => sum + f.size_bytes, 0);
 
     return res.status(200).json({
       success: true,
@@ -181,7 +181,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         totalStorageBytes,
         totalStorageGB: (totalStorageBytes / 1024 / 1024 / 1024).toFixed(2),
       },
-      artifactsCreated: allArtifacts.length,
+      filesIndexed: allFiles.length,
     });
   } catch (error: any) {
     console.error('Slack scan error:', error);

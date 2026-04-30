@@ -21,8 +21,8 @@ import {
 
 // Initialize Supabase client (server-side)
 const supabase = createClient(
-  process.env.VITE_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY! // Use service role key for server-side
+  process.env.SUPABASE_URL || '',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || '' // Use service role key for server-side
 );
 
 export default async function handler(

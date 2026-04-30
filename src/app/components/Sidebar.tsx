@@ -25,9 +25,9 @@ import {
   FileCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useTheme } from '../context/ThemeContext';
-import { useUser } from '../context/UserContext';
-import { useVersion, useFeature } from '../context/VersionContext';
+import { useTheme } from '@/app/context/ThemeContext';
+import { useUser } from '@/app/context/UserContext';
+import { useVersion, useFeature } from '@/app/context/VersionContext';
 
 interface SidebarProps {
   activeTab: string;
@@ -100,6 +100,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       return itemVersionIndex <= currentVersionIndex;
     })
   })).filter(group => group.items.length > 0); // Remove empty groups
+  const mobileNavItems = menuGroups.flatMap((group) => group.items).slice(0, 5);
 
   const NavButton = ({ item }: { item: any }) => {
     const isActive = activeTab === item.id;
@@ -136,10 +137,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   return (
-    <div 
+    <>
+    <div
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      className={`h-[calc(100vh-40px)] m-5 rounded-[32px] flex flex-col transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] relative border border-white/5 shadow-2xl overflow-visible backdrop-blur-3xl group/sidebar ${
+      className={`hidden md:flex h-[calc(100vh-40px)] m-5 rounded-[32px] flex-col transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] relative border border-white/5 shadow-2xl overflow-visible backdrop-blur-3xl group/sidebar ${
         isDaylight ? 'bg-white/80 border-slate-200 shadow-slate-200' : 'bg-[#0B0F19]/80 shadow-black/50'
       } ${isCollapsed ? 'w-20' : 'w-64'}`}
     >
@@ -285,5 +287,36 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </div>
     </div>
+    <nav
+      aria-label="Primary mobile navigation"
+      className={`fixed inset-x-3 bottom-3 z-[180] grid grid-cols-5 gap-1 rounded-2xl border p-1.5 shadow-2xl backdrop-blur-md md:hidden ${
+        isDaylight
+          ? 'border-slate-200 bg-white/90 shadow-slate-300/40'
+          : 'border-white/10 bg-[#0B0F19]/90 shadow-black/60'
+      }`}
+    >
+      {mobileNavItems.map((item) => {
+        const isActive = activeTab === item.id;
+        return (
+          <button
+            key={item.id}
+            onClick={() => setActiveTab(item.id)}
+            className={`flex min-h-[54px] min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 transition-all ${
+              isActive
+                ? 'bg-[#00F0FF] text-black shadow-[0_0_18px_rgba(0,240,255,0.25)]'
+                : isDaylight
+                  ? 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
+                  : 'text-slate-400 hover:bg-white/5 hover:text-white'
+            }`}
+          >
+            <item.icon className="h-4 w-4 shrink-0" />
+            <span className="max-w-full truncate text-[8px] font-black uppercase tracking-[0.08em]">
+              {item.label}
+            </span>
+          </button>
+        );
+      })}
+    </nav>
+    </>
   );
 };

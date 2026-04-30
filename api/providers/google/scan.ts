@@ -130,7 +130,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const now = Date.now();
     const NINETY_DAYS_MS = 90 * 24 * 60 * 60 * 1000;
 
-    const artifacts = files.map((file) => {
+    const indexedFiles = files.map((file) => {
       const lastModified = new Date(file.modifiedTime);
       const isStale = (now - lastModified.getTime()) > NINETY_DAYS_MS;
 
@@ -143,23 +143,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         tenant_id: tenantId,
         provider: 'google',
         provider_id: file.id,
+        provider_type: file.mimeType.includes('folder') ? 'google_folder' : 'google_file',
         name: file.name,
-        enriched_name: file.name,
-        artifact_type: file.mimeType.includes('folder') ? 'google_folder' : 'google_file',
+        ai_suggested_title: file.name,
         path: `/google-drive/${file.name}`,
         size_bytes: file.size ? parseInt(file.size, 10) : 0,
         mime_type: file.mimeType,
-        owner: file.owners?.[0]?.emailAddress || 'Unknown',
+        owner_email: file.owners?.[0]?.emailAddress || null,
+        owner_name: file.owners?.[0]?.displayName || null,
         is_stale: isStale,
         has_external_share: hasExternalShare,
-        exposure_level: hasExternalShare ? 'high' : 'low',
-        last_modified: file.modifiedTime,
+        risk_score: hasExternalShare ? 70 : isStale ? 30 : 0,
+        modified_at: file.modifiedTime,
         metadata: {
           shared: file.shared,
           permissions_count: file.permissions?.length || 0,
           workspace_id: connection.workspace_id,
         },
-        tags: [
+        ai_tags: [
           ...(isStale ? ['stale'] : []),
           ...(hasExternalShare ? ['external-share'] : []),
         ],
@@ -167,13 +168,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       };
     });
 
-    // Insert all artifacts
+    // Insert all files
     const { error: insertError } = await supabase
-      .from('artifacts')
-      .upsert(artifacts, { onConflict: 'tenant_id,provider,provider_id' });
+      .from('files')
+      .upsert(indexedFiles, { onConflict: 'tenant_id,provider,provider_id' });
 
     if (insertError) {
-      console.error('Error inserting artifacts:', insertError);
+      console.error('Error inserting files:', insertError);
       throw insertError;
     }
 
@@ -184,9 +185,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .eq('id', connectionId);
 
     // Calculate shadow discovery statistics
-    const staleFiles = artifacts.filter((a) => a.is_stale).length;
-    const externalShares = artifacts.filter((a) => a.has_external_share).length;
-    const totalStorageBytes = artifacts.reduce((sum, a) => sum + a.size_bytes, 0);
+    const staleFiles = indexedFiles.filter((a) => a.is_stale).length;
+    const externalShares = indexedFiles.filter((a) => a.has_external_share).length;
+    const totalStorageBytes = indexedFiles.reduce((sum, a) => sum + a.size_bytes, 0);
 
     return res.status(200).json({
       success: true,
@@ -198,7 +199,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         totalStorageGB: (totalStorageBytes / 1024 / 1024 / 1024).toFixed(2),
         leakageWarning: externalShares > 0 || staleFiles > 10,
       },
-      artifactsCreated: artifacts.length,
+      filesIndexed: indexedFiles.length,
       message: 'Shadow discovery complete. Redirect to M365/Slack for primary management.',
     });
   } catch (error: any) {

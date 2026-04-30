@@ -44,22 +44,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     for (const tenant of tenants) {
       try {
         // Calculate storage statistics for this tenant
-        const { data: artifacts, error: artifactsError } = await supabase
-          .from('artifacts')
+        const { data: files, error: filesError } = await supabase
+          .from('files')
           .select('size_bytes, provider')
           .eq('tenant_id', tenant.id)
           .not('is_deleted', 'eq', true);
 
-        if (artifactsError) throw artifactsError;
+        if (filesError) throw filesError;
 
-        const totalBytes = artifacts?.reduce((sum, a) => sum + (a.size_bytes || 0), 0) || 0;
-        const artifactCount = artifacts?.length || 0;
+        const totalBytes = files?.reduce((sum, a) => sum + (a.size_bytes || 0), 0) || 0;
+        const fileCount = files?.length || 0;
 
         // Calculate per-provider breakdown
         const providerBreakdown: Record<string, number> = {};
-        artifacts?.forEach((artifact) => {
-          const provider = artifact.provider || 'unknown';
-          providerBreakdown[provider] = (providerBreakdown[provider] || 0) + (artifact.size_bytes || 0);
+        files?.forEach((file) => {
+          const provider = file.provider || 'unknown';
+          providerBreakdown[provider] = (providerBreakdown[provider] || 0) + (file.size_bytes || 0);
         });
 
         // Insert snapshot (upsert to handle reruns)
@@ -70,7 +70,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               tenant_id: tenant.id,
               snapshot_date: today,
               total_bytes: totalBytes,
-              artifact_count: artifactCount,
+              file_count: fileCount,
               provider_breakdown: providerBreakdown,
               created_at: new Date().toISOString(),
             },
@@ -84,12 +84,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           tenantName: tenant.name,
           success: true,
           totalBytes,
-          artifactCount,
+          fileCount,
           totalGB: (totalBytes / 1024 / 1024 / 1024).toFixed(2),
         });
 
         console.log(
-          `Storage snapshot created for tenant ${tenant.name}: ${(totalBytes / 1024 / 1024 / 1024).toFixed(2)} GB, ${artifactCount} artifacts`
+          `Storage snapshot created for tenant ${tenant.name}: ${(totalBytes / 1024 / 1024 / 1024).toFixed(2)} GB, ${fileCount} files`
         );
       } catch (error: any) {
         console.error(`Error creating snapshot for tenant ${tenant.name}:`, error);

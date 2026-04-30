@@ -8,7 +8,7 @@
  * WORKFLOW:
  * 1. Create retention policy rule
  * 2. Schedule automated checks (cron)
- * 3. Apply actions to matching artifacts
+ * 3. Apply actions to matching files
  * 4. Create audit trail
  */
 
@@ -51,7 +51,7 @@ async function createRetentionPolicy(policy: RetentionPolicy) {
   return data;
 }
 
-// Execute retention policy (find matching artifacts and apply action)
+// Execute retention policy (find matching files and apply action)
 async function executeRetentionPolicy(policyId: string) {
   // Retrieve policy
   const { data: policy } = await supabase
@@ -64,9 +64,9 @@ async function executeRetentionPolicy(policyId: string) {
     throw new Error('Policy not found or disabled');
   }
 
-  // Build query to find matching artifacts
+  // Build query to find matching files
   let query = supabase
-    .from('artifacts')
+    .from('files')
     .select('*')
     .eq('tenant_id', policy.tenant_id);
 
@@ -93,45 +93,45 @@ async function executeRetentionPolicy(policyId: string) {
     query = query.in('provider', criteria.providers);
   }
 
-  const { data: matchingArtifacts, error } = await query;
+  const { data: matchingFiles, error } = await query;
 
   if (error) throw error;
 
-  // Apply action to matching artifacts
-  const affectedArtifacts = [];
+  // Apply action to matching files
+  const affectedFiles = [];
 
-  for (const artifact of matchingArtifacts || []) {
+  for (const file of matchingFiles || []) {
     let actionResult;
 
     switch (policy.action) {
       case 'archive':
         actionResult = await supabase
-          .from('artifacts')
+          .from('files')
           .update({ is_archived: true, archived_at: new Date().toISOString() })
-          .eq('id', artifact.id);
+          .eq('id', file.id);
         break;
 
       case 'soft_delete':
         actionResult = await supabase
-          .from('artifacts')
+          .from('files')
           .update({
             is_deleted: true,
             deleted_at: new Date().toISOString(),
             delete_scheduled_for: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
           })
-          .eq('id', artifact.id);
+          .eq('id', file.id);
         break;
 
       case 'hard_delete':
         // Only for authorized users with deep_purge permission
-        actionResult = await supabase.from('artifacts').delete().eq('id', artifact.id);
+        actionResult = await supabase.from('files').delete().eq('id', file.id);
         break;
 
       case 'flag':
         actionResult = await supabase
-          .from('artifacts')
+          .from('files')
           .update({ compliance_flagged: true })
-          .eq('id', artifact.id);
+          .eq('id', file.id);
         break;
 
       case 'notify':
@@ -141,15 +141,15 @@ async function executeRetentionPolicy(policyId: string) {
           type: 'compliance_alert',
           priority: 'medium',
           title: `Retention Policy Alert: ${policy.name}`,
-          message: `Artifact "${artifact.name}" matches retention policy criteria`,
-          artifact_id: artifact.id,
+          message: `File "${file.name}" matches retention policy criteria`,
+          file_id: file.id,
           created_at: new Date().toISOString(),
         });
         break;
     }
 
     if (actionResult && !actionResult.error) {
-      affectedArtifacts.push(artifact.id);
+      affectedFiles.push(file.id);
     }
   }
 
@@ -158,16 +158,16 @@ async function executeRetentionPolicy(policyId: string) {
     tenant_id: policy.tenant_id,
     policy_id: policyId,
     action: policy.action,
-    artifacts_affected: affectedArtifacts.length,
-    artifact_ids: affectedArtifacts,
+    files_affected: affectedFiles.length,
+    file_ids: affectedFiles,
     executed_at: new Date().toISOString(),
     execution_type: 'automated',
   });
 
   return {
     policyId,
-    artifactsMatched: matchingArtifacts?.length || 0,
-    artifactsAffected: affectedArtifacts.length,
+    filesMatched: matchingFiles?.length || 0,
+    filesAffected: affectedFiles.length,
   };
 }
 

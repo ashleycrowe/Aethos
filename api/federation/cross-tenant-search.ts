@@ -73,22 +73,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       try {
         // Build search query
         let searchQuery = supabase
-          .from('artifacts')
+          .from('files')
           .select('*')
           .eq('tenant_id', tenantId)
-          .or(`name.ilike.%${query}%,enriched_name.ilike.%${query}%,tags.cs.{${query}}`);
+          .or(`name.ilike.%${query}%,ai_suggested_title.ilike.%${query}%,ai_category.ilike.%${query}%`);
 
         // Apply filters
         if (filters.provider) {
           searchQuery = searchQuery.eq('provider', filters.provider);
         }
 
-        if (filters.artifact_type) {
-          searchQuery = searchQuery.eq('artifact_type', filters.artifact_type);
+        if (filters.provider_type) {
+          searchQuery = searchQuery.eq('provider_type', filters.provider_type);
         }
 
         if (filters.tags && filters.tags.length > 0) {
-          searchQuery = searchQuery.contains('tags', filters.tags);
+          searchQuery = searchQuery.contains('ai_tags', filters.tags);
         }
 
         // Execute search

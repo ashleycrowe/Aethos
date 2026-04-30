@@ -15,9 +15,13 @@ import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
-  process.env.VITE_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  process.env.SUPABASE_URL || '',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 );
+
+function sanitizeIlikeTerm(value: string) {
+  return value.replace(/[%_,]/g, ' ').trim();
+}
 
 export default async function handler(
   req: VercelRequest,
@@ -48,13 +52,22 @@ export default async function handler(
       .select('*', { count: 'exact' })
       .eq('tenant_id', tenantId);
 
-    // Apply full-text search if query provided
+    // Apply metadata search if query provided. The V1 schema has a functional
+    // full-text index but no materialized search_vector column, so use indexed
+    // metadata fields that exist in the files table.
     if (query && query.trim()) {
-      // Use PostgreSQL full-text search
-      dbQuery = dbQuery.textSearch('search_vector', query, {
-        type: 'websearch',
-        config: 'english',
-      });
+      const searchTerm = sanitizeIlikeTerm(query);
+      if (searchTerm) {
+        dbQuery = dbQuery.or(
+          [
+            `name.ilike.%${searchTerm}%`,
+            `path.ilike.%${searchTerm}%`,
+            `ai_suggested_title.ilike.%${searchTerm}%`,
+            `ai_category.ilike.%${searchTerm}%`,
+            `owner_email.ilike.%${searchTerm}%`,
+          ].join(',')
+        );
+      }
     }
 
     // Apply filters

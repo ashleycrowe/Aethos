@@ -84,9 +84,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { artifactId, tenantId } = req.body;
+    const { fileId, artifactId, tenantId } = req.body;
+    const targetFileId = fileId || artifactId;
 
-    if (!artifactId || !tenantId) {
+    if (!targetFileId || !tenantId) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
@@ -105,12 +106,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { data: chunks } = await supabase
       .from('content_embeddings')
       .select('chunk_text, chunk_index')
-      .eq('artifact_id', artifactId)
+      .eq('file_id', targetFileId)
       .eq('tenant_id', tenantId)
       .order('chunk_index', { ascending: true });
 
     if (!chunks || chunks.length === 0) {
-      return res.status(404).json({ error: 'No content found for this artifact' });
+      return res.status(404).json({ error: 'No content found for this file' });
     }
 
     const fullText = chunks.map((c) => c.chunk_text).join('\n\n');
@@ -133,7 +134,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Store PII detection results
     await supabase.from('pii_detections').insert({
       tenant_id: tenantId,
-      artifact_id: artifactId,
+      file_id: targetFileId,
       risk_level: riskLevel,
       risk_score: riskScore,
       pattern_findings: patternFindings,
@@ -142,18 +143,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       scanned_at: new Date().toISOString(),
     });
 
-    // Update artifact with PII flag
+    // Update file with PII flag
     await supabase
-      .from('artifacts')
+      .from('files')
       .update({
         has_pii: patternFindings.length > 0 || aiPIITypes.length > 0,
         pii_risk_level: riskLevel,
       })
-      .eq('id', artifactId);
+      .eq('id', targetFileId);
 
     return res.status(200).json({
       success: true,
-      artifactId,
+      fileId: targetFileId,
       riskLevel,
       riskScore,
       findings: {

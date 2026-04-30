@@ -29,16 +29,16 @@
 CREATE TABLE IF NOT EXISTS content_embeddings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-  artifact_id UUID NOT NULL REFERENCES artifacts(id) ON DELETE CASCADE,
+  file_id UUID NOT NULL REFERENCES files(id) ON DELETE CASCADE,
   chunk_index INTEGER NOT NULL,
   chunk_text TEXT NOT NULL,
   embedding vector(1536), -- OpenAI text-embedding-3-small dimension
   created_at TIMESTAMPTZ DEFAULT NOW(),
-  CONSTRAINT unique_artifact_chunk UNIQUE (artifact_id, chunk_index)
+  CONSTRAINT unique_file_chunk UNIQUE (file_id, chunk_index)
 );
 
 CREATE INDEX idx_embeddings_tenant ON content_embeddings(tenant_id);
-CREATE INDEX idx_embeddings_artifact ON content_embeddings(artifact_id);
+CREATE INDEX idx_embeddings_file ON content_embeddings(file_id);
 CREATE INDEX idx_embeddings_vector ON content_embeddings USING ivfflat (embedding vector_cosine_ops);
 
 -- RLS for content_embeddings
@@ -51,7 +51,7 @@ CREATE POLICY content_embeddings_tenant_isolation ON content_embeddings
 CREATE TABLE IF NOT EXISTS content_summaries (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-  artifact_id UUID NOT NULL REFERENCES artifacts(id) ON DELETE CASCADE,
+  file_id UUID NOT NULL REFERENCES files(id) ON DELETE CASCADE,
   summary_type VARCHAR(50) NOT NULL, -- 'concise' or 'detailed'
   summary TEXT NOT NULL,
   key_points TEXT[],
@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS content_summaries (
 );
 
 CREATE INDEX idx_summaries_tenant ON content_summaries(tenant_id);
-CREATE INDEX idx_summaries_artifact ON content_summaries(artifact_id);
+CREATE INDEX idx_summaries_file ON content_summaries(file_id);
 
 ALTER TABLE content_summaries ENABLE ROW LEVEL SECURITY;
 
@@ -70,7 +70,7 @@ CREATE POLICY content_summaries_tenant_isolation ON content_summaries
 CREATE TABLE IF NOT EXISTS pii_detections (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-  artifact_id UUID NOT NULL REFERENCES artifacts(id) ON DELETE CASCADE,
+  file_id UUID NOT NULL REFERENCES files(id) ON DELETE CASCADE,
   risk_level VARCHAR(20) NOT NULL, -- 'low', 'medium', 'high'
   risk_score INTEGER NOT NULL,
   pattern_findings JSONB,
@@ -80,7 +80,7 @@ CREATE TABLE IF NOT EXISTS pii_detections (
 );
 
 CREATE INDEX idx_pii_tenant ON pii_detections(tenant_id);
-CREATE INDEX idx_pii_artifact ON pii_detections(artifact_id);
+CREATE INDEX idx_pii_file ON pii_detections(file_id);
 CREATE INDEX idx_pii_risk ON pii_detections(risk_level);
 
 ALTER TABLE pii_detections ENABLE ROW LEVEL SECURITY;
@@ -88,12 +88,12 @@ ALTER TABLE pii_detections ENABLE ROW LEVEL SECURITY;
 CREATE POLICY pii_detections_tenant_isolation ON pii_detections
   USING (tenant_id = current_setting('app.current_tenant_id')::uuid);
 
--- Update artifacts table for AI+ features
-ALTER TABLE artifacts ADD COLUMN IF NOT EXISTS content_indexed BOOLEAN DEFAULT FALSE;
-ALTER TABLE artifacts ADD COLUMN IF NOT EXISTS content_chunk_count INTEGER DEFAULT 0;
-ALTER TABLE artifacts ADD COLUMN IF NOT EXISTS last_indexed_at TIMESTAMPTZ;
-ALTER TABLE artifacts ADD COLUMN IF NOT EXISTS has_pii BOOLEAN DEFAULT FALSE;
-ALTER TABLE artifacts ADD COLUMN IF NOT EXISTS pii_risk_level VARCHAR(20);
+-- Update files table for AI+ features
+ALTER TABLE files ADD COLUMN IF NOT EXISTS content_indexed BOOLEAN DEFAULT FALSE;
+ALTER TABLE files ADD COLUMN IF NOT EXISTS content_chunk_count INTEGER DEFAULT 0;
+ALTER TABLE files ADD COLUMN IF NOT EXISTS last_indexed_at TIMESTAMPTZ;
+ALTER TABLE files ADD COLUMN IF NOT EXISTS has_pii BOOLEAN DEFAULT FALSE;
+ALTER TABLE files ADD COLUMN IF NOT EXISTS pii_risk_level VARCHAR(20);
 
 -- ============================================================================
 -- V2 MULTI-PROVIDER INTEGRATION TABLES
@@ -164,8 +164,8 @@ CREATE TABLE IF NOT EXISTS compliance_audit_logs (
   tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
   policy_id UUID REFERENCES retention_policies(id) ON DELETE SET NULL,
   action VARCHAR(50) NOT NULL,
-  artifacts_affected INTEGER NOT NULL,
-  artifact_ids UUID[],
+  files_affected INTEGER NOT NULL,
+  file_ids UUID[],
   executed_at TIMESTAMPTZ DEFAULT NOW(),
   execution_type VARCHAR(20) NOT NULL, -- 'automated', 'manual'
   executed_by UUID REFERENCES users(id)
@@ -188,7 +188,7 @@ CREATE TABLE IF NOT EXISTS anomaly_detections (
   severity VARCHAR(20) NOT NULL, -- 'low', 'medium', 'high', 'critical'
   description TEXT NOT NULL,
   risk_score INTEGER NOT NULL,
-  affected_artifact_ids UUID[],
+  affected_file_ids UUID[],
   recommendation TEXT,
   detected_at TIMESTAMPTZ DEFAULT NOW(),
   status VARCHAR(20) DEFAULT 'open', -- 'open', 'acknowledged', 'resolved'
@@ -211,7 +211,7 @@ CREATE TABLE IF NOT EXISTS storage_snapshots (
   tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
   snapshot_date DATE NOT NULL,
   total_bytes BIGINT NOT NULL,
-  artifact_count INTEGER NOT NULL,
+  file_count INTEGER NOT NULL,
   provider_breakdown JSONB, -- { "microsoft": 1000000, "slack": 500000 }
   created_at TIMESTAMPTZ DEFAULT NOW(),
   CONSTRAINT unique_tenant_snapshot_date UNIQUE (tenant_id, snapshot_date)
@@ -225,13 +225,13 @@ ALTER TABLE storage_snapshots ENABLE ROW LEVEL SECURITY;
 CREATE POLICY storage_snapshots_tenant_isolation ON storage_snapshots
   USING (tenant_id = current_setting('app.current_tenant_id')::uuid);
 
--- Update artifacts table for compliance features
-ALTER TABLE artifacts ADD COLUMN IF NOT EXISTS is_archived BOOLEAN DEFAULT FALSE;
-ALTER TABLE artifacts ADD COLUMN IF NOT EXISTS archived_at TIMESTAMPTZ;
-ALTER TABLE artifacts ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN DEFAULT FALSE;
-ALTER TABLE artifacts ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
-ALTER TABLE artifacts ADD COLUMN IF NOT EXISTS delete_scheduled_for TIMESTAMPTZ;
-ALTER TABLE artifacts ADD COLUMN IF NOT EXISTS compliance_flagged BOOLEAN DEFAULT FALSE;
+-- Update files table for compliance features
+ALTER TABLE files ADD COLUMN IF NOT EXISTS is_archived BOOLEAN DEFAULT FALSE;
+ALTER TABLE files ADD COLUMN IF NOT EXISTS archived_at TIMESTAMPTZ;
+ALTER TABLE files ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN DEFAULT FALSE;
+ALTER TABLE files ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
+ALTER TABLE files ADD COLUMN IF NOT EXISTS delete_scheduled_for TIMESTAMPTZ;
+ALTER TABLE files ADD COLUMN IF NOT EXISTS compliance_flagged BOOLEAN DEFAULT FALSE;
 
 -- ============================================================================
 -- V4 FEDERATION & ECOSYSTEM TABLES
@@ -351,7 +351,7 @@ CREATE OR REPLACE FUNCTION semantic_search(
   tenant_id_filter uuid
 )
 RETURNS TABLE (
-  artifact_id uuid,
+  file_id uuid,
   chunk_index int,
   chunk_text text,
   similarity float
@@ -361,7 +361,7 @@ AS $$
 BEGIN
   RETURN QUERY
   SELECT
-    ce.artifact_id,
+    ce.file_id,
     ce.chunk_index,
     ce.chunk_text,
     1 - (ce.embedding <=> query_embedding) AS similarity
@@ -373,8 +373,8 @@ BEGIN
 END;
 $$;
 
--- Find Orphaned Artifacts (not in any workspace)
-CREATE OR REPLACE FUNCTION find_orphaned_artifacts(tenant_id_param uuid)
+-- Find Orphaned files (not in any workspace)
+CREATE OR REPLACE FUNCTION find_orphaned_files(tenant_id_param uuid)
 RETURNS TABLE (
   id uuid,
   name text,
@@ -385,10 +385,10 @@ AS $$
 BEGIN
   RETURN QUERY
   SELECT a.id, a.name, a.provider
-  FROM artifacts a
+  FROM files a
   WHERE a.tenant_id = tenant_id_param
     AND NOT EXISTS (
-      SELECT 1 FROM workspace_artifacts wa WHERE wa.artifact_id = a.id
+      SELECT 1 FROM workspace_items wa WHERE wa.file_id = a.id
     );
 END;
 $$;
@@ -419,3 +419,4 @@ COMMENT ON TABLE retention_policies IS 'V3: Automated retention and compliance p
 COMMENT ON TABLE tenant_relationships IS 'V4: MSP multi-tenant federation relationships';
 COMMENT ON TABLE api_keys IS 'V4: Public REST API access keys';
 COMMENT ON TABLE webhook_subscriptions IS 'V4: Real-time event webhook subscriptions';
+

@@ -190,9 +190,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { artifactId, tenantId, fileUrl, mimeType } = req.body;
+    const { fileId, artifactId, tenantId, fileUrl, mimeType } = req.body;
+    const targetFileId = fileId || artifactId;
 
-    if (!artifactId || !tenantId || !fileUrl) {
+    if (!targetFileId || !tenantId || !fileUrl) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
@@ -224,7 +225,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .from('content_embeddings')
         .insert({
           tenant_id: tenantId,
-          artifact_id: artifactId,
+          file_id: targetFileId,
           chunk_index: i,
           chunk_text: chunk,
           embedding: embedding, // pgvector column
@@ -241,19 +242,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       embeddingResults.push(data);
     }
 
-    // Update artifact to mark as indexed
+    // Update file to mark as indexed
     await supabase
-      .from('artifacts')
+      .from('files')
       .update({
         content_indexed: true,
         content_chunk_count: chunks.length,
         last_indexed_at: new Date().toISOString(),
       })
-      .eq('id', artifactId);
+      .eq('id', targetFileId);
 
     return res.status(200).json({
       success: true,
-      artifactId,
+      fileId: targetFileId,
       chunksProcessed: chunks.length,
       embeddings: embeddingResults,
     });

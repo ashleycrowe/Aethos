@@ -24,7 +24,7 @@ interface AnomalyDetectionResult {
   type: string;
   severity: 'low' | 'medium' | 'high' | 'critical';
   description: string;
-  affectedArtifacts: string[];
+  affectedFiles: string[];
   riskScore: number;
   recommendation: string;
 }
@@ -65,7 +65,7 @@ async function detectStorageAnomalies(tenantId: string): Promise<AnomalyDetectio
       type: 'storage_spike',
       severity: latestGrowth > mean + 3 * stdDev ? 'critical' : 'high',
       description: `Unusual storage growth detected: ${latestGrowth.toFixed(2)}% increase (normal: ${mean.toFixed(2)}%)`,
-      affectedArtifacts: [],
+      affectedFiles: [],
       riskScore: Math.min(100, Math.round((latestGrowth / mean) * 30)),
       recommendation: 'Review recently added large files and consider archiving unused content',
     });
@@ -78,10 +78,10 @@ async function detectStorageAnomalies(tenantId: string): Promise<AnomalyDetectio
 async function detectSharingAnomalies(tenantId: string): Promise<AnomalyDetectionResult[]> {
   const anomalies: AnomalyDetectionResult[] = [];
 
-  // Get artifacts with external shares created in last 7 days
+  // Get files with external shares created in last 7 days
   const { data: recentShares } = await supabase
-    .from('artifacts')
-    .select('id, name, owner, created_at, metadata')
+    .from('files')
+    .select('id, name, owner_email, created_at, metadata')
     .eq('tenant_id', tenantId)
     .eq('has_external_share', true)
     .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
@@ -92,8 +92,9 @@ async function detectSharingAnomalies(tenantId: string): Promise<AnomalyDetectio
 
   // Group by owner
   const sharesByOwner: Record<string, number> = {};
-  recentShares.forEach((artifact) => {
-    sharesByOwner[artifact.owner] = (sharesByOwner[artifact.owner] || 0) + 1;
+  recentShares.forEach((file) => {
+    const owner = file.owner_email || 'unknown';
+    sharesByOwner[owner] = (sharesByOwner[owner] || 0) + 1;
   });
 
   // Detect users with unusually high share activity
@@ -102,13 +103,13 @@ async function detectSharingAnomalies(tenantId: string): Promise<AnomalyDetectio
   for (const [owner, shareCount] of Object.entries(sharesByOwner)) {
     if (shareCount > avgSharesPerUser * 3) {
       // 3x average is anomalous
-      const affectedArtifacts = recentShares.filter((a) => a.owner === owner).map((a) => a.id);
+      const affectedFiles = recentShares.filter((a) => (a.owner_email || 'unknown') === owner).map((a) => a.id);
 
       anomalies.push({
         type: 'unusual_sharing_activity',
         severity: shareCount > avgSharesPerUser * 5 ? 'high' : 'medium',
         description: `User ${owner} has shared ${shareCount} files externally in the past 7 days (avg: ${avgSharesPerUser.toFixed(1)})`,
-        affectedArtifacts,
+        affectedFiles,
         riskScore: Math.min(100, Math.round((shareCount / avgSharesPerUser) * 20)),
         recommendation: 'Review external sharing permissions and verify if activity is legitimate',
       });
@@ -122,18 +123,18 @@ async function detectSharingAnomalies(tenantId: string): Promise<AnomalyDetectio
 async function detectDriftAnomalies(tenantId: string): Promise<AnomalyDetectionResult[]> {
   const anomalies: AnomalyDetectionResult[] = [];
 
-  // Get artifacts not in any workspace
-  const { data: orphanedArtifacts } = await supabase.rpc('find_orphaned_artifacts', {
+  // Get files not in any workspace
+  const { data: orphanedFiles } = await supabase.rpc('find_orphaned_files', {
     tenant_id_param: tenantId,
   });
 
-  if (orphanedArtifacts && orphanedArtifacts.length > 100) {
+  if (orphanedFiles && orphanedFiles.length > 100) {
     anomalies.push({
       type: 'organizational_drift',
-      severity: orphanedArtifacts.length > 500 ? 'high' : 'medium',
-      description: `${orphanedArtifacts.length} artifacts are not organized in any workspace`,
-      affectedArtifacts: orphanedArtifacts.slice(0, 100).map((a: any) => a.id),
-      riskScore: Math.min(100, Math.round(orphanedArtifacts.length / 10)),
+      severity: orphanedFiles.length > 500 ? 'high' : 'medium',
+      description: `${orphanedFiles.length} files are not organized in any workspace`,
+      affectedFiles: orphanedFiles.slice(0, 100).map((a: any) => a.id),
+      riskScore: Math.min(100, Math.round(orphanedFiles.length / 10)),
       recommendation: 'Create workspaces and use tag-based sync rules to organize content',
     });
   }
@@ -179,7 +180,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         severity: anomaly.severity,
         description: anomaly.description,
         risk_score: anomaly.riskScore,
-        affected_artifact_ids: anomaly.affectedArtifacts,
+        affected_file_ids: anomaly.affectedFiles,
         recommendation: anomaly.recommendation,
         detected_at: new Date().toISOString(),
         status: 'open',

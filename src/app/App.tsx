@@ -1,25 +1,25 @@
 import React, { Suspense, lazy, useState, useEffect } from 'react';
 import { motion as Motion, AnimatePresence } from 'motion/react';
-import { AethosProvider, useAethos } from './context/AethosContext';
-import { SettingsProvider } from './context/SettingsContext';
-import { ThemeProvider, useTheme } from './context/ThemeContext';
-import { OracleProvider } from './context/OracleContext';
-import { NotificationProvider } from './context/NotificationContext';
-import { OperationalMeritProvider } from './context/OperationalMeritContext';
-import { UserProvider } from './context/UserContext';
-import { VersionProvider, useVersion } from './context/VersionContext';
-import { AuthProvider } from './context/AuthContext';
+import { AethosProvider, useAethos } from '@/app/context/AethosContext';
+import { SettingsProvider } from '@/app/context/SettingsContext';
+import { ThemeProvider, useTheme } from '@/app/context/ThemeContext';
+import { OracleProvider } from '@/app/context/OracleContext';
+import { NotificationProvider } from '@/app/context/NotificationContext';
+import { OperationalMeritProvider } from '@/app/context/OperationalMeritContext';
+import { UserProvider } from '@/app/context/UserContext';
+import { VersionProvider, useVersion } from '@/app/context/VersionContext';
+import { AuthProvider } from '@/app/context/AuthContext';
 import { Toaster } from 'sonner';
 
 // Components
-import { Sidebar } from './components/Sidebar';
-import { VersionToggle } from './components/VersionToggle';
+import { Sidebar } from '@/app/components/Sidebar';
+import { VersionToggle } from '@/app/components/VersionToggle';
 import { Search, Bell, Settings } from 'lucide-react';
 
-const AdminCenter = lazy(() => import('./components/AdminCenter').then((module) => ({ default: module.AdminCenter })));
-const DesignCenter = lazy(() => import('./components/DesignCenter').then((module) => ({ default: module.DesignCenter })));
+const AdminCenter = lazy(() => import('@/app/components/AdminCenter').then((module) => ({ default: module.AdminCenter })));
+const DesignCenter = lazy(() => import('@/app/components/DesignCenter').then((module) => ({ default: module.DesignCenter })));
 const DocumentControlModule = lazy(() =>
-  import('./modules/document-control').then((module) => ({
+  import('@/app/modules/document-control').then((module) => ({
     default: () => (
       <module.DocumentControlProvider demoMode={true}>
         <module.DocumentControlHome />
@@ -27,33 +27,33 @@ const DocumentControlModule = lazy(() =>
     ),
   }))
 );
-const ForensicLab = lazy(() => import('./components/ForensicLab').then((module) => ({ default: module.ForensicLab })));
+const ForensicLab = lazy(() => import('@/app/components/ForensicLab').then((module) => ({ default: module.ForensicLab })));
 const IntelligenceDashboard = lazy(() =>
-  import('./components/IntelligenceDashboard').then((module) => ({ default: module.IntelligenceDashboard }))
+  import('@/app/components/IntelligenceDashboard').then((module) => ({ default: module.IntelligenceDashboard }))
 );
 const LatticeDeconstruction = lazy(() =>
-  import('./components/LatticeDeconstruction').then((module) => ({ default: module.LatticeDeconstruction }))
+  import('@/app/components/LatticeDeconstruction').then((module) => ({ default: module.LatticeDeconstruction }))
 );
 const OracleSearchBridgeV2 = lazy(() =>
-  import('./components/OracleSearchBridgeV2').then((module) => ({ default: module.OracleSearchBridgeV2 }))
+  import('@/app/components/OracleSearchBridgeV2').then((module) => ({ default: module.OracleSearchBridgeV2 }))
 );
-const PeopleCenter = lazy(() => import('./components/PeopleCenter').then((module) => ({ default: module.PeopleCenter })));
-const PrototypeLab = lazy(() => import('./components/PrototypeLab').then((module) => ({ default: module.PrototypeLab })));
-const PulseBridge = lazy(() => import('./components/PulseBridge').then((module) => ({ default: module.PulseBridge })));
+const PeopleCenter = lazy(() => import('@/app/components/PeopleCenter').then((module) => ({ default: module.PeopleCenter })));
+const PrototypeLab = lazy(() => import('@/app/components/PrototypeLab').then((module) => ({ default: module.PrototypeLab })));
+const PulseBridge = lazy(() => import('@/app/components/PulseBridge').then((module) => ({ default: module.PulseBridge })));
 const RemediationCenter = lazy(() =>
-  import('./components/RemediationCenter').then((module) => ({ default: module.RemediationCenter }))
+  import('@/app/components/RemediationCenter').then((module) => ({ default: module.RemediationCenter }))
 );
-const ReportingCenter = lazy(() => import('./components/ReportingCenter').then((module) => ({ default: module.ReportingCenter })));
+const ReportingCenter = lazy(() => import('@/app/components/ReportingCenter').then((module) => ({ default: module.ReportingCenter })));
 const TagManagementDemo = lazy(() =>
-  import('./components/TagManagementDemo').then((module) => ({ default: module.TagManagementDemo }))
+  import('@/app/components/TagManagementDemo').then((module) => ({ default: module.TagManagementDemo }))
 );
 const TagManagementFlowDemo = lazy(() =>
-  import('./components/TagManagementFlowDemo').then((module) => ({ default: module.TagManagementFlowDemo }))
+  import('@/app/components/TagManagementFlowDemo').then((module) => ({ default: module.TagManagementFlowDemo }))
 );
 const VoyagerWorkbench = lazy(() =>
-  import('./components/VoyagerWorkbench').then((module) => ({ default: module.VoyagerWorkbench }))
+  import('@/app/components/VoyagerWorkbench').then((module) => ({ default: module.VoyagerWorkbench }))
 );
-const WorkspaceEngine = lazy(() => import('./components/WorkspaceEngine').then((module) => ({ default: module.WorkspaceEngine })));
+const WorkspaceEngine = lazy(() => import('@/app/components/WorkspaceEngine').then((module) => ({ default: module.WorkspaceEngine })));
 
 const ViewLoadingFallback = () => (
   <div className="h-full min-h-[320px] flex flex-col items-center justify-center text-center">
@@ -105,11 +105,7 @@ const Layout: React.FC = () => {
       case 'admin':
         return <AdminCenter />; // Settings/Admin
       case 'documents':
-        return (
-          <DocumentControlProvider demoMode={true}>
-            <DocumentControlHome />
-          </DocumentControlProvider>
-        );
+        return <DocumentControlModule />;
       // Legacy routes for backwards compatibility
       case 'social':
         return <PulseBridge />; // Redirect to Pulse
@@ -155,7 +151,7 @@ const Layout: React.FC = () => {
       
       <main className="flex-1 flex flex-col min-w-0 relative overflow-hidden">
         {/* Header */}
-        <header className="h-20 flex items-center justify-between px-10 shrink-0">
+        <header className="h-16 md:h-20 flex items-center justify-between px-4 sm:px-6 lg:px-10 shrink-0">
           <div className="flex items-center gap-6 flex-1 max-w-2xl">
              <div className="relative group w-full">
                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-hover:text-[#00F0FF] transition-colors" size={16} />
@@ -172,13 +168,13 @@ const Layout: React.FC = () => {
              </div>
           </div>
 
-          <div className="flex items-center gap-6 ml-10">
+          <div className="flex items-center gap-3 sm:gap-6 ml-3 sm:ml-10">
             <button className="p-2 text-slate-500 hover:text-[#00F0FF] transition-colors relative">
               <Bell size={20} />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#FF5733] rounded-full border border-[#0B0F19]" />
             </button>
-            <div className="w-px h-6 bg-white/10" />
-            <div className="flex items-center gap-3">
+            <div className="hidden sm:block w-px h-6 bg-white/10" />
+            <div className="hidden sm:flex items-center gap-3">
               <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Operational Clarity</span>
               <div className="w-24 h-1.5 bg-white/5 rounded-full overflow-hidden">
                 <div className="h-full w-[88%] bg-[#00F0FF] shadow-[0_0_10px_#00F0FF]" />
@@ -188,7 +184,7 @@ const Layout: React.FC = () => {
         </header>
 
         {/* Dynamic Viewport */}
-        <div className="flex-1 p-10 pt-4 overflow-y-auto custom-scrollbar relative z-10">
+        <div className="flex-1 p-4 sm:p-6 lg:p-10 pt-2 sm:pt-4 pb-24 md:pb-10 overflow-y-auto custom-scrollbar relative z-10">
           <Suspense fallback={<ViewLoadingFallback />}>
             {renderContent()}
           </Suspense>

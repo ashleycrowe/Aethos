@@ -31,9 +31,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { artifactId, tenantId, summaryType = 'concise' } = req.body;
+    const { fileId, artifactId, tenantId, summaryType = 'concise' } = req.body;
+    const targetFileId = fileId || artifactId;
 
-    if (!artifactId || !tenantId) {
+    if (!targetFileId || !tenantId) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
@@ -52,7 +53,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { data: cachedSummary } = await supabase
       .from('content_summaries')
       .select('*')
-      .eq('artifact_id', artifactId)
+      .eq('file_id', targetFileId)
       .eq('summary_type', summaryType)
       .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()) // 24 hours
       .order('created_at', { ascending: false })
@@ -72,12 +73,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { data: chunks } = await supabase
       .from('content_embeddings')
       .select('chunk_text, chunk_index')
-      .eq('artifact_id', artifactId)
+      .eq('file_id', targetFileId)
       .eq('tenant_id', tenantId)
       .order('chunk_index', { ascending: true });
 
     if (!chunks || chunks.length === 0) {
-      return res.status(404).json({ error: 'No content found for this artifact' });
+      return res.status(404).json({ error: 'No content found for this file' });
     }
 
     // Combine chunks
@@ -112,7 +113,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Store summary in cache
     await supabase.from('content_summaries').insert({
       tenant_id: tenantId,
-      artifact_id: artifactId,
+      file_id: targetFileId,
       summary_type: summaryType,
       summary: summaryText,
       key_points: keyPoints,

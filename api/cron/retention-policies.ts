@@ -90,11 +90,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           policyName: policy.name,
           tenantName: policy.tenant.name,
           success: response.ok,
-          artifactsAffected: data.result?.artifactsAffected || 0,
+          filesAffected: data.result?.filesAffected || 0,
         });
 
         console.log(
-          `Retention policy "${policy.name}" executed for tenant ${policy.tenant.name}: ${data.result?.artifactsAffected || 0} artifacts affected`
+          `Retention policy "${policy.name}" executed for tenant ${policy.tenant.name}: ${data.result?.filesAffected || 0} files affected`
         );
       } catch (error: any) {
         console.error(`Error executing policy ${policy.name}:`, error);
