@@ -66,10 +66,6 @@ export const VersionToggle: React.FC = () => {
     return Object.keys(delta).length;
   };
 
-  if (!isDemoMode) {
-    return null; // Hide completely when demo mode is off
-  }
-
   return (
     <>
       {/* Minimized Badge (Always Visible) */}
@@ -88,7 +84,7 @@ export const VersionToggle: React.FC = () => {
               <div className="flex items-center gap-2">
                 <Zap className="w-4 h-4 text-[#00F0FF] animate-pulse" />
                 <span className="text-[10px] font-black uppercase tracking-widest text-[#00F0FF]">
-                  Demo Mode
+                  {isDemoMode ? 'Demo Mode' : 'Live Mode'}
                 </span>
               </div>
               
@@ -333,7 +329,7 @@ export const VersionToggle: React.FC = () => {
                 </div>
                 
                 <p className="text-[9px] text-slate-500 mt-2 leading-relaxed">
-                  Hide version toggle and demo indicators when testing production UX
+                  Overrides the VITE_DEMO_MODE startup default for this browser session
                 </p>
               </div>
 

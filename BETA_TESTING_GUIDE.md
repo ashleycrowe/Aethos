@@ -1,8 +1,8 @@
 # Aethos Beta Testing Guide
 
-**Last Updated:** April 30, 2026  
+**Last Updated:** May 4, 2026  
 **Audience:** Internal testers and early pilot reviewers  
-**Current Deployment Mode:** Frontend-only Vercel deployment
+**Current Deployment Mode:** Vercel deployment with frontend and API routes enabled
 
 ---
 
@@ -11,19 +11,30 @@
 - Vite/React frontend deployment.
 - Main shell, navigation, theme/version controls, and prototype screens.
 - V1-facing UI flows for Intelligence, Oracle, Nexus, Remediation, Reports, and Admin.
-- Demo/mock data surfaces where still enabled.
+- API-backed V1 flows where Microsoft, Supabase, and backend environment variables are configured.
+- Demo/mock data surfaces when Demo Mode is enabled or when a backend call falls back gracefully.
 
 ---
 
 ## Expected Limitations
 
-- The production Vercel deployment intentionally excludes `/api` via `.vercelignore`.
-- Any deployed UI action that calls `/api/...` may fail until the backend is re-enabled.
-- Microsoft OAuth values may still be placeholders unless configured in Vercel.
+- API routes are deployed, but may fail if Vercel environment variables are missing or invalid.
+- Microsoft OAuth values must be configured in Vercel before real login/discovery testing.
 - Supabase-backed flows require real `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
+- Backend routes require `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and any provider/API secrets used by the route.
 - Document Control remains demo-mode only.
 
-These are expected during the frontend-only beta preparation phase.
+These are expected during the first testable V1 preparation phase.
+
+---
+
+## Live/Demo Toggle
+
+- `VITE_DEMO_MODE=false` should start testers in Live Mode.
+- The floating version toggle remains visible in Live Mode so testers can deliberately switch browser-session Demo Mode on or off.
+- The Demo Mode setting is persisted in localStorage for the current browser profile.
+- Use Demo Mode when validating layout and fallback behavior without depending on live backend data.
+- Use Live Mode when testing Microsoft auth, Supabase-backed data, API error handling, workspace APIs, and remediation dry-run behavior.
 
 ---
 
@@ -32,11 +43,14 @@ These are expected during the frontend-only beta preparation phase.
 - [ ] App loads on the Vercel URL without a blank screen.
 - [ ] Sidebar navigation works across V1-visible sections.
 - [ ] Search input focuses or routes to the Oracle experience.
-- [ ] Version toggle does not expose confusing unfinished flows by default.
+- [ ] Floating toggle starts as `Live Mode` when `VITE_DEMO_MODE=false`.
+- [ ] Demo Mode can be enabled and disabled from the floating toggle.
 - [ ] Loading states appear when switching lazy-loaded views.
 - [ ] No overlapping text or broken layout on desktop.
 - [ ] Key screens render on mobile/tablet viewport widths.
-- [ ] API-backed actions fail gracefully where backend is parked.
+- [ ] API-backed actions either return real data or fail gracefully with clear fallback states.
+- [ ] Workspace list/create/detail flows work in Live Mode against the configured test tenant.
+- [ ] Remediation actions default to dry-run behavior.
 
 ---
 

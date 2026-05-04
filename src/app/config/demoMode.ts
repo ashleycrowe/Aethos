@@ -13,4 +13,4 @@ export const isDemoModeEnabled = () => {
   return getEnvDemoModeDefault();
 };
 
-export const DEMO_MODE_MESSAGE = 'Demo mode is enabled by VITE_DEMO_MODE';
+export const DEMO_MODE_MESSAGE = 'Demo mode is enabled for this browser session';

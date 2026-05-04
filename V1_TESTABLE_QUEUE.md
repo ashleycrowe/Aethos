@@ -1,7 +1,7 @@
 # Aethos V1 Testable Queue
 
-**Last Updated:** April 30, 2026  
-**Status:** Active execution queue  
+**Last Updated:** May 4, 2026  
+**Status:** Ready for manual V1 walkthrough after commit/deploy  
 **Scope:** First testable V1, not full production readiness
 
 ---
@@ -75,3 +75,12 @@ This file is the short-cycle engineering queue. Keep `IMPLEMENTATION_TASKS.md` a
 ## Current Review Findings
 
 See `docs/PHASE_1_DEPLOYMENT_REVIEW.md` for the full current review and deployment recommendations.
+
+---
+
+## Current Manual Testing Focus
+
+- Verify `VITE_DEMO_MODE=false` starts the app in Live Mode.
+- Confirm the floating version toggle can deliberately switch Demo Mode on/off and persists the browser-session override.
+- Walk the V1 path in Live Mode: Microsoft auth, tenant/user setup, discovery, Oracle search, Workspace creation/detail, and remediation dry-run.
+- Capture any manual test failures back into this queue before expanding P1/P2 work.
