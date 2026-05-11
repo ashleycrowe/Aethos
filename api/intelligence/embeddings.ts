@@ -23,8 +23,6 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-type PdfParse = (buffer: Buffer) => Promise<{ text?: string }>;
-
 const MAX_EXTRACTED_CHARS = 500_000;
 
 async function downloadFile(fileUrl: string): Promise<Buffer> {
@@ -95,10 +93,14 @@ async function extractTextContent(fileUrl: string, mimeType: string): Promise<st
   let extractedText = '';
 
   if (normalizedMimeType.includes('pdf')) {
-    const pdfParseModule = await import('pdf-parse');
-    const pdfParse = ('default' in pdfParseModule ? pdfParseModule.default : pdfParseModule) as PdfParse;
-    const data = await pdfParse(fileBuffer);
-    extractedText = data.text || '';
+    const { PDFParse } = await import('pdf-parse');
+    const parser = new PDFParse({ data: fileBuffer });
+    try {
+      const data = await parser.getText();
+      extractedText = data.text || '';
+    } finally {
+      await parser.destroy();
+    }
   } else if (
     normalizedMimeType.includes('word') ||
     normalizedMimeType.includes('document') ||
