@@ -8,14 +8,14 @@ import { NotificationProvider } from '@/app/context/NotificationContext';
 import { OperationalMeritProvider } from '@/app/context/OperationalMeritContext';
 import { UserProvider } from '@/app/context/UserContext';
 import { VersionProvider, useVersion } from '@/app/context/VersionContext';
-import { AuthProvider } from '@/app/context/AuthContext';
+import { AuthProvider, useAuth } from '@/app/context/AuthContext';
 import { isDemoModeEnabled } from '@/app/config/demoMode';
 import { Toaster } from 'sonner';
 
 // Components
 import { Sidebar } from '@/app/components/Sidebar';
 import { VersionToggle } from '@/app/components/VersionToggle';
-import { Search, Bell, Settings } from 'lucide-react';
+import { Search, Bell, Settings, LogIn, ShieldCheck } from 'lucide-react';
 
 const AdminCenter = lazy(() => import('@/app/components/AdminCenter').then((module) => ({ default: module.AdminCenter })));
 const DesignCenter = lazy(() => import('@/app/components/DesignCenter').then((module) => ({ default: module.DesignCenter })));
@@ -98,6 +98,63 @@ const ViewLoadingFallback = () => (
     </p>
   </div>
 );
+
+const LoginGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isAuthenticated, isLoading, login } = useAuth();
+  const demoMode = isDemoModeEnabled();
+
+  if (demoMode || isAuthenticated) {
+    return <>{children}</>;
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#0B0F19] px-4 text-center text-white">
+        <ViewLoadingFallback />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex min-h-screen items-center justify-center overflow-hidden bg-[#0B0F19] px-4 text-white">
+      <div className="pointer-events-none fixed right-[-20%] top-[-20%] h-[520px] w-[520px] rounded-full bg-[#00F0FF]/10 blur-[150px]" />
+      <div className="pointer-events-none fixed bottom-[-20%] left-[-20%] h-[480px] w-[480px] rounded-full bg-[#FF5733]/10 blur-[150px]" />
+
+      <section className="relative z-10 w-full max-w-md rounded-[32px] border border-white/10 bg-white/[0.06] p-8 shadow-2xl backdrop-blur-2xl sm:p-10">
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <p className="mb-2 text-[10px] font-black uppercase tracking-[0.35em] text-[#00F0FF]">
+              Aethos Live
+            </p>
+            <h1 className="text-3xl font-black tracking-tight text-white">
+              Sign in to continue
+            </h1>
+          </div>
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#00F0FF]/25 bg-[#00F0FF]/10 text-[#00F0FF]">
+            <ShieldCheck className="h-6 w-6" />
+          </div>
+        </div>
+
+        <p className="mb-8 text-sm leading-6 text-slate-300">
+          Connect with Microsoft to test the live tenant flow, JIT provisioning, and protected API endpoints.
+        </p>
+
+        <button
+          type="button"
+          onClick={() => void login()}
+          className="flex min-h-12 w-full items-center justify-center gap-3 rounded-2xl border border-[#00F0FF]/30 bg-[#00F0FF] px-5 py-3 text-sm font-black uppercase tracking-[0.18em] text-[#061018] shadow-[0_0_30px_rgba(0,240,255,0.25)] transition hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#00F0FF]/50"
+        >
+          <LogIn className="h-5 w-5" />
+          Sign in with Microsoft
+        </button>
+
+        <p className="mt-5 text-center text-xs text-slate-500">
+          Demo Mode is off for this browser session.
+        </p>
+      </section>
+    </div>
+  );
+};
 
 const Layout: React.FC = () => {
   const [activeTab, setActiveTab] = useState('insights');
@@ -244,22 +301,24 @@ export default function App() {
     <ThemeProvider>
       <VersionProvider defaultVersion="V1" demoMode={demoMode}>
         <AuthProvider>
-          <AethosProvider>
-            <UserProvider>
-              <SettingsProvider>
-                <OperationalMeritProvider>
-                  <OracleProvider>
-                    <NotificationProvider>
-                      <GlobalOverlays />
-                      <Layout />
-                      <VersionToggle />
-                      <Toaster closeButton position="bottom-right" theme="dark" />
-                    </NotificationProvider>
-                  </OracleProvider>
-                </OperationalMeritProvider>
-              </SettingsProvider>
-            </UserProvider>
-          </AethosProvider>
+          <LoginGate>
+            <AethosProvider>
+              <UserProvider>
+                <SettingsProvider>
+                  <OperationalMeritProvider>
+                    <OracleProvider>
+                      <NotificationProvider>
+                        <GlobalOverlays />
+                        <Layout />
+                        <VersionToggle />
+                      </NotificationProvider>
+                    </OracleProvider>
+                  </OperationalMeritProvider>
+                </SettingsProvider>
+              </UserProvider>
+            </AethosProvider>
+          </LoginGate>
+          <Toaster closeButton position="bottom-right" theme="dark" />
         </AuthProvider>
       </VersionProvider>
     </ThemeProvider>
