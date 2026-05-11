@@ -9,7 +9,7 @@
  */
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { requireApiContext, supabase } from '../_lib/apiAuth';
+import { requireApiContext, supabase } from '../_lib/apiAuth.js';
 
 export default async function handler(
   req: VercelRequest,

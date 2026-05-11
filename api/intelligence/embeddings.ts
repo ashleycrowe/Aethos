@@ -16,7 +16,7 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import OpenAI from 'openai';
 import { XMLParser } from 'fast-xml-parser';
-import { requireApiContext, supabase } from '../_lib/apiAuth';
+import { requireApiContext, supabase } from '../_lib/apiAuth.js';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -96,7 +96,7 @@ async function extractTextContent(fileUrl: string, mimeType: string): Promise<st
 
   if (normalizedMimeType.includes('pdf')) {
     const pdfParseModule = await import('pdf-parse');
-    const pdfParse = (pdfParseModule.default || pdfParseModule) as PdfParse;
+    const pdfParse = ('default' in pdfParseModule ? pdfParseModule.default : pdfParseModule) as PdfParse;
     const data = await pdfParse(fileBuffer);
     extractedText = data.text || '';
   } else if (

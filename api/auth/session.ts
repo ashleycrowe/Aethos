@@ -1,5 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { requireApiContext } from '../_lib/apiAuth';
+import { requireApiContext } from '../_lib/apiAuth.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const context = await requireApiContext(req, res, {

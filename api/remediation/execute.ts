@@ -11,12 +11,12 @@
  */
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { requireApiContext, sendApiError, supabase } from '../_lib/apiAuth';
+import { requireApiContext, sendApiError, supabase } from '../_lib/apiAuth.js';
 import {
   archiveFile,
   deleteFile,
   revokeExternalLinks,
-} from '../../src/lib/microsoftGraph';
+} from '../../src/lib/microsoftGraph.js';
 
 export default async function handler(
   req: VercelRequest,

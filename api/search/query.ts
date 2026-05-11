@@ -12,7 +12,7 @@
  */
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { requireApiContext, sendApiError, supabase } from '../_lib/apiAuth';
+import { requireApiContext, sendApiError, supabase } from '../_lib/apiAuth.js';
 
 function sanitizeIlikeTerm(value: string) {
   return value.replace(/[%_,]/g, ' ').trim();

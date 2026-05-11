@@ -9,7 +9,7 @@
  */
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { requireApiContext, supabase } from '../_lib/apiAuth';
+import { requireApiContext, supabase } from '../_lib/apiAuth.js';
 import {
   getAllSharePointSites,
   getFilesInSite,
@@ -17,7 +17,7 @@ import {
   getAllTeams,
   getTeamFiles,
   hasExternalShare,
-} from '../../src/lib/microsoftGraph';
+} from '../../src/lib/microsoftGraph.js';
 
 export default async function handler(
   req: VercelRequest,

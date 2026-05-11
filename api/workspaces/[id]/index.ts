@@ -8,7 +8,7 @@
  */
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { requireApiContext, supabase } from '../../_lib/apiAuth';
+import { requireApiContext, supabase } from '../../_lib/apiAuth.js';
 
 export default async function handler(
   req: VercelRequest,
@@ -86,28 +86,32 @@ export default async function handler(
     }
 
     // Format workspace items
-    const formattedItems = workspaceItems?.map(item => ({
-      id: item.id,
-      fileId: item.file_id,
-      addedBy: item.added_by,
-      addedMethod: item.added_method,
-      pinned: item.pinned,
-      addedAt: item.added_at,
-      file: item.files ? {
-        id: item.files.id,
-        name: item.files.name,
-        path: item.files.path,
-        sizeBytes: item.files.size_bytes,
-        mimeType: item.files.mime_type,
-        createdAt: item.files.created_at,
-        modifiedAt: item.files.modified_at,
-        ownerEmail: item.files.owner_email,
-        intelligenceScore: item.files.intelligence_score,
-        aiTags: item.files.ai_tags || [],
-        aiCategory: item.files.ai_category,
-        aiSuggestedTitle: item.files.ai_suggested_title
-      } : null
-    })) || [];
+    const formattedItems = workspaceItems?.map(item => {
+      const file = Array.isArray(item.files) ? item.files[0] : item.files;
+
+      return {
+        id: item.id,
+        fileId: item.file_id,
+        addedBy: item.added_by,
+        addedMethod: item.added_method,
+        pinned: item.pinned,
+        addedAt: item.added_at,
+        file: file ? {
+          id: file.id,
+          name: file.name,
+          path: file.path,
+          sizeBytes: file.size_bytes,
+          mimeType: file.mime_type,
+          createdAt: file.created_at,
+          modifiedAt: file.modified_at,
+          ownerEmail: file.owner_email,
+          intelligenceScore: file.intelligence_score,
+          aiTags: file.ai_tags || [],
+          aiCategory: file.ai_category,
+          aiSuggestedTitle: file.ai_suggested_title
+        } : null
+      };
+    }) || [];
 
     // Calculate some stats
     const stats = {

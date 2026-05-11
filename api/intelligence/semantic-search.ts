@@ -14,7 +14,7 @@
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import OpenAI from 'openai';
-import { requireApiContext, supabase } from '../_lib/apiAuth';
+import { requireApiContext, supabase } from '../_lib/apiAuth.js';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
