@@ -75,6 +75,11 @@ const loginRequest = {
   ],
 };
 
+const interactiveLoginRequest = {
+  ...loginRequest,
+  prompt: 'select_account',
+};
+
 interface AuthContextType {
   // State
   user: AccountInfo | null;
@@ -352,7 +357,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         return;
       }
 
-      await msal.loginRedirect(loginRequest);
+      await msal.loginRedirect(interactiveLoginRequest);
     } catch (error: any) {
       console.error('Login error:', error);
       
