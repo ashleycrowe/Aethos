@@ -25,13 +25,17 @@ import { toast } from 'sonner';
 
 const MICROSOFT_AUTHORITY = 'https://login.microsoftonline.com/organizations';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+const DEFAULT_MICROSOFT_REDIRECT_URI = `${window.location.origin}/auth/callback.html`;
+const MICROSOFT_REDIRECT_URI =
+  import.meta.env.VITE_MICROSOFT_REDIRECT_URI || DEFAULT_MICROSOFT_REDIRECT_URI;
 
 // MSAL Configuration
 const msalConfig = {
   auth: {
     clientId: import.meta.env.VITE_MICROSOFT_CLIENT_ID || '',
     authority: MICROSOFT_AUTHORITY,
-    redirectUri: window.location.origin,
+    redirectUri: MICROSOFT_REDIRECT_URI,
+    navigateToLoginRequestUrl: false,
   },
   cache: {
     cacheLocation: 'localStorage' as const,
