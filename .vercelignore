@@ -1,1 +1,16 @@
-
+# Deploy only the V1/P0 API surface on Vercel Hobby.
+# Hobby deployments allow up to 12 serverless functions; every route under api/
+# counts, so future-phase endpoints stay out of the live walkthrough deploy.
+api/analytics/
+api/compliance/
+api/cron/
+api/federation/
+api/providers/
+api/public/
+api/webhooks/
+api/intelligence/embeddings.ts
+api/intelligence/enrich.ts
+api/intelligence/pii-detection.ts
+api/intelligence/semantic-search.ts
+api/intelligence/summarize.ts
+api/_lib/*.test.ts
