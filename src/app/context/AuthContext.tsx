@@ -25,7 +25,7 @@ import { toast } from 'sonner';
 
 const MICROSOFT_AUTHORITY = 'https://login.microsoftonline.com/organizations';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
-const DEFAULT_MICROSOFT_REDIRECT_URI = `${window.location.origin}/auth/callback.html`;
+const DEFAULT_MICROSOFT_REDIRECT_URI = window.location.origin;
 const MICROSOFT_REDIRECT_URI =
   import.meta.env.VITE_MICROSOFT_REDIRECT_URI || DEFAULT_MICROSOFT_REDIRECT_URI;
 
@@ -35,6 +35,7 @@ const msalConfig = {
     clientId: import.meta.env.VITE_MICROSOFT_CLIENT_ID || '',
     authority: MICROSOFT_AUTHORITY,
     redirectUri: MICROSOFT_REDIRECT_URI,
+    postLogoutRedirectUri: window.location.origin,
     navigateToLoginRequestUrl: false,
   },
   cache: {
@@ -144,6 +145,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           return;
         }
         
+        const redirectResponse = await msal.handleRedirectPromise();
+        if (redirectResponse) {
+          setUser(redirectResponse.account);
+          setAccessToken(redirectResponse.accessToken);
+          await handlePostLogin(redirectResponse);
+          setIsLoading(false);
+          return;
+        }
+
         const accounts = msal.getAllAccounts();
 
         if (accounts.length > 0) {
@@ -330,7 +340,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   /**
-   * Login with Microsoft (popup flow)
+   * Login with Microsoft (full-page redirect flow)
    */
   const login = async () => {
     try {
@@ -342,12 +352,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         return;
       }
 
-      const response = await msal.loginPopup(loginRequest);
-
-      setUser(response.account);
-      setAccessToken(response.accessToken);
-
-      await handlePostLogin(response);
+      await msal.loginRedirect(loginRequest);
     } catch (error: any) {
       console.error('Login error:', error);
       
@@ -381,7 +386,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         return;
       }
 
-      await msal.logoutPopup();
+      await msal.logoutRedirect();
 
       setUser(null);
       setAccessToken(null);
