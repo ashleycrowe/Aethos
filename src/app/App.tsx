@@ -99,6 +99,30 @@ const ViewLoadingFallback = () => (
   </div>
 );
 
+const isMicrosoftAuthPopupResponse = () => {
+  if (typeof window === 'undefined') return false;
+  if (!window.opener) return false;
+
+  const authParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+  return authParams.has('code') || authParams.has('error') || authParams.has('error_description');
+};
+
+const PopupAuthResponseFallback = () => (
+  <div className="flex min-h-screen items-center justify-center bg-[#0B0F19] px-4 text-center text-white">
+    <section className="w-full max-w-sm rounded-[28px] border border-[#00F0FF]/20 bg-white/[0.06] p-8 shadow-2xl backdrop-blur-2xl">
+      <p className="mb-3 text-[10px] font-black uppercase tracking-[0.35em] text-[#00F0FF]">
+        Aethos Live
+      </p>
+      <h1 className="mb-3 text-2xl font-black tracking-tight text-white">
+        Completing sign-in
+      </h1>
+      <p className="text-sm leading-6 text-slate-400">
+        You can close this popup if it does not close automatically.
+      </p>
+    </section>
+  </div>
+);
+
 const LoginGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isLoading, login } = useAuth();
   const demoMode = isDemoModeEnabled();
@@ -296,6 +320,10 @@ const Layout: React.FC = () => {
 
 export default function App() {
   const demoMode = isDemoModeEnabled();
+
+  if (isMicrosoftAuthPopupResponse()) {
+    return <PopupAuthResponseFallback />;
+  }
 
   return (
     <ThemeProvider>
