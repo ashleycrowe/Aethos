@@ -45,10 +45,16 @@ export default async function handler(
 
     // Get workspace item counts for each workspace
     const workspaceIds = workspaces?.map(ws => ws.id) || [];
-    const { data: itemCounts } = await supabase
-      .from('workspace_items')
-      .select('workspace_id')
-      .in('workspace_id', workspaceIds);
+    const { data: itemCounts, error: itemCountsError } = workspaceIds.length > 0
+      ? await supabase
+          .from('workspace_items')
+          .select('workspace_id')
+          .in('workspace_id', workspaceIds)
+      : { data: [], error: null };
+
+    if (itemCountsError) {
+      throw itemCountsError;
+    }
 
     // Count items per workspace
     const counts: { [key: string]: number } = {};

@@ -229,10 +229,10 @@ export const OracleSearchBridgeV2 = () => {
   ];
 
   const liveQuickActions = [
-    { id: 'q-live-1', label: 'budget', icon: BarChart3 },
-    { id: 'q-live-2', label: 'policy', icon: ShieldCheck },
-    { id: 'q-live-3', label: 'contract', icon: Database },
-    { id: 'q-live-4', label: 'meeting notes', icon: Target },
+    { id: 'q-live-1', label: 'Find policy documents', icon: ShieldCheck },
+    { id: 'q-live-2', label: 'Search for contracts', icon: Database },
+    { id: 'q-live-3', label: 'Show recently modified files', icon: History },
+    { id: 'q-live-4', label: 'Find files shared externally', icon: ExternalLink },
   ];
 
   const quickActions = globalDemoMode ? demoQuickActions : liveQuickActions;
@@ -245,10 +245,10 @@ export const OracleSearchBridgeV2 = () => {
   ];
 
   const liveUniversalCommands = [
-    { id: 'c-live-1', label: 'external', icon: ShieldCheck, desc: 'Search for externally shared or exposure-related files' },
-    { id: 'c-live-2', label: 'archive', icon: Trash2, desc: 'Search for archival or stale-content references' },
-    { id: 'c-live-3', label: 'finance', icon: BarChart3, desc: 'Search indexed files for finance-related metadata' },
-    { id: 'c-live-4', label: 'onboarding', icon: Target, desc: 'Search indexed files for onboarding or people documents' },
+    { id: 'c-live-1', label: 'Search for budget documents', icon: BarChart3, desc: 'Find finance, planning, and budget-related files' },
+    { id: 'c-live-2', label: 'Find stale documents', icon: Trash2, desc: 'Look for archive, old, or cleanup-related files' },
+    { id: 'c-live-3', label: 'Search by owner email', icon: Target, desc: 'Use a known owner email or username as the query' },
+    { id: 'c-live-4', label: 'Find meeting notes', icon: FileText, desc: 'Search for notes, minutes, and meeting materials' },
   ];
 
   const universalCommands = globalDemoMode ? demoUniversalCommands : liveUniversalCommands;
@@ -352,7 +352,7 @@ export const OracleSearchBridgeV2 = () => {
                           <CornerDownRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-[#00F0FF] transition-colors ml-auto" />
                         </div>
                         <p className="text-[11px] font-black uppercase tracking-tight text-slate-300 group-hover:text-white transition-colors leading-snug">
-                          {globalDemoMode ? action.label : `Search "${action.label}"`}
+                          {action.label}
                         </p>
                       </button>
                     ))}
