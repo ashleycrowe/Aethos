@@ -40,6 +40,18 @@ export type RiskDriver = {
   filterTarget: string;
 };
 
+export type ReportFileSample = {
+  id: string;
+  name: string;
+  ownerEmail: string | null;
+  ownerName: string | null;
+  providerType: string | null;
+  sizeBytes: number;
+  modifiedAt: string | null;
+  riskScore: number;
+  externalUserCount: number;
+};
+
 export type ReportSummary = {
   tenantId: string;
   generatedAt: string;
@@ -84,6 +96,12 @@ export type ReportSummary = {
     externallySharedFiles: number;
     highRiskFiles: number;
     missingOwnerFiles: number;
+  };
+  exposureReview: {
+    topFiles: ReportFileSample[];
+  };
+  staleContentReview: {
+    topFiles: ReportFileSample[];
   };
   ownership: {
     uniqueOwners: number;
@@ -306,6 +324,20 @@ function buildWorkspaceOpportunities(files: ReportFileRow[]): ReportSummary['wor
   ].filter(Boolean) as ReportSummary['workspaceOpportunities'];
 }
 
+function toFileSample(file: ReportFileRow): ReportFileSample {
+  return {
+    id: file.id,
+    name: file.name || 'Untitled file',
+    ownerEmail: file.owner_email || null,
+    ownerName: file.owner_name || null,
+    providerType: file.provider_type || null,
+    sizeBytes: file.size_bytes || 0,
+    modifiedAt: file.modified_at || null,
+    riskScore: file.risk_score || 0,
+    externalUserCount: file.external_user_count || 0,
+  };
+}
+
 export function buildReportSummary({
   tenantId,
   files,
@@ -395,6 +427,16 @@ export function buildReportSummary({
     .slice(0, 10);
 
   const uniqueOwners = new Set(files.map((file) => file.owner_email?.trim().toLowerCase()).filter(Boolean)).size;
+  const topExposureFiles = externallySharedFiles
+    .slice()
+    .sort((a, b) => (b.external_user_count || 0) - (a.external_user_count || 0) || (b.risk_score || 0) - (a.risk_score || 0))
+    .slice(0, 5)
+    .map(toFileSample);
+  const topStaleFiles = staleFiles
+    .slice()
+    .sort((a, b) => (b.size_bytes || 0) - (a.size_bytes || 0) || (b.risk_score || 0) - (a.risk_score || 0))
+    .slice(0, 5)
+    .map(toFileSample);
 
   return {
     tenantId,
@@ -440,6 +482,12 @@ export function buildReportSummary({
       externallySharedFiles: externallySharedFiles.length,
       highRiskFiles: highRiskFiles.length,
       missingOwnerFiles: missingOwnerFiles.length,
+    },
+    exposureReview: {
+      topFiles: topExposureFiles,
+    },
+    staleContentReview: {
+      topFiles: topStaleFiles,
     },
     ownership: {
       uniqueOwners,

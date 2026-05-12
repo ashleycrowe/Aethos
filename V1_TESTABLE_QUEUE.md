@@ -106,11 +106,17 @@ See `docs/OPERATIONAL_INTELLIGENCE_DEVELOPMENT_QUEUE.md` for the detailed implem
 - [x] Replace Operational Intelligence overview cards with live report-summary data.
 - [x] Add `Tenant Health Score`, inverse `tenantExposureIndex`, top score drivers, and trend deltas to the report summary.
 - [x] Add data maturity floors: `not_enough_data` until a completed scan has at least 50 indexed files and 3 indexed sites.
-- [ ] Add no-data `Path to Value` checklist for connected tenants with little or no content.
+- [x] Add no-data `Path to Value` checklist for connected tenants with little or no content.
 - [ ] Add focused report cards: Discovery Summary, Exposure Review, Stale Content Review, Metadata Quality, Ownership & Offboarding Risk, Workspace Opportunities, Remediation Dry Run.
+  - [x] Exposure Review live card and remediation handoff.
+  - [x] Stale Content Review live card and remediation handoff.
+  - [x] Ownership & Offboarding Risk live card.
+  - [x] Workspace Opportunities card.
+  - [ ] Remediation Dry Run report card.
 - [x] Promote V1 identity scope as Ownership & Offboarding Risk, not the full prototype Identity Engine, using the 40/25/20/10/5 Owner Liability Score model.
 - [x] Add V1 risk-driver library: Unsecured External Shares, Unmanaged Knowledge Gaps, Critical Knowledge Exposure, Accumulated Stale Burden, High OneDrive Concentration.
 - [x] Add manual admin action exports: copy issue list, CSV, and dry-run-first PowerShell/Graph helper.
+- [x] Align Remediation playbooks with Operational Intelligence report drivers.
 - [ ] Add V1.5 identity enrichment spike for Entra active/disabled/departed owner status.
 - [ ] Add smoke tests for demo route, live empty tenant, live first discovery, ownership/offboarding risk, and V1.5 content intelligence.
 - [ ] Keep mock `ReportingCenterV1` hidden from Live Mode until it is live-backed.

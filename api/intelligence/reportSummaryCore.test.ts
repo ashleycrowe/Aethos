@@ -79,5 +79,11 @@ describe('buildReportSummary', () => {
     expect(summary.ownership.topRiskOwners[0].ownerLiabilityScore).toBeGreaterThan(0);
     expect(summary.risk.externallySharedFiles).toBe(20);
     expect(summary.risk.missingOwnerFiles).toBe(15);
+    expect(summary.exposureReview.topFiles.length).toBeGreaterThan(0);
+    expect(summary.staleContentReview.topFiles.length).toBeGreaterThan(0);
+    expect(summary.exposureReview.topFiles[0]).toMatchObject({
+      name: 'Policy.docx',
+      riskScore: expect.any(Number),
+    });
   });
 });

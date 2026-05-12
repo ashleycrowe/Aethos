@@ -53,6 +53,62 @@ type RemediationAction = 'archive' | 'delete' | 'revoke_links' | null;
 type ViewMode = 'pending' | 'history';
 type IssueFilter = 'all' | 'external_share' | 'stale' | 'orphaned' | 'waste' | 'missing_owner' | 'high_risk' | 'onedrive_silo';
 
+const ISSUE_PLAYBOOKS: Record<IssueFilter, {
+  title: string;
+  attitude: string;
+  suggestedAction: string;
+  allowedActions: string;
+}> = {
+  all: {
+    title: 'Comprehensive Remediation Queue',
+    attitude: 'Triage before action. Use reports to decide which review path matters most.',
+    suggestedAction: 'Filter by a report driver, export the issue list, then run a dry-run on a small set.',
+    allowedActions: 'Copy, CSV, dry-run, archive, revoke links, delete with confirmation.',
+  },
+  external_share: {
+    title: 'Unsecured External Shares',
+    attitude: 'Security review first. Treat access removal as a targeted control, not a cleanup sweep.',
+    suggestedAction: 'Review owner and external user count, then dry-run Revoke Links for confirmed exposure.',
+    allowedActions: 'Copy, CSV, dry-run script, revoke links.',
+  },
+  missing_owner: {
+    title: 'Unmanaged Knowledge Gaps',
+    attitude: 'Assign stewardship before deleting or moving anything.',
+    suggestedAction: 'Export the list, identify a business steward, then create a handoff workspace.',
+    allowedActions: 'Copy, CSV, dry-run script, workspace handoff.',
+  },
+  high_risk: {
+    title: 'Critical Knowledge Exposure',
+    attitude: 'Preserve context and reduce exposure. High-risk does not automatically mean delete.',
+    suggestedAction: 'Review file purpose, owner, and sharing state; dry-run archive or revoke links as appropriate.',
+    allowedActions: 'Copy, CSV, dry-run script, archive, revoke links.',
+  },
+  stale: {
+    title: 'Accumulated Stale Burden',
+    attitude: 'Archive candidates, not trash candidates. Old content may still carry institutional memory.',
+    suggestedAction: 'Export stale candidates, confirm owners, then dry-run Archive on low-risk content.',
+    allowedActions: 'Copy, CSV, dry-run script, archive.',
+  },
+  onedrive_silo: {
+    title: 'High OneDrive Concentration',
+    attitude: 'Treat as handoff risk. Move knowledge into shared operating context before offboarding.',
+    suggestedAction: 'Create a workspace or handoff packet for concentrated owner content.',
+    allowedActions: 'Copy, CSV, dry-run script, workspace handoff.',
+  },
+  orphaned: {
+    title: 'Orphaned Content',
+    attitude: 'Verify business ownership before cleanup.',
+    suggestedAction: 'Review metadata and path, assign a steward, then dry-run Archive if no active owner exists.',
+    allowedActions: 'Copy, CSV, dry-run script, archive.',
+  },
+  waste: {
+    title: 'Storage Waste',
+    attitude: 'Use cost as a prioritization signal, not the sole reason for deletion.',
+    suggestedAction: 'Export large/stale candidates, review with owners, then dry-run Archive.',
+    allowedActions: 'Copy, CSV, dry-run script, archive.',
+  },
+};
+
 type SearchFileResult = {
   id: string;
   name: string;
@@ -282,6 +338,7 @@ export const RemediationCenter: React.FC = () => {
   const selectedCount = selectedItems.size;
   const allSelected = filteredItems.length > 0 && filteredItems.every(item => selectedItems.has(item.id));
   const selectedItemsList = items.filter(i => selectedItems.has(i.id));
+  const activePlaybook = ISSUE_PLAYBOOKS[filterIssue];
 
   const toggleSelectAll = () => {
     if (allSelected) {
@@ -579,6 +636,33 @@ export const RemediationCenter: React.FC = () => {
               CSV
             </button>
           </div>
+
+          <GlassCard className="p-5 border-[#00F0FF]/20 bg-[#00F0FF]/[0.03]">
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+              <div className="max-w-3xl">
+                <p className="text-[10px] font-black uppercase tracking-[0.35em] text-slate-500">
+                  Remediation Playbook
+                </p>
+                <h3 className={`mt-2 text-lg font-black uppercase tracking-tight ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
+                  {activePlaybook.title}
+                </h3>
+                <p className="mt-3 text-sm leading-6 text-slate-400">
+                  {activePlaybook.attitude}
+                </p>
+                <p className="mt-2 text-xs leading-5 text-slate-500">
+                  {activePlaybook.suggestedAction}
+                </p>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-white/[0.04] p-4 xl:max-w-xs">
+                <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">
+                  Safe actions
+                </p>
+                <p className="mt-2 text-xs leading-5 text-slate-400">
+                  {activePlaybook.allowedActions}
+                </p>
+              </div>
+            </div>
+          </GlassCard>
 
           {/* Bulk Actions Bar */}
           <AnimatePresence>

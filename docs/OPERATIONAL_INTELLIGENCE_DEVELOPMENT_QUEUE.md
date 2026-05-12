@@ -59,7 +59,7 @@ Replace the current broad tab concept with a V1 report-card layout:
 Acceptance:
 
 - A first-time tester understands what to do next within 30 seconds.
-- Empty tenants still produce a useful `Path to Value` / first-scan readiness experience.
+- [x] Empty tenants still produce a useful `Path to Value` / first-scan readiness experience.
 - Medium/large tenants see prioritized next actions instead of raw inventory.
 
 ---
@@ -298,7 +298,7 @@ Tasks:
 - [ ] Add scan history link in Admin.
 - [ ] Add post-scan CTA to Search, Remediation, Workspace.
 - [ ] Add `partial scan` state with clear errors.
-- [ ] Add no-data `Path to Value` checklist:
+- [x] Add no-data `Path to Value` checklist:
   - Connect Microsoft account.
   - Confirm permissions/capabilities.
   - Run first discovery.
@@ -324,8 +324,8 @@ Report cards:
 Tasks:
 
 - [ ] Add exposure aggregation to `report-summary`.
-- [ ] Add top externally shared files table.
-- [ ] Add filter handoff to Remediation: `issue=external_share`.
+- [x] Add top externally shared files table.
+- [x] Add filter handoff to Remediation: `issue=external_share`.
 - [x] Add exportable CSV data model.
 
 Sales angle:
@@ -351,8 +351,8 @@ Report cards:
 Tasks:
 
 - [ ] Add stale storage aggregation.
-- [ ] Add top stale files table.
-- [ ] Add handoff to Remediation: `issue=stale`.
+- [x] Add top stale files table.
+- [x] Add handoff to Remediation: `issue=stale`.
 - [ ] Avoid hard-coded dollar savings until pricing/storage assumptions are configurable.
 
 Sales angle:
@@ -486,6 +486,16 @@ Purpose:
 
 Make cleanup safe and testable.
 
+Remediation alignment principle:
+
+- Remediation is the action layer for Operational Intelligence, not a generic delete/archive queue.
+- Every report driver should map to a clear remediation attitude:
+  - External sharing -> security review and targeted link revocation.
+  - Missing owner -> assign stewardship or create handoff workspace before cleanup.
+  - High-risk files -> preserve context, reduce exposure, and avoid automatic deletion.
+  - Stale content -> archive review before deletion.
+  - OneDrive concentration -> handoff/workspace creation before offboarding.
+
 Tasks:
 
 - [ ] Preserve dry-run actions in `remediation_actions`.
@@ -493,6 +503,7 @@ Tasks:
 - [ ] Show estimated affected files and action type.
 - [x] Add CSV export for dry-run recommendations.
 - [x] Add `no destructive action taken` label.
+- [x] Add issue-specific remediation playbooks that match report drivers.
 
 Sales angle:
 

@@ -123,6 +123,32 @@ export interface ReportSummaryResponse {
       highRiskFiles: number;
       missingOwnerFiles: number;
     };
+    exposureReview: {
+      topFiles: Array<{
+        id: string;
+        name: string;
+        ownerEmail: string | null;
+        ownerName: string | null;
+        providerType: string | null;
+        sizeBytes: number;
+        modifiedAt: string | null;
+        riskScore: number;
+        externalUserCount: number;
+      }>;
+    };
+    staleContentReview: {
+      topFiles: Array<{
+        id: string;
+        name: string;
+        ownerEmail: string | null;
+        ownerName: string | null;
+        providerType: string | null;
+        sizeBytes: number;
+        modifiedAt: string | null;
+        riskScore: number;
+        externalUserCount: number;
+      }>;
+    };
     ownership: {
       uniqueOwners: number;
       unknownOwnerFiles: number;

@@ -49,10 +49,26 @@ function getScoreColor(score: number) {
   return '#10B981';
 }
 
+function formatDate(value?: string | null) {
+  if (!value) return 'Unknown';
+  return new Date(value).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
 function openRemediation(issue?: string) {
   if (typeof window === 'undefined') return;
   window.dispatchEvent(new CustomEvent('aethos:navigate', {
     detail: { tab: 'archival', issue },
+  }));
+}
+
+function openAppTab(tab: string) {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent('aethos:navigate', {
+    detail: { tab },
   }));
 }
 
@@ -195,6 +211,7 @@ const OverviewDashboard = () => {
   const healthDisplay = healthScore === null || healthScore === undefined ? 'Pending' : `${healthScore}/100`;
   const maturity = reportSummary?.healthScore.dataMaturity ?? 'none';
   const lastScanStatus = reportSummary?.lastScan.status ?? 'none';
+  const shouldShowPathToValue = !isDemoMode && reportSummary?.healthScore.label === 'not_enough_data';
 
   const metrics = [
     {
@@ -343,11 +360,102 @@ const OverviewDashboard = () => {
               </div>
             </div>
             <button
-              onClick={() => openRemediation(reportSummary.riskDrivers[0]?.filterTarget.split('issue=')[1])}
+              onClick={() => healthLabel === 'not_enough_data'
+                ? openAppTab('admin')
+                : openRemediation(reportSummary.riskDrivers[0]?.filterTarget.split('issue=')[1])
+              }
               className="min-h-[44px] rounded-xl bg-white px-5 py-3 text-xs font-black uppercase tracking-[0.2em] text-[#0B0F19] transition hover:bg-[#00F0FF]"
             >
               {healthLabel === 'not_enough_data' ? 'Expand Discovery' : 'View Signal Queue'}
             </button>
+          </div>
+        </GlassCard>
+      )}
+
+      {shouldShowPathToValue && reportSummary && (
+        <GlassCard className="p-5 md:p-8">
+          <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.35em] text-slate-500">
+                Path To Value
+              </p>
+              <h3 className={`mt-2 text-xl font-black uppercase tracking-tight ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
+                Complete Your First Reliable Report
+              </h3>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
+                Aethos is connected, but this tenant needs broader discovery coverage before we calculate a reliable health score.
+              </p>
+            </div>
+            <span className="w-fit rounded-full border border-[#00F0FF]/20 bg-[#00F0FF]/10 px-3 py-1 text-[9px] font-black uppercase tracking-widest text-[#00F0FF]">
+              {reportSummary.discovery.totalFiles.toLocaleString()} files / {reportSummary.discovery.totalSites.toLocaleString()} sites
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-5">
+            {[
+              {
+                label: 'Connect Microsoft',
+                detail: 'Live tenant session is active.',
+                complete: true,
+                action: 'Admin',
+                tab: 'admin',
+              },
+              {
+                label: 'Confirm Permissions',
+                detail: 'Review tenant capability status.',
+                complete: reportSummary.lastScan.status !== 'failed',
+                action: 'Admin',
+                tab: 'admin',
+              },
+              {
+                label: 'Run Discovery',
+                detail: 'Target at least 50 files and 3 sites.',
+                complete: reportSummary.discovery.totalFiles >= 50 && reportSummary.discovery.totalSites >= 3,
+                action: 'Run Scan',
+                tab: 'admin',
+              },
+              {
+                label: 'Review First Report',
+                detail: 'Verify indexed files, owners, and risk.',
+                complete: reportSummary.discovery.totalFiles > 0,
+                action: 'Reports',
+                tab: 'insights',
+              },
+              {
+                label: 'Create Workspace',
+                detail: 'Start organizing even before risk appears.',
+                complete: false,
+                action: 'Workspace',
+                tab: 'nexus',
+              },
+            ].map((step, index) => (
+              <button
+                key={step.label}
+                onClick={() => openAppTab(step.tab)}
+                className={`min-h-[140px] rounded-xl border p-4 text-left transition hover:border-[#00F0FF]/40 ${
+                  isDaylight ? 'border-slate-200 bg-slate-50' : 'border-white/10 bg-white/[0.03]'
+                }`}
+              >
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <div className={`flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-black ${
+                    step.complete
+                      ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+                      : 'border-white/10 bg-white/[0.04] text-slate-500'
+                  }`}>
+                    {step.complete ? <CheckCircle2 className="h-4 w-4" /> : index + 1}
+                  </div>
+                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">
+                    {step.action}
+                  </span>
+                </div>
+                <p className={`text-sm font-black ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
+                  {step.label}
+                </p>
+                <p className="mt-2 text-xs leading-5 text-slate-500">
+                  {step.detail}
+                </p>
+              </button>
+            ))}
           </div>
         </GlassCard>
       )}
@@ -525,6 +633,155 @@ const OverviewDashboard = () => {
             </div>
           </GlassCard>
         </div>
+      )}
+
+      {!isDemoMode && reportSummary && (
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 md:gap-8">
+          {[
+            {
+              title: 'Exposure Review',
+              eyebrow: 'Unsecured External Shares',
+              description: 'Externally shared files that deserve review before they become an incident.',
+              issue: 'external_share',
+              empty: 'No externally shared files are currently indexed.',
+              files: reportSummary.exposureReview.topFiles,
+              accent: '#FF5733',
+              meta: (file: ReportSummaryResponse['summary']['exposureReview']['topFiles'][number]) =>
+                `${file.externalUserCount.toLocaleString()} external user${file.externalUserCount === 1 ? '' : 's'} | Risk ${file.riskScore}/100`,
+            },
+            {
+              title: 'Stale Content Review',
+              eyebrow: 'Accumulated Stale Burden',
+              description: 'Old content that may need archive, ownership handoff, or workspace cleanup.',
+              issue: 'stale',
+              empty: 'No stale files are currently indexed.',
+              files: reportSummary.staleContentReview.topFiles,
+              accent: '#10B981',
+              meta: (file: ReportSummaryResponse['summary']['staleContentReview']['topFiles'][number]) =>
+                `${formatBytes(file.sizeBytes)} | Modified ${formatDate(file.modifiedAt)}`,
+            },
+          ].map((card) => (
+            <GlassCard key={card.title} className="p-5 md:p-8">
+              <div className="mb-6 flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.35em] text-slate-500">
+                    {card.eyebrow}
+                  </p>
+                  <h3 className={`mt-2 text-xl font-black uppercase tracking-tight ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
+                    {card.title}
+                  </h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-400">
+                    {card.description}
+                  </p>
+                </div>
+                <button
+                  onClick={() => openRemediation(card.issue)}
+                  className="min-h-[40px] rounded-xl border border-white/10 bg-white/[0.04] px-3 text-[9px] font-black uppercase tracking-widest text-slate-300 transition hover:border-[#00F0FF]/40 hover:text-white"
+                >
+                  Review
+                </button>
+              </div>
+
+              {card.files.length > 0 ? (
+                <div className="space-y-3">
+                  {card.files.map((file) => (
+                    <button
+                      key={file.id}
+                      onClick={() => openRemediation(card.issue)}
+                      className={`w-full rounded-xl border p-4 text-left transition hover:border-[#00F0FF]/40 ${
+                        isDaylight ? 'border-slate-200 bg-slate-50' : 'border-white/10 bg-white/[0.03]'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0">
+                          <p className={`truncate text-sm font-black ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
+                            {file.name}
+                          </p>
+                          <p className="mt-1 truncate text-xs text-slate-500">
+                            {file.ownerName || file.ownerEmail || 'Unknown owner'} | {file.providerType || 'microsoft'}
+                          </p>
+                          <p className="mt-2 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                            {card.meta(file as any)}
+                          </p>
+                        </div>
+                        <div className="h-10 w-1 shrink-0 rounded-full" style={{ backgroundColor: card.accent }} />
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-xl border border-white/10 bg-white/[0.03] p-6 text-sm text-slate-400">
+                  {card.empty}
+                </div>
+              )}
+            </GlassCard>
+          ))}
+        </div>
+      )}
+
+      {!isDemoMode && reportSummary && (
+        <GlassCard className="p-5 md:p-8">
+          <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.35em] text-slate-500">
+                Workspace Opportunities
+              </p>
+              <h3 className={`mt-2 text-xl font-black uppercase tracking-tight ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
+                Turn Discovery Into Working Context
+              </h3>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
+                Suggested workspaces collect related review items without moving source files.
+              </p>
+            </div>
+            <button
+              onClick={() => openAppTab('nexus')}
+              className="min-h-[44px] rounded-xl bg-white px-5 py-3 text-xs font-black uppercase tracking-[0.2em] text-[#0B0F19] transition hover:bg-[#00F0FF]"
+            >
+              Open Workspaces
+            </button>
+          </div>
+
+          {reportSummary.workspaceOpportunities.length > 0 ? (
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+              {reportSummary.workspaceOpportunities.slice(0, 3).map((opportunity) => (
+                <button
+                  key={opportunity.label}
+                  onClick={() => openAppTab('nexus')}
+                  className={`min-h-[180px] rounded-xl border p-5 text-left transition hover:border-[#00F0FF]/40 ${
+                    isDaylight ? 'border-slate-200 bg-slate-50' : 'border-white/10 bg-white/[0.03]'
+                  }`}
+                >
+                  <div className="mb-5 flex items-center justify-between gap-3">
+                    <div className="rounded-lg border border-[#00F0FF]/20 bg-[#00F0FF]/10 px-3 py-1 text-[9px] font-black uppercase tracking-widest text-[#00F0FF]">
+                      {opportunity.fileCount.toLocaleString()} files
+                    </div>
+                    <Database className="h-4 w-4 text-slate-500" />
+                  </div>
+                  <p className={`text-base font-black ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
+                    {opportunity.label}
+                  </p>
+                  <p className="mt-3 text-xs leading-5 text-slate-500">
+                    {opportunity.reason}
+                  </p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {opportunity.suggestedTags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-[9px] font-black uppercase tracking-widest text-slate-500"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-6 text-sm text-slate-400">
+              No workspace opportunities yet. Run Discovery or review files in Search to create a manual workspace.
+            </div>
+          )}
+        </GlassCard>
       )}
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8">
