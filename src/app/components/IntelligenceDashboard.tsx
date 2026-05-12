@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   Sparkles, 
   Brain, 
@@ -25,6 +25,8 @@ import { MetadataIntelligenceDashboard } from '@/app/components/MetadataIntellig
 import { IdentityEngine } from '@/app/components/IdentityEngine';
 import { DiscoveryScanSimulation } from '@/app/components/DiscoveryScanSimulation';
 import { toast } from 'sonner';
+import { getIntelligenceMetrics, type IntelligenceMetricsResponse } from '@/lib/api';
+import { useAuth } from '@/app/context/AuthContext';
 
 type IntelligenceView = 'dashboard' | 'stream' | 'metadata' | 'identity';
 
@@ -117,17 +119,53 @@ export const IntelligenceDashboard = () => {
 
 const OverviewDashboard = () => {
   const { isDaylight } = useTheme();
-  const { version } = useVersion();
+  const { version, isDemoMode } = useVersion();
+  const { getAccessToken } = useAuth();
   const hasSlack = useFeature('slackIntegration');
   const hasGoogle = useFeature('googleWorkspaceShadow');
   const hasBox = useFeature('boxShadowDiscovery');
+  const [liveMetrics, setLiveMetrics] = useState<IntelligenceMetricsResponse | null>(null);
+  const [isLoadingMetrics, setIsLoadingMetrics] = useState(false);
+  const [metricsError, setMetricsError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isDemoMode) {
+      setLiveMetrics(null);
+      setMetricsError(null);
+      return;
+    }
+
+    let cancelled = false;
+    const loadMetrics = async () => {
+      try {
+        setIsLoadingMetrics(true);
+        setMetricsError(null);
+        const response = await getIntelligenceMetrics({ accessToken: await getAccessToken() });
+        if (!cancelled) setLiveMetrics(response);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unable to load live metrics';
+        if (!cancelled) setMetricsError(message);
+      } finally {
+        if (!cancelled) setIsLoadingMetrics(false);
+      }
+    };
+
+    void loadMetrics();
+    return () => {
+      cancelled = true;
+    };
+  }, [isDemoMode]);
+
+  const totalFiles = liveMetrics?.sourceQuality.totalFiles ?? 0;
+  const discoverableFiles = liveMetrics?.enrichmentStatus.filesNowDiscoverable ?? 0;
+  const intelligenceScore = liveMetrics?.intelligenceScore ?? 0;
 
   const metrics = [
     {
       id: 'intelligence-score',
       label: 'Intelligence Score',
-      value: '92.4%',
-      change: '+4.2%',
+      value: isDemoMode ? '92.4%' : `${intelligenceScore}%`,
+      change: isDemoMode ? '+4.2%' : isLoadingMetrics ? 'Loading' : 'Live',
       trend: 'up',
       icon: Sparkles,
       color: '#00F0FF',
@@ -135,9 +173,9 @@ const OverviewDashboard = () => {
     },
     {
       id: 'waste-recovery',
-      label: 'Waste Recovery',
-      value: '2.4 TB',
-      change: '+840 GB',
+      label: isDemoMode ? 'Waste Recovery' : 'Indexed Files',
+      value: isDemoMode ? '2.4 TB' : totalFiles.toLocaleString(),
+      change: isDemoMode ? '+840 GB' : `${discoverableFiles} searchable`,
       trend: 'up',
       icon: TrendingUp,
       color: '#10B981',
@@ -145,9 +183,11 @@ const OverviewDashboard = () => {
     },
     {
       id: 'identity-health',
-      label: 'Identity Health',
-      value: '98.1%',
-      change: '+0.8%',
+      label: isDemoMode ? 'Identity Health' : 'Metadata Quality',
+      value: isDemoMode
+        ? '98.1%'
+        : `${liveMetrics?.sourceQuality.filesWithMeaningfulNames ?? 0}/${totalFiles}`,
+      change: isDemoMode ? '+0.8%' : 'Live',
       trend: 'up',
       icon: Fingerprint,
       color: '#A855F7',
@@ -172,12 +212,36 @@ const OverviewDashboard = () => {
     { id: 4, type: 'success', message: 'Workspace "Project Phoenix" created', time: '2h ago', icon: CheckCircle2 },
     { id: 5, type: 'info', message: 'Metadata quality improved to 92.4%', time: '3h ago', icon: Sparkles },
   ];
+  const liveActivity = liveMetrics
+    ? [
+        {
+          id: 1,
+          type: 'info',
+          message: `${liveMetrics.sourceQuality.totalFiles.toLocaleString()} Microsoft files indexed`,
+          time: 'Live tenant',
+          icon: FileText,
+        },
+        {
+          id: 2,
+          type: 'info',
+          message: `${liveMetrics.enrichmentStatus.filesNowDiscoverable.toLocaleString()} files currently searchable`,
+          time: 'Live tenant',
+          icon: Database,
+        },
+      ]
+    : [];
 
   // V1: Microsoft 365 only
   // V2+: Add Slack, Google Workspace
   // V3+: Add Box
   const allProviders = [
-    { name: 'Microsoft 365', status: 'active', assets: '12.4K', lastSync: '2m ago', version: 'V1' },
+    {
+      name: 'Microsoft 365',
+      status: isDemoMode ? 'active' : metricsError ? 'needs attention' : 'active',
+      assets: isDemoMode ? '12.4K' : totalFiles.toLocaleString(),
+      lastSync: isDemoMode ? '2m ago' : liveMetrics ? 'Live metrics' : 'Not scanned',
+      version: 'V1',
+    },
     { name: 'Slack', status: 'active', assets: '8.2K', lastSync: '5m ago', version: 'V2', enabled: hasSlack },
     { name: 'Google Workspace', status: 'active', assets: '6.1K', lastSync: '8m ago', version: 'V2', enabled: hasGoogle },
     { name: 'Box', status: 'active', assets: '4.3K', lastSync: '12m ago', version: 'V3', enabled: hasBox },
@@ -189,6 +253,22 @@ const OverviewDashboard = () => {
     <div className="space-y-6 md:space-y-8 pb-10">
       {/* Discovery Scan Simulation */}
       <DiscoveryScanSimulation />
+
+      {!isDemoMode && metricsError && (
+        <GlassCard className="border-[#FF5733]/20 bg-[#FF5733]/5 p-5">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-[#FF5733]" />
+            <div>
+              <h3 className="text-sm font-black uppercase tracking-widest text-white">
+                Live Intelligence Unavailable
+              </h3>
+              <p className="mt-2 text-sm text-slate-400">
+                {metricsError}. Run Microsoft Discovery from Admin or check API configuration.
+              </p>
+            </div>
+          </div>
+        </GlassCard>
+      )}
 
       {/* Key Metrics Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
@@ -234,7 +314,7 @@ const OverviewDashboard = () => {
               <Activity className="w-4 h-4 text-[#00F0FF]" />
             </h3>
             <div className="space-y-4">
-              {recentActivity.map((activity) => (
+              {(isDemoMode ? recentActivity : liveActivity).map((activity) => (
                 <div 
                   key={activity.id}
                   className={`flex items-start gap-4 p-4 rounded-xl transition-all hover:bg-white/5 ${
@@ -263,6 +343,11 @@ const OverviewDashboard = () => {
                   </div>
                 </div>
               ))}
+              {!isDemoMode && !isLoadingMetrics && liveActivity.length === 0 && (
+                <div className="rounded-xl border border-white/10 bg-white/[0.03] p-5 text-sm text-slate-400">
+                  No live intelligence activity yet. Run Microsoft Discovery to populate tenant metrics.
+                </div>
+              )}
             </div>
           </GlassCard>
         </div>

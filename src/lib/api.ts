@@ -43,6 +43,58 @@ export interface DiscoveryScanResponse {
   };
 }
 
+export interface IntelligenceMetricsResponse {
+  intelligenceScore: number;
+  sourceQuality: {
+    totalFiles: number;
+    filesWithDescriptions: number;
+    filesWithTags: number;
+    filesWithMeaningfulNames: number;
+    avgNameLength: number;
+  };
+  enrichmentStatus: {
+    filesCategorized: number;
+    departmentsInferred: number;
+    keywordsGenerated: number;
+    timePeriodsExtracted: number;
+    avgConfidenceScore: number;
+    filesNowDiscoverable: number;
+  };
+  categories: Array<{
+    category: string;
+    count: number;
+    percentage: number;
+    color: string;
+  }>;
+  opportunities: Array<{
+    priority: 'high' | 'medium' | 'low';
+    title: string;
+    description: string;
+    count: number;
+    action: string;
+    icon: string;
+  }>;
+}
+
+export interface ExecuteRemediationRequest {
+  action: 'archive' | 'delete' | 'revoke_links';
+  fileIds: string[];
+  dryRun?: boolean;
+  accessToken?: string | null;
+}
+
+export interface ExecuteRemediationResponse {
+  success: boolean;
+  dryRun: boolean;
+  actionId: string;
+  message: string;
+  results: {
+    successCount: number;
+    failedCount: number;
+    errors: Array<{ error: string }>;
+  };
+}
+
 async function request<T>(path: string, options: RequestInit = {}, accessToken?: string | null): Promise<T> {
   if (isDemoModeEnabled()) {
     throw new Error(DEMO_MODE_MESSAGE);
@@ -183,6 +235,35 @@ export async function runDiscoveryScan({
     {
       method: 'POST',
       body: JSON.stringify({ scanType }),
+    },
+    accessToken
+  );
+}
+
+export async function getIntelligenceMetrics({
+  accessToken,
+}: {
+  accessToken?: string | null;
+} = {}): Promise<IntelligenceMetricsResponse> {
+  return request<IntelligenceMetricsResponse>(
+    '/intelligence/metrics',
+    {
+      method: 'POST',
+      body: JSON.stringify({}),
+    },
+    accessToken
+  );
+}
+
+export async function executeRemediation({
+  accessToken,
+  ...body
+}: ExecuteRemediationRequest): Promise<ExecuteRemediationResponse> {
+  return request<ExecuteRemediationResponse>(
+    '/remediation/execute',
+    {
+      method: 'POST',
+      body: JSON.stringify(body),
     },
     accessToken
   );

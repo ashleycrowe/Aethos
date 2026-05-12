@@ -26,6 +26,8 @@ import { useTheme } from '../context/ThemeContext';
 import { useVersion } from '../context/VersionContext';
 import { GlassCard } from './GlassCard';
 import { toast } from 'sonner';
+import { useAuth } from '@/app/context/AuthContext';
+import { runDiscoveryScan, type DiscoveryScanResponse } from '@/lib/api';
 
 type ScanStage = 'idle' | 'scanning' | 'complete';
 type ScanStep = 'sharepoint' | 'onedrive' | 'teams' | 'analyzing' | 'done';
@@ -39,10 +41,13 @@ interface ScanProgress {
 
 export const DiscoveryScanSimulation: React.FC = () => {
   const { isDaylight } = useTheme();
-  const { version } = useVersion();
+  const { version, isDemoMode } = useVersion();
+  const { isAuthenticated, getAccessToken } = useAuth();
   const [scanStage, setScanStage] = useState<ScanStage>('idle');
   const [currentStep, setCurrentStep] = useState<ScanStep>('sharepoint');
   const [progress, setProgress] = useState(0);
+  const [isLiveScanning, setIsLiveScanning] = useState(false);
+  const [liveScanResult, setLiveScanResult] = useState<DiscoveryScanResponse | null>(null);
   const [foundItems, setFoundItems] = useState({
     files: 0,
     sites: 0,
@@ -118,6 +123,88 @@ export const DiscoveryScanSimulation: React.FC = () => {
     setCurrentStep('sharepoint');
     setFoundItems({ files: 0, sites: 0, waste: 0, exposure: 0 });
   };
+
+  const startLiveScan = async () => {
+    try {
+      setIsLiveScanning(true);
+      setLiveScanResult(null);
+      const token = await getAccessToken();
+      if (!token) {
+        toast.error('Microsoft session required', {
+          description: 'Sign in again before running discovery.',
+        });
+        return;
+      }
+
+      const result = await runDiscoveryScan({ accessToken: token, scanType: 'full' });
+      setLiveScanResult(result);
+      toast.success('Live discovery scan complete', {
+        description: `${result.results.totalFiles.toLocaleString()} files found across ${result.results.totalSites.toLocaleString()} sites.`,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Discovery scan failed';
+      toast.error('Live discovery scan failed', { description: message });
+    } finally {
+      setIsLiveScanning(false);
+    }
+  };
+
+  if (!isDemoMode) {
+    return (
+      <GlassCard className="p-5 md:p-8">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 mb-2">
+              Discovery Engine
+            </h3>
+            <h2 className={`text-2xl font-black ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
+              Microsoft 365 Live Scan
+            </h2>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
+              Live Mode uses your signed-in Microsoft tenant. If your OneDrive or SharePoint has little
+              content, Aethos should show little or no content too.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={startLiveScan}
+            disabled={!isAuthenticated || isLiveScanning}
+            className="flex min-h-11 items-center justify-center gap-3 rounded-xl bg-[#00F0FF] px-6 py-3 text-sm font-black uppercase tracking-widest text-[#0B0F19] shadow-[0_0_30px_rgba(0,240,255,0.25)] transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isLiveScanning ? <Loader2 className="h-5 w-5 animate-spin" /> : <Play className="h-5 w-5" />}
+            {isLiveScanning ? 'Scanning Tenant' : 'Run Live Discovery'}
+          </button>
+        </div>
+
+        <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-4">
+          {[
+            { label: 'Files Found', value: liveScanResult?.results.totalFiles ?? 0, icon: FileText, color: '#00F0FF' },
+            { label: 'Sites/Teams', value: liveScanResult?.results.totalSites ?? 0, icon: Database, color: '#A855F7' },
+            { label: 'New Indexed', value: liveScanResult?.results.newFiles ?? 0, icon: TrendingUp, color: '#10B981' },
+            { label: 'Errors', value: liveScanResult?.results.errors ?? 0, icon: AlertTriangle, color: '#FF5733' },
+          ].map((metric) => (
+            <div key={metric.label} className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+              <metric.icon className="mb-2 h-5 w-5" style={{ color: metric.color }} />
+              <p className={`text-2xl font-black ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
+                {metric.value.toLocaleString()}
+              </p>
+              <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">
+                {metric.label}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {!liveScanResult && !isLiveScanning && (
+          <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-slate-400">
+            No live scan has been run in this browser session. Run discovery from here or Admin before
+            expecting Search, Intelligence, Workspace, or Remediation to show tenant-specific data.
+          </div>
+        )}
+      </GlassCard>
+    );
+  }
 
   return (
     <GlassCard className="p-8">

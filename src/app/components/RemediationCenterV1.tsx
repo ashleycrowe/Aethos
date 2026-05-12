@@ -14,7 +14,7 @@
  * - Simple confirmation dialogs
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion as Motion, AnimatePresence } from 'motion/react';
 import { 
   Archive, 
@@ -44,13 +44,84 @@ import { useVersion, useFeature } from '../context/VersionContext';
 import { GlassCard } from './GlassCard';
 import { toast } from 'sonner';
 import { generateRemediationItems, searchRemediationItems, type RemediationItem } from '../utils/mockDataGenerator';
+import { executeRemediation, searchFiles } from '@/lib/api';
+import { useAuth } from '@/app/context/AuthContext';
 
 type RemediationAction = 'archive' | 'delete' | 'revoke_links' | null;
 type ViewMode = 'pending' | 'history';
 
+type SearchFileResult = {
+  id: string;
+  name: string;
+  provider_type?: string | null;
+  provider?: string | null;
+  size_bytes?: number | null;
+  modified_at?: string | null;
+  owner_email?: string | null;
+  owner_name?: string | null;
+  risk_score?: number | null;
+  is_stale?: boolean | null;
+  is_orphaned?: boolean | null;
+  has_external_share?: boolean | null;
+  external_user_count?: number | null;
+};
+
+function formatBytes(bytes?: number | null) {
+  if (!bytes) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  let value = bytes;
+  let unitIndex = 0;
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex += 1;
+  }
+  return `${value.toFixed(value >= 10 || unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
+}
+
+function formatRelativeDate(value?: string | null) {
+  if (!value) return 'Unknown';
+  const diffMs = Date.now() - new Date(value).getTime();
+  const days = Math.max(0, Math.round(diffMs / 86400000));
+  if (days === 0) return 'Today';
+  if (days < 31) return `${days}d ago`;
+  const months = Math.round(days / 30);
+  return `${months}mo ago`;
+}
+
+function toRemediationItem(file: SearchFileResult): RemediationItem {
+  const riskScore = file.risk_score || 0;
+  const issue: RemediationItem['issue'] = file.has_external_share
+    ? 'external_share'
+    : file.is_orphaned
+      ? 'orphaned'
+      : file.is_stale
+        ? 'stale'
+        : 'waste';
+
+  return {
+    id: file.id,
+    name: file.name,
+    type: file.provider_type === 'teams' ? 'channel' : 'file',
+    provider: file.provider_type === 'sharepoint'
+      ? 'SharePoint'
+      : file.provider_type === 'onedrive'
+        ? 'OneDrive'
+        : file.provider_type === 'teams'
+          ? 'Teams'
+          : 'M365',
+    risk: riskScore >= 70 ? 'high' : riskScore >= 35 ? 'medium' : 'low',
+    issue,
+    size: formatBytes(file.size_bytes),
+    lastModified: formatRelativeDate(file.modified_at),
+    owner: file.owner_name || file.owner_email || 'Unknown owner',
+    externalUsers: file.external_user_count || undefined,
+  };
+}
+
 export const RemediationCenter: React.FC = () => {
   const { isDaylight } = useTheme();
-  const { version } = useVersion();
+  const { version, isDemoMode } = useVersion();
+  const { tenantId, getAccessToken } = useAuth();
   const hasSimulation = useFeature('simulationMode');
   const hasAdvancedRemediation = useFeature('advancedRemediation');
   
@@ -62,11 +133,49 @@ export const RemediationCenter: React.FC = () => {
   const [filterRisk, setFilterRisk] = useState<'all' | 'high' | 'medium' | 'low'>('all');
   const [filterIssue, setFilterIssue] = useState<'all' | 'external_share' | 'stale' | 'orphaned' | 'waste'>('all');
 
-  // Mock data - V1 focuses on M365 only
-  const mockItems: RemediationItem[] = generateRemediationItems(5);
-
-  const [items] = useState<RemediationItem[]>(mockItems);
+  const [items, setItems] = useState<RemediationItem[]>(() => generateRemediationItems(5));
   const [completedActions, setCompletedActions] = useState<any[]>([]);
+  const [isLoadingItems, setIsLoadingItems] = useState(false);
+  const [itemsError, setItemsError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isDemoMode) {
+      setItems(generateRemediationItems(5));
+      setItemsError(null);
+      return;
+    }
+
+    let cancelled = false;
+    const loadLiveCandidates = async () => {
+      try {
+        setIsLoadingItems(true);
+        setItemsError(null);
+        const token = await getAccessToken();
+        const response = await searchFiles<SearchFileResult>({
+          tenantId: tenantId || '',
+          filters: { minRiskScore: 1 },
+          sortBy: 'risk',
+          sortOrder: 'desc',
+          pageSize: 25,
+          accessToken: token,
+        });
+        if (!cancelled) setItems((response.results || []).map(toRemediationItem));
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unable to load live remediation candidates';
+        if (!cancelled) {
+          setItems([]);
+          setItemsError(message);
+        }
+      } finally {
+        if (!cancelled) setIsLoadingItems(false);
+      }
+    };
+
+    void loadLiveCandidates();
+    return () => {
+      cancelled = true;
+    };
+  }, [isDemoMode, tenantId]);
 
   // Filter items
   const filteredItems = items.filter(item => {
@@ -107,7 +216,7 @@ export const RemediationCenter: React.FC = () => {
     setShowConfirmDialog(true);
   };
 
-  const executeAction = () => {
+  const executeAction = async () => {
     const actionLabels = {
       archive: 'Archived',
       delete: 'Deleted',
@@ -115,6 +224,43 @@ export const RemediationCenter: React.FC = () => {
     };
 
     const selectedItemsList = items.filter(i => selectedItems.has(i.id));
+    if (!pendingAction) return;
+
+    if (!isDemoMode) {
+      try {
+        const response = await executeRemediation({
+          action: pendingAction,
+          fileIds: selectedItemsList.map((item) => item.id),
+          dryRun: true,
+          accessToken: await getAccessToken(),
+        });
+
+        setCompletedActions(prev => [
+          {
+            id: response.actionId,
+            action: pendingAction,
+            items: selectedItemsList,
+            timestamp: new Date().toISOString(),
+            executedBy: 'Current User',
+            dryRun: true,
+          },
+          ...prev
+        ]);
+
+        toast.success(`Dry run logged for ${selectedCount} item${selectedCount > 1 ? 's' : ''}`, {
+          description: response.message,
+          duration: 5000,
+        });
+
+        setSelectedItems(new Set());
+        setShowConfirmDialog(false);
+        setPendingAction(null);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Remediation dry run failed';
+        toast.error('Remediation dry run failed', { description: message });
+      }
+      return;
+    }
     
     // Add to history
     setCompletedActions(prev => [
@@ -128,7 +274,7 @@ export const RemediationCenter: React.FC = () => {
       ...prev
     ]);
 
-    toast.success(`${actionLabels[pendingAction!]} ${selectedCount} item${selectedCount > 1 ? 's' : ''}`, {
+    toast.success(`${actionLabels[pendingAction]} ${selectedCount} item${selectedCount > 1 ? 's' : ''}`, {
       description: pendingAction === 'delete' 
         ? 'Items moved to Recycle Bin (30-day recovery)' 
         : 'Changes synced to provider',
@@ -324,14 +470,36 @@ export const RemediationCenter: React.FC = () => {
 
           {/* Items List */}
           <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3">
-            {filteredItems.length === 0 ? (
+            {isLoadingItems ? (
+              <GlassCard className="p-12 text-center">
+                <Loader2 className="w-12 h-12 text-[#00F0FF] mx-auto mb-4 animate-spin" />
+                <h3 className={`text-lg font-black uppercase mb-2 ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
+                  Loading Live Candidates
+                </h3>
+                <p className="text-sm text-slate-500">
+                  Querying indexed Microsoft metadata for stale, exposed, or high-risk files.
+                </p>
+              </GlassCard>
+            ) : itemsError ? (
+              <GlassCard className="p-12 text-center border-[#FF5733]/20 bg-[#FF5733]/5">
+                <AlertTriangle className="w-12 h-12 text-[#FF5733] mx-auto mb-4" />
+                <h3 className={`text-lg font-black uppercase mb-2 ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
+                  Live Remediation Unavailable
+                </h3>
+                <p className="text-sm text-slate-500">
+                  {itemsError}
+                </p>
+              </GlassCard>
+            ) : filteredItems.length === 0 ? (
               <GlassCard className="p-12 text-center">
                 <CheckCircle2 className="w-12 h-12 text-[#10B981] mx-auto mb-4" />
                 <h3 className={`text-lg font-black uppercase mb-2 ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
                   No Items Requiring Remediation
                 </h3>
                 <p className="text-sm text-slate-500">
-                  All artifacts are within operational parameters. Check back later for new recommendations.
+                  {isDemoMode
+                    ? 'All artifacts are within operational parameters. Check back later for new recommendations.'
+                    : 'No indexed Microsoft files currently match the remediation rules. Run discovery first if this tenant has not been indexed.'}
                 </p>
               </GlassCard>
             ) : (

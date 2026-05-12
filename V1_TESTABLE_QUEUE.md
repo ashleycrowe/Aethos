@@ -1,7 +1,7 @@
 # Aethos V1 Testable Queue
 
-**Last Updated:** May 4, 2026  
-**Status:** Ready for manual V1 walkthrough after commit/deploy  
+**Last Updated:** May 12, 2026  
+**Status:** V1 live walkthrough blocked by Live-vs-Demo boundary polish  
 **Scope:** First testable V1, not full production readiness
 
 ---
@@ -25,6 +25,9 @@ This file is the short-cycle engineering queue. Keep `IMPLEMENTATION_TASKS.md` a
 - Workspace creation reads and writes real workspace data.
 - Remediation supports safe dry-run behavior before destructive actions.
 - Demo/prototype-only surfaces are hidden, gated, or clearly labeled.
+- Live Mode never renders seeded/mock tenant data as if it came from the signed-in customer.
+- Demo Mode remains intentionally available for sales/testing fixtures and later-feature walkthroughs.
+- First-run users have a clear setup path from sign-in to discovery to first workspace.
 - Smoke tests cover the main V1 flow.
 - Documentation accurately distinguishes implemented, partial, and deferred work.
 
@@ -38,13 +41,62 @@ This file is the short-cycle engineering queue. Keep `IMPLEMENTATION_TASKS.md` a
 - [x] Add a shared API auth/tenant validation helper for Vercel functions.
 - [x] Apply auth/tenant validation to V1 endpoints: discovery, search, workspaces, remediation, intelligence.
 - [x] Add remediation dry-run mode and make dry-run the default UI path for first tester sessions.
-- [x] Wire `IntelligenceDashboard` to real discovery/search metrics.
+- [ ] Wire `IntelligenceDashboard` to real discovery/search metrics in Live Mode.
 - [x] Wire `WorkspaceEngine` to real workspace creation/list/detail APIs.
+- [x] Prevent `WorkspaceEngine` from falling back to demo workspaces in Live Mode.
+- [x] Make Workspace creation obvious in V1 Nexus, even when no indexed files exist.
 - [x] Refactor existing UI components (`IntelligenceDashboard`, `WorkspaceEngine`, `DesignCenter`) to meet Mobile-First standards.
 - [x] Add workspace list/detail endpoints if the frontend needs them.
 - [x] Gate non-V1 prototype modules behind feature flags or hide them from the default nav.
 - [x] Turn global demo mode into an explicit environment-controlled setting.
+- [ ] Enforce a strict Live Mode vs Demo Mode data boundary across V1 modules.
+- [x] Replace Live Mode mock/simulation surfaces in Intelligence with real scan status, empty states, or setup CTAs.
+- [x] Replace Live Mode mock remediation queue with real candidates from indexed `files` metadata.
+- [ ] Add Phase 1 first-run setup guidance after Microsoft sign-in.
+- [ ] Finish Phase 1 Admin Center with scan status, tenant capability status, sign-out, and mode controls.
 - [x] Add Vitest configuration and smoke tests for the V1 happy path.
+
+---
+
+## Active Workstream - Live vs Demo Boundary
+
+**Principle:** Demo data is allowed and useful, but only when Demo Mode is explicitly active. Live Mode must be boringly honest: if the tenant has no files, scans, workspaces, or remediation candidates, the UI should say that.
+
+- [x] Keep `VITE_DEMO_MODE` as the environment default.
+- [x] Keep the browser/session Demo Mode override for intentional testing.
+- [x] Add Admin control to force Live Mode or Demo Mode.
+- [x] Add Admin action to run Microsoft Discovery against the signed-in Microsoft tenant.
+- [x] Stop Oracle metadata search from silently falling back to demo results in Live Mode.
+- [ ] Add a global visual status that distinguishes `Live: real tenant data` from `Demo: fixture data`.
+- [ ] Audit all V1 screens for mock data in Live Mode.
+- [x] Add clear empty states for real tenants with little or no Microsoft content.
+- [ ] Preserve seeded Supabase/demo fixtures for Demo Mode.
+- [ ] Document how to switch between Live Mode and Demo Mode for testing.
+
+---
+
+## Active Workstream - Phase 1 Setup And Admin
+
+- [ ] Add a first-run setup panel/wizard after successful Microsoft sign-in.
+- [ ] Step 1: show signed-in account and tenant.
+- [ ] Step 2: run Microsoft capability checks for OneDrive, SharePoint, Teams/groups.
+- [ ] Step 3: run Microsoft Discovery scan.
+- [ ] Step 4: show scan results and route to Oracle Search or Create Workspace.
+- [ ] Add Admin scan history: last scan status, file count, site count, errors.
+- [ ] Add Admin capability status: connected, missing permission, needs admin consent, unavailable.
+- [ ] Keep Sign Out visible and confirm it clears local Aethos session state.
+- [ ] Add a reset/debug section for local demo override and cached MSAL state guidance.
+
+---
+
+## Active Workstream - Workspace V1
+
+- [ ] Rename or clarify `Nexus` as the Workspace area in V1 navigation/copy.
+- [ ] Add a primary `Create Workspace` button to the Workspace/Nexus header.
+- [x] Show real empty state when the live tenant has zero workspaces.
+- [x] Allow manual workspace creation without requiring discovered files.
+- [x] Make API failure state distinct from Demo Mode fallback.
+- [ ] Add a post-discovery CTA: `Create a workspace from these results`.
 
 ---
 

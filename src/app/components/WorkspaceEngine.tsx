@@ -123,6 +123,7 @@ export const WorkspaceEngine = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isDemoMode, setIsDemoMode] = useState(isDemoModeEnabled());
   const [apiWorkspaces, setApiWorkspaces] = useState<Workspace[]>([]);
+  const [workspaceError, setWorkspaceError] = useState<string | null>(null);
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string | null>(null);
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [isSyncManagerOpen, setIsSyncManagerOpen] = useState(false);
@@ -152,6 +153,8 @@ export const WorkspaceEngine = () => {
 
       try {
         setIsLoading(true);
+        setIsDemoMode(false);
+        setWorkspaceError(null);
 
         const accessToken = await getAccessToken();
         const response = await listWorkspaces({ tenantId: activeTenantId, accessToken });
@@ -168,12 +171,11 @@ export const WorkspaceEngine = () => {
         }
 
       } catch (err) {
-        console.warn('Failed to fetch workspaces, falling back to demo data:', err);
-        setIsDemoMode(true);
-        // Keep the context workspaces as fallback
-        if (!selectedWorkspaceId && workspaces.length > 0) {
-          setSelectedWorkspaceId(workspaces[0].id);
-        }
+        const message = err instanceof Error ? err.message : 'Failed to fetch live workspaces';
+        console.warn('Failed to fetch live workspaces:', err);
+        setWorkspaceError(message);
+        setApiWorkspaces([]);
+        setSelectedWorkspaceId(null);
       } finally {
         setIsLoading(false);
       }
@@ -332,7 +334,11 @@ export const WorkspaceEngine = () => {
         </div>
         <h2 className="text-3xl font-black uppercase tracking-tight mb-4 text-slate-900 dark:text-white">No Workspaces Yet</h2>
         <p className="text-slate-500 dark:text-slate-400 text-sm mb-10 max-w-md font-medium leading-relaxed">
-          Create an operational workspace to synthesize cross-cloud resources into a unified lattice.
+          {workspaceError
+            ? `Live workspace data could not load: ${workspaceError}`
+            : isDemoMode
+              ? 'Create an operational workspace to synthesize cross-cloud resources into a unified lattice.'
+              : 'No live workspaces exist for this tenant yet. You can create one now, even before discovery has found files.'}
         </p>
         <button 
           onClick={handleOpenWizard}
@@ -378,6 +384,12 @@ export const WorkspaceEngine = () => {
           className="flex-shrink-0 min-w-[44px] min-h-[44px] rounded-xl border-2 border-dashed border-slate-200 dark:border-white/10 flex items-center justify-center hover:border-[#00F0FF] transition-all group"
         >
           <Plus className="w-5 h-5 text-slate-400 group-hover:text-[#00F0FF]" />
+        </button>
+        <button
+          onClick={handleOpenWizard}
+          className="flex-shrink-0 min-h-[44px] rounded-xl border border-[#00F0FF]/25 bg-[#00F0FF]/10 px-4 text-[10px] font-black uppercase tracking-[0.2em] text-[#00F0FF] transition-all hover:bg-[#00F0FF]/20"
+        >
+          Create Workspace
         </button>
         {effectiveWorkspaces.map((ws) => (
           <button 
