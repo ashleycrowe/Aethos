@@ -52,7 +52,7 @@ export function WorkspaceCreationWizard({
   const canProceedStep1 = name.trim().length >= 3;
   const canProceedStep2 = contentMethod !== null;
   const canProceedStep3 = contentMethod === 'manual' || 
-    (contentMethod === 'smart' && (
+    (contentMethod !== null && contentMethod !== 'manual' && (
       (ruleType === 'tag' && tagsIncludeAny.length > 0) ||
       (ruleType === 'location' && locationPath.trim().length > 0)
     ));
@@ -618,11 +618,12 @@ export function WorkspaceCreationWizard({
               </button>
               <button
                 onClick={handleComplete}
-                disabled={selectedAssetIds.size === 0}
                 className="px-6 py-3 bg-[#00F0FF] text-[#0B0F19] rounded-lg font-medium hover:bg-[#00F0FF]/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 <CheckCircle2 className="w-5 h-5" />
-                Create Workspace with {selectedAssetIds.size} Files
+                {selectedAssetIds.size > 0
+                  ? `Create Workspace with ${selectedAssetIds.size} Files`
+                  : 'Create Empty Workspace'}
               </button>
             </div>
           </div>

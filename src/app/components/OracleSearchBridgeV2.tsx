@@ -221,19 +221,37 @@ export const OracleSearchBridgeV2 = () => {
     }
   };
 
-  const quickActions = [
+  const demoQuickActions = [
     { id: 'q-1', label: 'Show budget leakage in Project Alpha', icon: BarChart3 },
     { id: 'q-2', label: 'Analyze Storage ROI for January', icon: Database },
     { id: 'q-3', label: 'Audit external user exposure', icon: ShieldCheck },
     { id: 'q-4', label: 'Find my onboarding buddy', icon: Target },
   ];
 
-  const universalCommands = [
+  const liveQuickActions = [
+    { id: 'q-live-1', label: 'budget', icon: BarChart3 },
+    { id: 'q-live-2', label: 'policy', icon: ShieldCheck },
+    { id: 'q-live-3', label: 'contract', icon: Database },
+    { id: 'q-live-4', label: 'meeting notes', icon: Target },
+  ];
+
+  const quickActions = globalDemoMode ? demoQuickActions : liveQuickActions;
+
+  const demoUniversalCommands = [
     { id: 'c-1', label: '/audit-waste', icon: Trash2, desc: 'Scan for dead capital across all providers' },
     { id: 'c-2', label: '/simulate-rem', icon: Zap, desc: 'Run remediation simulation chains' },
     { id: 'c-3', label: '/identity-scan', icon: ShieldCheck, desc: 'Map identity velocity & drift' },
     { id: 'c-4', label: '/clearance-up', icon: Lock, desc: 'Request architect tier elevation' },
   ];
+
+  const liveUniversalCommands = [
+    { id: 'c-live-1', label: 'external', icon: ShieldCheck, desc: 'Search for externally shared or exposure-related files' },
+    { id: 'c-live-2', label: 'archive', icon: Trash2, desc: 'Search for archival or stale-content references' },
+    { id: 'c-live-3', label: 'finance', icon: BarChart3, desc: 'Search indexed files for finance-related metadata' },
+    { id: 'c-live-4', label: 'onboarding', icon: Target, desc: 'Search indexed files for onboarding or people documents' },
+  ];
+
+  const universalCommands = globalDemoMode ? demoUniversalCommands : liveUniversalCommands;
 
   return (
     <div className="flex flex-col h-full max-w-[1800px] mx-auto px-2 sm:px-4">
@@ -334,7 +352,7 @@ export const OracleSearchBridgeV2 = () => {
                           <CornerDownRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-[#00F0FF] transition-colors ml-auto" />
                         </div>
                         <p className="text-[11px] font-black uppercase tracking-tight text-slate-300 group-hover:text-white transition-colors leading-snug">
-                          {action.label}
+                          {globalDemoMode ? action.label : `Search "${action.label}"`}
                         </p>
                       </button>
                     ))}

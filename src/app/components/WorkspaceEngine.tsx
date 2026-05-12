@@ -230,7 +230,6 @@ export const WorkspaceEngine = () => {
       if (!isDemoMode) {
         const response = await createWorkspace({
           tenantId: activeTenantId,
-          userId: userId || user.id,
           name: data.name,
           description: data.description,
           icon: 'Target',
@@ -310,7 +309,9 @@ export const WorkspaceEngine = () => {
 
     } catch (error) {
       console.error('Error creating workspace:', error);
-      toast.error('Failed to create workspace');
+      toast.error('Failed to create workspace', {
+        description: error instanceof Error ? error.message : 'Check diagnostics for details.',
+      });
     }
   };
 

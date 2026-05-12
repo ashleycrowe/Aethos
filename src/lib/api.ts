@@ -133,7 +133,7 @@ export interface WorkspaceDetailRequest {
 
 export interface CreateWorkspaceRequest {
   tenantId: string;
-  userId: string;
+  userId?: string;
   name: string;
   description?: string;
   icon?: string;
