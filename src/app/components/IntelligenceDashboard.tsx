@@ -58,6 +58,10 @@ function formatDate(value?: string | null) {
   });
 }
 
+function formatAction(value: string) {
+  return value.replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
 function openRemediation(issue?: string) {
   if (typeof window === 'undefined') return;
   window.dispatchEvent(new CustomEvent('aethos:navigate', {
@@ -782,6 +786,107 @@ const OverviewDashboard = () => {
             </div>
           )}
         </GlassCard>
+      )}
+
+      {!isDemoMode && reportSummary && (
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 md:gap-8">
+          <GlassCard className="p-5 md:p-8">
+            <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.35em] text-slate-500">
+                  Remediation Dry Run
+                </p>
+                <h3 className={`mt-2 text-xl font-black uppercase tracking-tight ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
+                  Reviewed Before Action
+                </h3>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
+                  Dry runs log intent and affected files without changing Microsoft 365.
+                </p>
+              </div>
+              <button
+                onClick={() => openAppTab('archival')}
+                className="min-h-[44px] rounded-xl bg-white px-5 py-3 text-xs font-black uppercase tracking-[0.2em] text-[#0B0F19] transition hover:bg-[#00F0FF]"
+              >
+                Open Remediation
+              </button>
+            </div>
+
+            <div className="mb-5 rounded-xl border border-[#00F0FF]/20 bg-[#00F0FF]/10 p-4">
+              <p className="text-[9px] font-black uppercase tracking-widest text-[#00F0FF]">
+                No destructive action taken by default
+              </p>
+              <p className="mt-2 text-sm text-slate-400">
+                {reportSummary.remediationDryRun.totalDryRuns.toLocaleString()} dry-run review{reportSummary.remediationDryRun.totalDryRuns === 1 ? '' : 's'} logged for this tenant.
+              </p>
+            </div>
+
+            {reportSummary.remediationDryRun.recentDryRuns.length > 0 ? (
+              <div className="space-y-3">
+                {reportSummary.remediationDryRun.recentDryRuns.map((dryRun) => (
+                  <button
+                    key={dryRun.id}
+                    onClick={() => openAppTab('archival')}
+                    className={`w-full rounded-xl border p-4 text-left transition hover:border-[#00F0FF]/40 ${
+                      isDaylight ? 'border-slate-200 bg-slate-50' : 'border-white/10 bg-white/[0.03]'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className={`text-sm font-black ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
+                          {formatAction(dryRun.actionType)}
+                        </p>
+                        <p className="mt-1 text-xs text-slate-500">
+                          {dryRun.fileCount.toLocaleString()} files | {dryRun.status} | {formatDate(dryRun.executedAt)}
+                        </p>
+                      </div>
+                      <span className="rounded-lg border border-white/10 bg-white/[0.04] px-2 py-1 text-[9px] font-black uppercase tracking-widest text-slate-500">
+                        Dry Run
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-xl border border-white/10 bg-white/[0.03] p-6 text-sm text-slate-400">
+                No dry-run history yet. Select candidates in Remediation and run a dry-run to create a reviewed action record.
+              </div>
+            )}
+          </GlassCard>
+
+          <GlassCard className="p-5 md:p-8">
+            <div className="mb-6">
+              <p className="text-[10px] font-black uppercase tracking-[0.35em] text-slate-500">
+                V1.5 Identity Readiness
+              </p>
+              <h3 className={`mt-2 text-xl font-black uppercase tracking-tight ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
+                Owner Status Enrichment
+              </h3>
+              <p className="mt-2 text-sm leading-6 text-slate-400">
+                V1 groups content by owner. V1.5 adds Entra status enrichment so Aethos can distinguish active, inactive, departed, deleted, and guest owners when permissions allow.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3">
+              {[
+                ['V1 Ready', 'Owner visibility, unknown owner counts, owner liability scoring.'],
+                ['V1.5 Spike', 'Lookup Entra account status for top owner-risk groups.'],
+                ['Boundary', 'Do not claim departed-user detection until Entra status is connected.'],
+              ].map(([label, detail]) => (
+                <div
+                  key={label}
+                  className={`rounded-xl border p-4 ${isDaylight ? 'border-slate-200 bg-slate-50' : 'border-white/10 bg-white/[0.03]'}`}
+                >
+                  <p className="text-[9px] font-black uppercase tracking-widest text-[#00F0FF]">
+                    {label}
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-slate-400">
+                    {detail}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </GlassCard>
+        </div>
       )}
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8">

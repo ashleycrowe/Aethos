@@ -498,9 +498,9 @@ Remediation alignment principle:
 
 Tasks:
 
-- [ ] Preserve dry-run actions in `remediation_actions`.
-- [ ] Add dry-run history to Operational Intelligence.
-- [ ] Show estimated affected files and action type.
+- [x] Preserve dry-run actions in `remediation_actions`.
+- [x] Add dry-run history to Operational Intelligence.
+- [x] Show estimated affected files and action type.
 - [x] Add CSV export for dry-run recommendations.
 - [x] Add `no destructive action taken` label.
 - [x] Add issue-specific remediation playbooks that match report drivers.

@@ -70,6 +70,31 @@ describe('buildReportSummary', () => {
           errors: [],
         },
       ],
+      remediationActions: [
+        {
+          id: 'action-2',
+          action_type: 'delete',
+          file_count: 99,
+          status: 'completed',
+          executed_at: '2026-05-12T02:00:00.000Z',
+          completed_at: '2026-05-12T02:00:01.000Z',
+          success_count: 99,
+          failed_count: 0,
+          metadata: { dry_run: false },
+        },
+        {
+          id: 'action-1',
+          action_type: 'revoke_links',
+          file_count: 3,
+          status: 'completed',
+          executed_at: '2026-05-12T01:00:00.000Z',
+          completed_at: '2026-05-12T01:00:01.000Z',
+          success_count: 3,
+          failed_count: 0,
+          metadata: { dry_run: true },
+        },
+      ],
+      remediationDryRunTotal: 7,
       generatedAt: '2026-05-12T00:00:00.000Z',
     });
 
@@ -84,6 +109,12 @@ describe('buildReportSummary', () => {
     expect(summary.exposureReview.topFiles[0]).toMatchObject({
       name: 'Policy.docx',
       riskScore: expect.any(Number),
+    });
+    expect(summary.remediationDryRun.totalDryRuns).toBe(7);
+    expect(summary.remediationDryRun.recentDryRuns).toHaveLength(1);
+    expect(summary.remediationDryRun.recentDryRuns[0]).toMatchObject({
+      actionType: 'revoke_links',
+      fileCount: 3,
     });
   });
 });

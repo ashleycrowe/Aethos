@@ -33,6 +33,18 @@ export type ReportScanRow = {
   errors: string[] | null;
 };
 
+export type ReportRemediationActionRow = {
+  id: string;
+  action_type: 'archive' | 'delete' | 'revoke_links' | string;
+  file_count: number | null;
+  status: string | null;
+  executed_at: string | null;
+  completed_at: string | null;
+  success_count: number | null;
+  failed_count: number | null;
+  metadata: Record<string, unknown> | null;
+};
+
 export type RiskDriver = {
   label: string;
   category: 'external' | 'ownership' | 'high_risk' | 'stale' | 'storage';
@@ -103,6 +115,18 @@ export type ReportSummary = {
   staleContentReview: {
     topFiles: ReportFileSample[];
   };
+  remediationDryRun: {
+    totalDryRuns: number;
+    recentDryRuns: Array<{
+      id: string;
+      actionType: string;
+      fileCount: number;
+      status: string;
+      executedAt: string | null;
+      successCount: number;
+      failedCount: number;
+    }>;
+  };
   ownership: {
     uniqueOwners: number;
     unknownOwnerFiles: number;
@@ -133,6 +157,8 @@ type BuildReportSummaryInput = {
   files: ReportFileRow[];
   sites: ReportSiteRow[];
   scans: ReportScanRow[];
+  remediationActions?: ReportRemediationActionRow[];
+  remediationDryRunTotal?: number;
   generatedAt?: string;
 };
 
@@ -343,6 +369,8 @@ export function buildReportSummary({
   files,
   sites,
   scans,
+  remediationActions = [],
+  remediationDryRunTotal,
   generatedAt = new Date().toISOString(),
 }: BuildReportSummaryInput): ReportSummary {
   const latestScan = scans[0];
@@ -437,6 +465,13 @@ export function buildReportSummary({
     .sort((a, b) => (b.size_bytes || 0) - (a.size_bytes || 0) || (b.risk_score || 0) - (a.risk_score || 0))
     .slice(0, 5)
     .map(toFileSample);
+  const dryRunActions = remediationActions
+    .filter((action) => action.metadata?.dry_run === true)
+    .sort((a, b) => {
+      const aTime = new Date(a.executed_at || a.completed_at || 0).getTime();
+      const bTime = new Date(b.executed_at || b.completed_at || 0).getTime();
+      return bTime - aTime;
+    });
 
   return {
     tenantId,
@@ -488,6 +523,18 @@ export function buildReportSummary({
     },
     staleContentReview: {
       topFiles: topStaleFiles,
+    },
+    remediationDryRun: {
+      totalDryRuns: remediationDryRunTotal ?? dryRunActions.length,
+      recentDryRuns: dryRunActions.slice(0, 5).map((action) => ({
+        id: action.id,
+        actionType: action.action_type,
+        fileCount: action.file_count || 0,
+        status: action.status || 'unknown',
+        executedAt: action.executed_at || action.completed_at || null,
+        successCount: action.success_count || 0,
+        failedCount: action.failed_count || 0,
+      })),
     },
     ownership: {
       uniqueOwners,

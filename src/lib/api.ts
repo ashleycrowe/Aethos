@@ -149,6 +149,18 @@ export interface ReportSummaryResponse {
         externalUserCount: number;
       }>;
     };
+    remediationDryRun: {
+      totalDryRuns: number;
+      recentDryRuns: Array<{
+        id: string;
+        actionType: string;
+        fileCount: number;
+        status: string;
+        executedAt: string | null;
+        successCount: number;
+        failedCount: number;
+      }>;
+    };
     ownership: {
       uniqueOwners: number;
       unknownOwnerFiles: number;

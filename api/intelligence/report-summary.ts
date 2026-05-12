@@ -7,7 +7,13 @@
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { requireApiContext, sendApiError, supabase } from '../_lib/apiAuth.js';
-import { buildReportSummary, type ReportFileRow, type ReportScanRow, type ReportSiteRow } from './reportSummaryCore.js';
+import {
+  buildReportSummary,
+  type ReportFileRow,
+  type ReportRemediationActionRow,
+  type ReportScanRow,
+  type ReportSiteRow,
+} from './reportSummaryCore.js';
 
 async function fetchFiles(tenantId: string): Promise<ReportFileRow[]> {
   const pageSize = 1000;
@@ -56,7 +62,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const { tenantId } = context;
 
-    const [{ data: sites, error: sitesError }, { data: scans, error: scansError }, files] = await Promise.all([
+    const [
+      { data: sites, error: sitesError },
+      { data: scans, error: scansError },
+      { data: remediationActions, error: remediationError, count: remediationDryRunCount },
+      files,
+    ] = await Promise.all([
       supabase
         .from('sites')
         .select('id, provider_type')
@@ -67,17 +78,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .eq('tenant_id', tenantId)
         .order('started_at', { ascending: false })
         .limit(2),
+      supabase
+        .from('remediation_actions')
+        .select('id,action_type,file_count,status,executed_at,completed_at,success_count,failed_count,metadata', { count: 'exact' })
+        .eq('tenant_id', tenantId)
+        .contains('metadata', { dry_run: true })
+        .order('executed_at', { ascending: false })
+        .limit(5),
       fetchFiles(tenantId),
     ]);
 
     if (sitesError) throw sitesError;
     if (scansError) throw scansError;
+    if (remediationError) throw remediationError;
 
     const summary = buildReportSummary({
       tenantId,
       files,
       sites: (sites || []) as ReportSiteRow[],
       scans: (scans || []) as ReportScanRow[],
+      remediationActions: (remediationActions || []) as ReportRemediationActionRow[],
+      remediationDryRunTotal: remediationDryRunCount ?? undefined,
     });
 
     res.status(200).json({
