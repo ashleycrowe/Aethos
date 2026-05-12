@@ -98,6 +98,25 @@ Known follow-up from the latest audit:
 
 ---
 
+## Active Workstream - Operational Intelligence And Discovery Reports
+
+See `docs/OPERATIONAL_INTELLIGENCE_DEVELOPMENT_QUEUE.md` for the detailed implementation queue, report API shape, smoke workflows, and product-decision prompts.
+
+- [x] Build `POST /api/intelligence/report-summary` from `files`, `sites`, and `discovery_scans`.
+- [x] Replace Operational Intelligence overview cards with live report-summary data.
+- [x] Add `Tenant Health Score`, inverse `tenantExposureIndex`, top score drivers, and trend deltas to the report summary.
+- [x] Add data maturity floors: `not_enough_data` until a completed scan has at least 50 indexed files and 3 indexed sites.
+- [ ] Add no-data `Path to Value` checklist for connected tenants with little or no content.
+- [ ] Add focused report cards: Discovery Summary, Exposure Review, Stale Content Review, Metadata Quality, Ownership & Offboarding Risk, Workspace Opportunities, Remediation Dry Run.
+- [x] Promote V1 identity scope as Ownership & Offboarding Risk, not the full prototype Identity Engine, using the 40/25/20/10/5 Owner Liability Score model.
+- [x] Add V1 risk-driver library: Unsecured External Shares, Unmanaged Knowledge Gaps, Critical Knowledge Exposure, Accumulated Stale Burden, High OneDrive Concentration.
+- [x] Add manual admin action exports: copy issue list, CSV, and dry-run-first PowerShell/Graph helper.
+- [ ] Add V1.5 identity enrichment spike for Entra active/disabled/departed owner status.
+- [ ] Add smoke tests for demo route, live empty tenant, live first discovery, ownership/offboarding risk, and V1.5 content intelligence.
+- [ ] Keep mock `ReportingCenterV1` hidden from Live Mode until it is live-backed.
+
+---
+
 ## Active Workstream - Workspace V1
 
 - [ ] Rename or clarify `Nexus` as the Workspace area in V1 navigation/copy.

@@ -7,7 +7,7 @@
 
 type Provider = 'M365' | 'SharePoint' | 'Teams' | 'OneDrive' | 'Exchange';
 type Risk = 'high' | 'medium' | 'low';
-type IssueType = 'external_share' | 'stale' | 'orphaned' | 'waste';
+type IssueType = 'external_share' | 'stale' | 'orphaned' | 'waste' | 'missing_owner' | 'high_risk' | 'onedrive_silo';
 type FileType = 'file' | 'site' | 'channel' | 'folder';
 
 export interface RemediationItem {

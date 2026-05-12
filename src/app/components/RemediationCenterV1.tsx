@@ -37,7 +37,9 @@ import {
   Unlock,
   RotateCcw,
   Download,
-  Loader2
+  Loader2,
+  ClipboardCopy,
+  FileCode2
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useVersion, useFeature } from '../context/VersionContext';
@@ -49,6 +51,7 @@ import { useAuth } from '@/app/context/AuthContext';
 
 type RemediationAction = 'archive' | 'delete' | 'revoke_links' | null;
 type ViewMode = 'pending' | 'history';
+type IssueFilter = 'all' | 'external_share' | 'stale' | 'orphaned' | 'waste' | 'missing_owner' | 'high_risk' | 'onedrive_silo';
 
 type SearchFileResult = {
   id: string;
@@ -88,15 +91,86 @@ function formatRelativeDate(value?: string | null) {
   return `${months}mo ago`;
 }
 
+function escapeCsvValue(value: unknown): string {
+  const text = String(value ?? '');
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
+function buildIssueRows(items: RemediationItem[]) {
+  return items.map((item) => ({
+    id: item.id,
+    name: item.name,
+    provider: item.provider,
+    risk: item.risk,
+    issue: item.issue,
+    owner: item.owner,
+    size: item.size,
+    lastModified: item.lastModified,
+    externalUsers: item.externalUsers || 0,
+  }));
+}
+
+function buildIssueListText(items: RemediationItem[], getIssueLabel: (issue: string) => string): string {
+  if (items.length === 0) return 'No remediation candidates selected.';
+
+  const lines = items.map((item, index) => {
+    return `${index + 1}. ${item.name} | ${getIssueLabel(item.issue)} | ${item.risk.toUpperCase()} | ${item.provider} | Owner: ${item.owner} | ID: ${item.id}`;
+  });
+
+  return [
+    'Aethos remediation review list',
+    `Generated: ${new Date().toISOString()}`,
+    `Items: ${items.length}`,
+    '',
+    ...lines,
+  ].join('\n');
+}
+
+function buildCsv(items: RemediationItem[]): string {
+  const headers = ['id', 'name', 'provider', 'risk', 'issue', 'owner', 'size', 'lastModified', 'externalUsers'];
+  const rows = buildIssueRows(items).map((row) => headers.map((header) => escapeCsvValue(row[header as keyof typeof row])).join(','));
+  return [headers.join(','), ...rows].join('\n');
+}
+
+function buildDryRunPowerShell(items: RemediationItem[], getIssueLabel: (issue: string) => string): string {
+  const inventory = items.map((item) => ({
+    id: item.id,
+    name: item.name,
+    provider: item.provider,
+    risk: item.risk,
+    issue: getIssueLabel(item.issue),
+    owner: item.owner,
+  }));
+
+  return [
+    '# Aethos dry-run review helper',
+    '# This script performs no destructive action. It only prints the selected review inventory.',
+    '# Review each item in Microsoft 365 before taking archive/delete/revoke actions.',
+    '',
+    '$AethosReviewItems = @(',
+    ...inventory.map((item) => `  [pscustomobject]@{ Id = '${item.id}'; Name = '${item.name.replace(/'/g, "''")}'; Provider = '${item.provider}'; Risk = '${item.risk}'; Issue = '${item.issue}'; Owner = '${item.owner.replace(/'/g, "''")}' }`),
+    ')',
+    '',
+    '$AethosReviewItems | Format-Table -AutoSize',
+    'Write-Host "Dry-run only: no Microsoft 365 changes were performed."',
+  ].join('\n');
+}
+
 function toRemediationItem(file: SearchFileResult): RemediationItem {
   const riskScore = file.risk_score || 0;
   const issue: RemediationItem['issue'] = file.has_external_share
     ? 'external_share'
-    : file.is_orphaned
-      ? 'orphaned'
-      : file.is_stale
-        ? 'stale'
-        : 'waste';
+    : !file.owner_email && !file.owner_name
+      ? 'missing_owner'
+      : riskScore >= 70
+        ? 'high_risk'
+        : file.is_stale
+          ? 'stale'
+          : file.is_orphaned
+            ? 'orphaned'
+            : file.provider_type === 'onedrive'
+              ? 'onedrive_silo'
+              : 'waste';
 
   return {
     id: file.id,
@@ -131,12 +205,22 @@ export const RemediationCenter: React.FC = () => {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterRisk, setFilterRisk] = useState<'all' | 'high' | 'medium' | 'low'>('all');
-  const [filterIssue, setFilterIssue] = useState<'all' | 'external_share' | 'stale' | 'orphaned' | 'waste'>('all');
+  const [filterIssue, setFilterIssue] = useState<IssueFilter>('all');
 
   const [items, setItems] = useState<RemediationItem[]>(() => generateRemediationItems(5));
   const [completedActions, setCompletedActions] = useState<any[]>([]);
   const [isLoadingItems, setIsLoadingItems] = useState(false);
   const [itemsError, setItemsError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const issue = new URLSearchParams(window.location.search).get('issue');
+      const allowedIssues: IssueFilter[] = ['external_share', 'stale', 'orphaned', 'waste', 'missing_owner', 'high_risk', 'onedrive_silo'];
+      if (allowedIssues.includes(issue as IssueFilter)) {
+        setFilterIssue(issue as IssueFilter);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (isDemoMode) {
@@ -151,9 +235,18 @@ export const RemediationCenter: React.FC = () => {
         setIsLoadingItems(true);
         setItemsError(null);
         const token = await getAccessToken();
+        const issueFilters: Record<Exclude<IssueFilter, 'all'>, Record<string, unknown>> = {
+          external_share: { issue: 'external_share' },
+          stale: { issue: 'stale' },
+          orphaned: { issue: 'orphaned' },
+          waste: { issue: 'waste' },
+          missing_owner: { issue: 'missing_owner' },
+          high_risk: { issue: 'high_risk' },
+          onedrive_silo: { issue: 'onedrive_silo' },
+        };
         const response = await searchFiles<SearchFileResult>({
           tenantId: tenantId || '',
-          filters: { minRiskScore: 1 },
+          filters: filterIssue === 'all' ? { minRiskScore: 1 } : issueFilters[filterIssue],
           sortBy: 'risk',
           sortOrder: 'desc',
           pageSize: 25,
@@ -175,7 +268,7 @@ export const RemediationCenter: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [isDemoMode, tenantId]);
+  }, [filterIssue, isDemoMode, tenantId]);
 
   // Filter items
   const filteredItems = items.filter(item => {
@@ -188,6 +281,7 @@ export const RemediationCenter: React.FC = () => {
 
   const selectedCount = selectedItems.size;
   const allSelected = filteredItems.length > 0 && filteredItems.every(item => selectedItems.has(item.id));
+  const selectedItemsList = items.filter(i => selectedItems.has(i.id));
 
   const toggleSelectAll = () => {
     if (allSelected) {
@@ -216,6 +310,49 @@ export const RemediationCenter: React.FC = () => {
     setShowConfirmDialog(true);
   };
 
+  const copyIssueList = async (targetItems = selectedItemsList) => {
+    try {
+      await navigator.clipboard.writeText(buildIssueListText(targetItems, getIssueLabel));
+      toast.success(`Copied ${targetItems.length} issue${targetItems.length === 1 ? '' : 's'} to clipboard`);
+    } catch {
+      toast.error('Unable to copy issue list');
+    }
+  };
+
+  const copyDryRunScript = async () => {
+    if (selectedItemsList.length === 0) {
+      toast.error('Select items before copying a dry-run script');
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(buildDryRunPowerShell(selectedItemsList, getIssueLabel));
+      toast.success('Copied dry-run PowerShell review helper', {
+        description: 'The helper prints review inventory only. It does not change Microsoft 365.',
+      });
+    } catch {
+      toast.error('Unable to copy dry-run script');
+    }
+  };
+
+  const exportCsv = (targetItems = selectedItemsList) => {
+    if (targetItems.length === 0) {
+      toast.error('No remediation candidates to export');
+      return;
+    }
+
+    const blob = new Blob([buildCsv(targetItems)], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `aethos-remediation-${filterIssue}-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${targetItems.length} remediation candidate${targetItems.length === 1 ? '' : 's'}`);
+  };
+
   const executeAction = async () => {
     const actionLabels = {
       archive: 'Archived',
@@ -223,7 +360,6 @@ export const RemediationCenter: React.FC = () => {
       revoke_links: 'Links Revoked',
     };
 
-    const selectedItemsList = items.filter(i => selectedItems.has(i.id));
     if (!pendingAction) return;
 
     if (!isDemoMode) {
@@ -300,6 +436,9 @@ export const RemediationCenter: React.FC = () => {
       case 'external_share': return 'External Share';
       case 'stale': return 'Stale Content';
       case 'orphaned': return 'Orphaned';
+      case 'missing_owner': return 'Missing Owner';
+      case 'high_risk': return 'High Risk';
+      case 'onedrive_silo': return 'OneDrive Silo';
       case 'waste': return 'Storage Waste';
       default: return issue;
     }
@@ -330,6 +469,11 @@ export const RemediationCenter: React.FC = () => {
             ? 'Execute basic remediation protocols: archive, delete, and revoke external access.'
             : 'Advanced remediation workflows with approval chains, simulation mode, and multi-provider support.'}
         </p>
+        {!isDemoMode && (
+          <div className="w-fit rounded-full border border-[#00F0FF]/20 bg-[#00F0FF]/10 px-3 py-1 text-[9px] font-black uppercase tracking-widest text-[#00F0FF]">
+            Dry-run first: no destructive action taken by default
+          </div>
+        )}
       </div>
 
       {/* View Mode Tabs */}
@@ -407,10 +551,33 @@ export const RemediationCenter: React.FC = () => {
             >
               <option value="all">All Issues</option>
               <option value="external_share">External Shares</option>
+              <option value="missing_owner">Missing Owners</option>
+              <option value="high_risk">High Risk</option>
               <option value="stale">Stale Content</option>
+              <option value="onedrive_silo">OneDrive Silos</option>
               <option value="orphaned">Orphaned</option>
               <option value="waste">Storage Waste</option>
             </select>
+
+            <button
+              type="button"
+              onClick={() => copyIssueList(filteredItems)}
+              disabled={filteredItems.length === 0}
+              className="min-h-[44px] px-4 py-3 rounded-xl border border-white/10 bg-white/5 text-xs font-black uppercase tracking-widest text-slate-300 transition-all hover:border-[#00F0FF]/40 hover:text-white disabled:cursor-not-allowed disabled:opacity-40 flex items-center gap-2"
+            >
+              <ClipboardCopy className="w-4 h-4" />
+              Copy Filtered
+            </button>
+
+            <button
+              type="button"
+              onClick={() => exportCsv(filteredItems)}
+              disabled={filteredItems.length === 0}
+              className="min-h-[44px] px-4 py-3 rounded-xl border border-white/10 bg-white/5 text-xs font-black uppercase tracking-widest text-slate-300 transition-all hover:border-[#00F0FF]/40 hover:text-white disabled:cursor-not-allowed disabled:opacity-40 flex items-center gap-2"
+            >
+              <Download className="w-4 h-4" />
+              CSV
+            </button>
           </div>
 
           {/* Bulk Actions Bar */}
@@ -423,8 +590,8 @@ export const RemediationCenter: React.FC = () => {
                 className="sticky top-0 z-10"
               >
                 <GlassCard className="p-4 border-[#00F0FF]/30 bg-[#00F0FF]/5">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
+                  <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+                    <div className="flex flex-wrap items-center gap-4">
                       <div className="flex items-center gap-2">
                         <CheckCircle2 className="w-5 h-5 text-[#00F0FF]" />
                         <span className={`text-sm font-black ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
@@ -439,7 +606,28 @@ export const RemediationCenter: React.FC = () => {
                       </button>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <button
+                        onClick={() => copyIssueList()}
+                        className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 transition-all flex items-center gap-2 text-sm font-black uppercase tracking-tight"
+                      >
+                        <ClipboardCopy className="w-4 h-4" />
+                        Copy
+                      </button>
+                      <button
+                        onClick={() => exportCsv()}
+                        className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 transition-all flex items-center gap-2 text-sm font-black uppercase tracking-tight"
+                      >
+                        <Download className="w-4 h-4" />
+                        CSV
+                      </button>
+                      <button
+                        onClick={copyDryRunScript}
+                        className="px-4 py-2 rounded-xl bg-[#00F0FF]/10 border border-[#00F0FF]/30 text-[#00F0FF] hover:bg-[#00F0FF]/20 transition-all flex items-center gap-2 text-sm font-black uppercase tracking-tight"
+                      >
+                        <FileCode2 className="w-4 h-4" />
+                        Dry-Run Script
+                      </button>
                       <button
                         onClick={() => initiateAction('archive')}
                         className="px-4 py-2 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/20 transition-all flex items-center gap-2 text-sm font-black uppercase tracking-tight"

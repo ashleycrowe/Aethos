@@ -76,6 +76,84 @@ export interface IntelligenceMetricsResponse {
   }>;
 }
 
+export interface ReportSummaryResponse {
+  success: boolean;
+  summary: {
+    tenantId: string;
+    generatedAt: string;
+    healthScore: {
+      score: number | null;
+      label: 'not_enough_data' | 'healthy' | 'needs_review' | 'high_risk';
+      dataMaturity: 'none' | 'low' | 'medium' | 'large';
+      drivers: string[];
+    };
+    globalRisk: {
+      tenantExposureIndex: number | null;
+      riskRating: 'Not Enough Data' | 'Low' | 'Medium' | 'High' | 'Critical';
+      primaryRiskFactor: string | null;
+    };
+    trend: {
+      previousScanId: string | null;
+      healthScoreDelta: number | null;
+      externalShareDelta: number | null;
+      staleFileDelta: number | null;
+      missingOwnerDelta: number | null;
+    };
+    lastScan: {
+      id: string | null;
+      status: 'none' | 'running' | 'completed' | 'partial' | 'failed';
+      completedAt: string | null;
+      filesDiscovered: number;
+      sitesDiscovered: number;
+      newFiles: number;
+      errorCount: number;
+    };
+    discovery: {
+      totalFiles: number;
+      totalSites: number;
+      sharePointFiles: number;
+      oneDriveFiles: number;
+      teamsFiles: number;
+      totalStorageBytes: number;
+    };
+    risk: {
+      staleFiles: number;
+      staleBytes: number;
+      externallySharedFiles: number;
+      highRiskFiles: number;
+      missingOwnerFiles: number;
+    };
+    ownership: {
+      uniqueOwners: number;
+      unknownOwnerFiles: number;
+      topRiskOwners: Array<{
+        ownerEmail: string | null;
+        ownerName: string | null;
+        fileCount: number;
+        highRiskCount: number;
+        externalShareCount: number;
+        staleCount: number;
+        missingOwnerCount: number;
+        oneDriveFileCount: number;
+        ownerLiabilityScore: number;
+        primaryRiskFactor: string;
+      }>;
+    };
+    workspaceOpportunities: Array<{
+      label: string;
+      reason: string;
+      fileCount: number;
+      suggestedTags: string[];
+    }>;
+    riskDrivers: Array<{
+      label: string;
+      category: 'external' | 'ownership' | 'high_risk' | 'stale' | 'storage';
+      value: number;
+      filterTarget: string;
+    }>;
+  };
+}
+
 export interface ExecuteRemediationRequest {
   action: 'archive' | 'delete' | 'revoke_links';
   fileIds: string[];
@@ -247,6 +325,21 @@ export async function getIntelligenceMetrics({
 } = {}): Promise<IntelligenceMetricsResponse> {
   return request<IntelligenceMetricsResponse>(
     '/intelligence/metrics',
+    {
+      method: 'POST',
+      body: JSON.stringify({}),
+    },
+    accessToken
+  );
+}
+
+export async function getReportSummary({
+  accessToken,
+}: {
+  accessToken?: string | null;
+} = {}): Promise<ReportSummaryResponse> {
+  return request<ReportSummaryResponse>(
+    '/intelligence/report-summary',
     {
       method: 'POST',
       body: JSON.stringify({}),

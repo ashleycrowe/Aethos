@@ -219,6 +219,24 @@ const Layout: React.FC = () => {
     }
   }, [version, activeTab]);
 
+  useEffect(() => {
+    const handleNavigate = (event: Event) => {
+      const detail = (event as CustomEvent<{ tab?: string; issue?: string }>).detail;
+      if (!detail?.tab) return;
+
+      if (detail.issue && typeof window !== 'undefined') {
+        const url = new URL(window.location.href);
+        url.searchParams.set('issue', detail.issue);
+        window.history.replaceState({}, '', url.toString());
+      }
+
+      setActiveTab(detail.tab);
+    };
+
+    window.addEventListener('aethos:navigate', handleNavigate);
+    return () => window.removeEventListener('aethos:navigate', handleNavigate);
+  }, []);
+
   const renderContent = () => {
     if (!V1_CORE_TABS.has(activeTab)) {
       return <ComingSoonView tab={activeTab} />;

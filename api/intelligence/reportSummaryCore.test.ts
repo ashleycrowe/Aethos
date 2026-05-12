@@ -1,0 +1,83 @@
+import { describe, expect, it } from 'vitest';
+import { buildReportSummary, type ReportFileRow } from './reportSummaryCore';
+
+const baseFile = (overrides: Partial<ReportFileRow>): ReportFileRow => ({
+  id: crypto.randomUUID(),
+  provider_type: 'sharepoint',
+  name: 'Policy.docx',
+  path: '/sites/ops/Policy.docx',
+  size_bytes: 1024,
+  modified_at: '2026-01-01T00:00:00.000Z',
+  owner_email: 'owner@example.com',
+  owner_name: 'Owner',
+  is_stale: false,
+  is_orphaned: false,
+  has_external_share: false,
+  external_user_count: 0,
+  risk_score: 0,
+  intelligence_score: 50,
+  ai_tags: ['policy'],
+  ai_category: 'operations',
+  ...overrides,
+});
+
+describe('buildReportSummary', () => {
+  it('suppresses tenant health score for low-maturity tenants', () => {
+    const summary = buildReportSummary({
+      tenantId: 'tenant-1',
+      files: [baseFile({})],
+      sites: [{ id: 'site-1', provider_type: 'sharepoint' }],
+      scans: [],
+      generatedAt: '2026-05-12T00:00:00.000Z',
+    });
+
+    expect(summary.healthScore.score).toBeNull();
+    expect(summary.healthScore.label).toBe('not_enough_data');
+    expect(summary.healthScore.dataMaturity).toBe('low');
+    expect(summary.globalRisk.riskRating).toBe('Not Enough Data');
+  });
+
+  it('prioritizes external shares and owner liability for messy tenants', () => {
+    const files = Array.from({ length: 60 }, (_, index) =>
+      baseFile({
+        id: `file-${index}`,
+        provider_type: index < 40 ? 'onedrive' : 'sharepoint',
+        owner_email: index < 30 ? 'alex@example.com' : index < 45 ? null : 'clean@example.com',
+        owner_name: index < 30 ? 'Alex' : index < 45 ? null : 'Clean Owner',
+        has_external_share: index < 20,
+        risk_score: index < 12 ? 85 : 20,
+        is_stale: index >= 30 && index < 55,
+      })
+    );
+
+    const summary = buildReportSummary({
+      tenantId: 'tenant-1',
+      files,
+      sites: [
+        { id: 'site-1', provider_type: 'sharepoint' },
+        { id: 'site-2', provider_type: 'teams' },
+        { id: 'site-3', provider_type: 'sharepoint' },
+      ],
+      scans: [
+        {
+          id: 'scan-1',
+          status: 'completed',
+          completed_at: '2026-05-12T00:00:00.000Z',
+          started_at: '2026-05-12T00:00:00.000Z',
+          files_discovered: 60,
+          sites_discovered: 3,
+          new_files: 60,
+          errors: [],
+        },
+      ],
+      generatedAt: '2026-05-12T00:00:00.000Z',
+    });
+
+    expect(summary.healthScore.score).not.toBeNull();
+    expect(summary.globalRisk.tenantExposureIndex).not.toBeNull();
+    expect(summary.healthScore.drivers[0]).toBe('Unsecured External Shares');
+    expect(summary.ownership.topRiskOwners[0].ownerLiabilityScore).toBeGreaterThan(0);
+    expect(summary.risk.externallySharedFiles).toBe(20);
+    expect(summary.risk.missingOwnerFiles).toBe(15);
+  });
+});

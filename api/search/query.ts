@@ -126,6 +126,32 @@ export default async function handler(
       dbQuery = dbQuery.eq('file_extension', filters.fileExtension.toLowerCase());
     }
 
+    if (filters.issue) {
+      switch (filters.issue) {
+        case 'external_share':
+          dbQuery = dbQuery.eq('has_external_share', true);
+          break;
+        case 'missing_owner':
+          dbQuery = dbQuery.is('owner_email', null).is('owner_name', null);
+          break;
+        case 'high_risk':
+          dbQuery = dbQuery.gte('risk_score', 70);
+          break;
+        case 'stale':
+          dbQuery = dbQuery.eq('is_stale', true);
+          break;
+        case 'onedrive_silo':
+          dbQuery = dbQuery.eq('provider_type', 'onedrive');
+          break;
+        case 'orphaned':
+          dbQuery = dbQuery.eq('is_orphaned', true);
+          break;
+        case 'waste':
+          dbQuery = dbQuery.or('is_stale.eq.true,is_orphaned.eq.true');
+          break;
+      }
+    }
+
     // Apply sorting
     switch (sortBy) {
       case 'name':

@@ -14,7 +14,8 @@ import {
   FileText,
   Activity,
   Play,
-  Loader2
+  Loader2,
+  ShieldAlert
 } from 'lucide-react';
 import { motion as Motion, AnimatePresence } from 'motion/react';
 import { useTheme } from '@/app/context/ThemeContext';
@@ -25,10 +26,35 @@ import { MetadataIntelligenceDashboard } from '@/app/components/MetadataIntellig
 import { IdentityEngine } from '@/app/components/IdentityEngine';
 import { DiscoveryScanSimulation } from '@/app/components/DiscoveryScanSimulation';
 import { toast } from 'sonner';
-import { getIntelligenceMetrics, type IntelligenceMetricsResponse } from '@/lib/api';
+import { getReportSummary, type ReportSummaryResponse } from '@/lib/api';
 import { useAuth } from '@/app/context/AuthContext';
 
 type IntelligenceView = 'dashboard' | 'stream' | 'metadata' | 'identity';
+
+function formatBytes(bytes?: number | null) {
+  if (!bytes) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  let value = bytes;
+  let unitIndex = 0;
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex += 1;
+  }
+  return `${value.toFixed(value >= 10 || unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
+}
+
+function getScoreColor(score: number) {
+  if (score >= 75) return '#FF5733';
+  if (score >= 45) return '#F59E0B';
+  return '#10B981';
+}
+
+function openRemediation(issue?: string) {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent('aethos:navigate', {
+    detail: { tab: 'archival', issue },
+  }));
+}
 
 export const IntelligenceDashboard = () => {
   const { isDaylight } = useTheme();
@@ -131,84 +157,87 @@ const OverviewDashboard = () => {
   const hasSlack = useFeature('slackIntegration');
   const hasGoogle = useFeature('googleWorkspaceShadow');
   const hasBox = useFeature('boxShadowDiscovery');
-  const [liveMetrics, setLiveMetrics] = useState<IntelligenceMetricsResponse | null>(null);
-  const [isLoadingMetrics, setIsLoadingMetrics] = useState(false);
-  const [metricsError, setMetricsError] = useState<string | null>(null);
+  const [reportSummary, setReportSummary] = useState<ReportSummaryResponse['summary'] | null>(null);
+  const [isLoadingSummary, setIsLoadingSummary] = useState(false);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isDemoMode) {
-      setLiveMetrics(null);
-      setMetricsError(null);
+      setReportSummary(null);
+      setSummaryError(null);
       return;
     }
 
     let cancelled = false;
-    const loadMetrics = async () => {
+    const loadSummary = async () => {
       try {
-        setIsLoadingMetrics(true);
-        setMetricsError(null);
-        const response = await getIntelligenceMetrics({ accessToken: await getAccessToken() });
-        if (!cancelled) setLiveMetrics(response);
+        setIsLoadingSummary(true);
+        setSummaryError(null);
+        const response = await getReportSummary({ accessToken: await getAccessToken() });
+        if (!cancelled) setReportSummary(response.summary);
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Unable to load live metrics';
-        if (!cancelled) setMetricsError(message);
+        const message = error instanceof Error ? error.message : 'Unable to load live report summary';
+        if (!cancelled) setSummaryError(message);
       } finally {
-        if (!cancelled) setIsLoadingMetrics(false);
+        if (!cancelled) setIsLoadingSummary(false);
       }
     };
 
-    void loadMetrics();
+    void loadSummary();
     return () => {
       cancelled = true;
     };
   }, [isDemoMode]);
 
-  const totalFiles = liveMetrics?.sourceQuality.totalFiles ?? 0;
-  const discoverableFiles = liveMetrics?.enrichmentStatus.filesNowDiscoverable ?? 0;
-  const intelligenceScore = liveMetrics?.intelligenceScore ?? 0;
+  const totalFiles = reportSummary?.discovery.totalFiles ?? 0;
+  const healthScore = reportSummary?.healthScore.score;
+  const healthLabel = reportSummary?.healthScore.label;
+  const healthDisplay = healthScore === null || healthScore === undefined ? 'Pending' : `${healthScore}/100`;
+  const maturity = reportSummary?.healthScore.dataMaturity ?? 'none';
+  const lastScanStatus = reportSummary?.lastScan.status ?? 'none';
 
   const metrics = [
     {
       id: 'intelligence-score',
-      label: 'Intelligence Score',
-      value: isDemoMode ? '92.4%' : `${intelligenceScore}%`,
-      change: isDemoMode ? '+4.2%' : isLoadingMetrics ? 'Loading' : 'Live',
+      label: isDemoMode ? 'Intelligence Score' : 'Tenant Health',
+      value: isDemoMode ? '92.4%' : healthDisplay,
+      change: isDemoMode ? '+4.2%' : isLoadingSummary ? 'Loading' : reportSummary?.globalRisk.riskRating ?? 'Live',
       trend: 'up',
       icon: Sparkles,
       color: '#00F0FF',
-      description: 'Overall metadata quality & enrichment'
+      description: isDemoMode ? 'Overall metadata quality & enrichment' : 'Global health from live discovery data'
     },
     {
       id: 'waste-recovery',
       label: isDemoMode ? 'Waste Recovery' : 'Indexed Files',
       value: isDemoMode ? '2.4 TB' : totalFiles.toLocaleString(),
-      change: isDemoMode ? '+840 GB' : `${discoverableFiles} searchable`,
+      change: isDemoMode ? '+840 GB' : `${reportSummary?.discovery.totalSites ?? 0} sites`,
       trend: 'up',
       icon: TrendingUp,
       color: '#10B981',
-      description: 'Dead capital identified this month'
+      description: isDemoMode ? 'Dead capital identified this month' : 'Files indexed from Microsoft 365'
     },
     {
       id: 'identity-health',
-      label: isDemoMode ? 'Identity Health' : 'Metadata Quality',
+      label: isDemoMode ? 'Identity Health' : 'Owner Liability',
       value: isDemoMode
         ? '98.1%'
-        : `${liveMetrics?.sourceQuality.filesWithMeaningfulNames ?? 0}/${totalFiles}`,
-      change: isDemoMode ? '+0.8%' : 'Live',
+        : `${reportSummary?.ownership.topRiskOwners[0]?.ownerLiabilityScore ?? 0}/100`,
+      change: isDemoMode ? '+0.8%' : `${reportSummary?.ownership.unknownOwnerFiles ?? 0} unowned`,
       trend: 'up',
       icon: Fingerprint,
       color: '#A855F7',
-      description: 'Reconciliation accuracy across providers'
+      description: isDemoMode ? 'Reconciliation accuracy across providers' : 'Top owner/offboarding risk score'
     },
     {
       id: 'sync-status',
-      label: 'Sync Status',
-      value: version === 'V1' || version === 'V1.5' ? '1/1' : '4/4',
-      change: 'All Active',
+      label: isDemoMode ? 'Sync Status' : 'Last Scan',
+      value: isDemoMode ? (version === 'V1' || version === 'V1.5' ? '1/1' : '4/4') : lastScanStatus.toUpperCase(),
+      change: isDemoMode ? 'All Active' : `${reportSummary?.lastScan.errorCount ?? 0} errors`,
       trend: 'neutral',
       icon: Zap,
       color: '#F59E0B',
-      description: 'Universal adapters operational'
+      description: isDemoMode ? 'Universal adapters operational' : 'Most recent discovery scan status'
     },
   ];
 
@@ -219,21 +248,23 @@ const OverviewDashboard = () => {
     { id: 4, type: 'success', message: 'Workspace "Project Phoenix" created', time: '2h ago', icon: CheckCircle2 },
     { id: 5, type: 'info', message: 'Metadata quality improved to 92.4%', time: '3h ago', icon: Sparkles },
   ];
-  const liveActivity = liveMetrics
+  const liveActivity = reportSummary
     ? [
         {
           id: 1,
           type: 'info',
-          message: `${liveMetrics.sourceQuality.totalFiles.toLocaleString()} Microsoft files indexed`,
+          message: `${reportSummary.discovery.totalFiles.toLocaleString()} Microsoft files indexed`,
           time: 'Live tenant',
           icon: FileText,
         },
         {
           id: 2,
           type: 'info',
-          message: `${liveMetrics.enrichmentStatus.filesNowDiscoverable.toLocaleString()} files currently searchable`,
+          message: reportSummary.globalRisk.primaryRiskFactor
+            ? `Primary driver: ${reportSummary.globalRisk.primaryRiskFactor}`
+            : 'No health score yet. Expand discovery coverage to calculate one.',
           time: 'Live tenant',
-          icon: Database,
+          icon: AlertCircle,
         },
       ]
     : [];
@@ -244,9 +275,9 @@ const OverviewDashboard = () => {
   const allProviders = [
     {
       name: 'Microsoft 365',
-      status: isDemoMode ? 'active' : metricsError ? 'needs attention' : 'active',
+      status: isDemoMode ? 'active' : summaryError ? 'needs attention' : 'active',
       assets: isDemoMode ? '12.4K' : totalFiles.toLocaleString(),
-      lastSync: isDemoMode ? '2m ago' : liveMetrics ? 'Live metrics' : 'Not scanned',
+      lastSync: isDemoMode ? '2m ago' : reportSummary?.lastScan.completedAt ? 'Live discovery' : 'Not scanned',
       version: 'V1',
     },
     { name: 'Slack', status: 'active', assets: '8.2K', lastSync: '5m ago', version: 'V2', enabled: hasSlack },
@@ -261,7 +292,7 @@ const OverviewDashboard = () => {
       {/* Discovery Scan Simulation */}
       <DiscoveryScanSimulation />
 
-      {!isDemoMode && metricsError && (
+      {!isDemoMode && summaryError && (
         <GlassCard className="border-[#FF5733]/20 bg-[#FF5733]/5 p-5">
           <div className="flex items-start gap-3">
             <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-[#FF5733]" />
@@ -270,9 +301,53 @@ const OverviewDashboard = () => {
                 Live Intelligence Unavailable
               </h3>
               <p className="mt-2 text-sm text-slate-400">
-                {metricsError}. Run Microsoft Discovery from Admin or check API configuration.
+                {summaryError}. Run Microsoft Discovery from Admin or check API configuration.
               </p>
             </div>
+          </div>
+        </GlassCard>
+      )}
+
+      {!isDemoMode && reportSummary && (
+        <GlassCard className="p-5 md:p-8 border-[#00F0FF]/20 bg-[#00F0FF]/[0.03]">
+          <div className="grid gap-5 lg:grid-cols-[220px_1fr_auto] lg:items-center">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.35em] text-slate-500">
+                Data source: Live tenant
+              </p>
+              <p className={`mt-3 text-4xl font-black ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
+                {healthDisplay}
+              </p>
+              <p className="mt-1 text-xs font-black uppercase tracking-widest text-[#00F0FF]">
+                Tenant Health Score
+              </p>
+            </div>
+            <div>
+              <p className={`text-sm font-semibold ${isDaylight ? 'text-slate-700' : 'text-slate-200'}`}>
+                {healthLabel === 'not_enough_data'
+                  ? `Aethos is warming up. We have indexed ${totalFiles.toLocaleString()} files, but need at least 50 files and 3 sites to calculate a reliable Health Score.`
+                  : `Your score is mainly impacted by ${reportSummary.globalRisk.primaryRiskFactor}.`}
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {(reportSummary.healthScore.drivers.length > 0
+                  ? reportSummary.healthScore.drivers
+                  : ['Path to Value', `Maturity: ${maturity}`]
+                ).map((driver) => (
+                  <span
+                    key={driver}
+                    className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-400"
+                  >
+                    {driver}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <button
+              onClick={() => openRemediation(reportSummary.riskDrivers[0]?.filterTarget.split('issue=')[1])}
+              className="min-h-[44px] rounded-xl bg-white px-5 py-3 text-xs font-black uppercase tracking-[0.2em] text-[#0B0F19] transition hover:bg-[#00F0FF]"
+            >
+              {healthLabel === 'not_enough_data' ? 'Expand Discovery' : 'View Signal Queue'}
+            </button>
           </div>
         </GlassCard>
       )}
@@ -312,6 +387,146 @@ const OverviewDashboard = () => {
         ))}
       </div>
 
+      {!isDemoMode && reportSummary && (
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8">
+          <GlassCard className="xl:col-span-2 p-5 md:p-8">
+            <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.35em] text-slate-500">
+                  Ownership & Offboarding Risk
+                </p>
+                <h3 className={`mt-2 text-xl font-black uppercase tracking-tight ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
+                  Owner Liability Queue
+                </h3>
+              </div>
+              <span className="w-fit rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[9px] font-black uppercase tracking-widest text-emerald-400">
+                Data source: Live tenant
+              </span>
+            </div>
+
+            {reportSummary.ownership.topRiskOwners.length > 0 ? (
+              <div className="space-y-3">
+                {reportSummary.ownership.topRiskOwners.slice(0, 5).map((owner, index) => {
+                  const color = getScoreColor(owner.ownerLiabilityScore);
+                  return (
+                    <div
+                      key={owner.ownerEmail || owner.ownerName || index}
+                      className={`rounded-xl border p-4 ${isDaylight ? 'border-slate-200 bg-slate-50' : 'border-white/10 bg-white/[0.03]'}`}
+                    >
+                      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span
+                              className="rounded-lg px-2 py-1 text-[9px] font-black uppercase tracking-widest"
+                              style={{ backgroundColor: `${color}18`, color }}
+                            >
+                              OLS {owner.ownerLiabilityScore}/100
+                            </span>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                              {owner.primaryRiskFactor}
+                            </span>
+                          </div>
+                          <p className={`mt-3 truncate text-sm font-black ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
+                            {owner.ownerName || owner.ownerEmail || 'Unknown Owner'}
+                          </p>
+                          <p className="mt-1 truncate text-xs text-slate-500">
+                            {owner.ownerEmail || 'No owner metadata available'}
+                          </p>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 md:min-w-[420px]">
+                          {[
+                            ['Files', owner.fileCount],
+                            ['External', owner.externalShareCount],
+                            ['High Risk', owner.highRiskCount],
+                            ['Stale', owner.staleCount],
+                          ].map(([label, value]) => (
+                            <div key={label} className="rounded-lg bg-white/[0.04] p-3">
+                              <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">{label}</p>
+                              <p className={`mt-1 text-lg font-black ${isDaylight ? 'text-slate-900' : 'text-white'}`}>{value}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="rounded-xl border border-white/10 bg-white/[0.03] p-6 text-sm text-slate-400">
+                No owner groups are available yet. Run Discovery against SharePoint, Teams, and OneDrive to populate owner liability.
+              </div>
+            )}
+          </GlassCard>
+
+          <GlassCard className="p-5 md:p-8">
+            <div className="mb-6 flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.35em] text-slate-500">
+                  Discovery Reports
+                </p>
+                <h3 className={`mt-2 text-xl font-black uppercase tracking-tight ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
+                  Risk Snapshot
+                </h3>
+              </div>
+              <ShieldAlert className="h-5 w-5 text-[#FF5733]" />
+            </div>
+
+            <div className="space-y-3">
+              {[
+                {
+                  label: 'External Shares',
+                  value: reportSummary.risk.externallySharedFiles,
+                  helper: 'Exposure Review',
+                  color: '#FF5733',
+                  issue: 'external_share',
+                },
+                {
+                  label: 'Missing Owners',
+                  value: reportSummary.risk.missingOwnerFiles,
+                  helper: 'Ownership Review',
+                  color: '#A855F7',
+                  issue: 'missing_owner',
+                },
+                {
+                  label: 'High-Risk Files',
+                  value: reportSummary.risk.highRiskFiles,
+                  helper: 'Critical Knowledge Exposure',
+                  color: '#F59E0B',
+                  issue: 'high_risk',
+                },
+                {
+                  label: 'Stale Storage',
+                  value: formatBytes(reportSummary.risk.staleBytes),
+                  helper: `${reportSummary.risk.staleFiles.toLocaleString()} stale files`,
+                  color: '#10B981',
+                  issue: 'stale',
+                },
+              ].map((item) => (
+                <button
+                  key={item.label}
+                  onClick={() => openRemediation(item.issue)}
+                  className={`w-full rounded-xl border p-4 text-left transition hover:border-[#00F0FF]/40 ${isDaylight ? 'border-slate-200 bg-slate-50' : 'border-white/10 bg-white/[0.03]'}`}
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">{item.label}</p>
+                      <p className={`mt-1 text-2xl font-black ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
+                        {typeof item.value === 'number' ? item.value.toLocaleString() : item.value}
+                      </p>
+                    </div>
+                    <div className="h-10 w-1 rounded-full" style={{ backgroundColor: item.color }} />
+                  </div>
+                  <p className="mt-2 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                    {item.helper}
+                  </p>
+                </button>
+              ))}
+            </div>
+          </GlassCard>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8">
         {/* Recent Activity */}
         <div className="xl:col-span-2">
@@ -350,7 +565,7 @@ const OverviewDashboard = () => {
                   </div>
                 </div>
               ))}
-              {!isDemoMode && !isLoadingMetrics && liveActivity.length === 0 && (
+              {!isDemoMode && !isLoadingSummary && liveActivity.length === 0 && (
                 <div className="rounded-xl border border-white/10 bg-white/[0.03] p-5 text-sm text-slate-400">
                   No live intelligence activity yet. Run Microsoft Discovery to populate tenant metrics.
                 </div>
@@ -415,30 +630,30 @@ const OverviewDashboard = () => {
           <button className="min-h-[44px] p-5 md:p-6 rounded-2xl bg-[#00F0FF]/5 border border-[#00F0FF]/20 hover:bg-[#00F0FF]/10 transition-all text-left group">
             <Brain className="w-6 h-6 text-[#00F0FF] mb-4 group-hover:scale-110 transition-transform" />
             <p className={`text-sm font-bold mb-2 ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
-              Enrich Metadata
+              {isDemoMode ? 'Enrich Metadata' : 'Review Metadata'}
             </p>
             <p className="text-[10px] text-slate-500 uppercase tracking-widest font-black">
-              AI-powered tagging
+              {isDemoMode ? 'AI-powered tagging' : 'Quality and AI readiness'}
             </p>
           </button>
 
           <button className="min-h-[44px] p-5 md:p-6 rounded-2xl bg-[#A855F7]/5 border border-[#A855F7]/20 hover:bg-[#A855F7]/10 transition-all text-left group">
             <Fingerprint className="w-6 h-6 text-[#A855F7] mb-4 group-hover:scale-110 transition-transform" />
             <p className={`text-sm font-bold mb-2 ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
-              Reconcile Identities
+              {isDemoMode ? 'Reconcile Identities' : 'Review Owners'}
             </p>
             <p className="text-[10px] text-slate-500 uppercase tracking-widest font-black">
-              3 pending matches
+              {isDemoMode ? '3 pending matches' : 'Offboarding risk'}
             </p>
           </button>
 
           <button className="min-h-[44px] p-5 md:p-6 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 hover:bg-emerald-500/10 transition-all text-left group">
             <TrendingUp className="w-6 h-6 text-emerald-500 mb-4 group-hover:scale-110 transition-transform" />
             <p className={`text-sm font-bold mb-2 ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
-              Review Waste
+              {isDemoMode ? 'Review Waste' : 'Open Remediation'}
             </p>
             <p className="text-[10px] text-slate-500 uppercase tracking-widest font-black">
-              2.4TB identified
+              {isDemoMode ? '2.4TB identified' : 'Dry-run first'}
             </p>
           </button>
         </div>
