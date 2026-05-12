@@ -25,7 +25,9 @@ import { useVersion } from '@/app/context/VersionContext';
 import {
   DEMO_MODE_STORAGE_KEY,
   getEnvDemoModeDefault,
+  getRuntimeSurface,
   isDemoModeEnabled,
+  isDemoOverrideAllowed,
 } from '@/app/config/demoMode';
 import {
   clearLocalDiagnostics,
@@ -119,14 +121,14 @@ export const AdminCenter = () => {
   const [localDiagnostics, setLocalDiagnostics] = React.useState<StoredDiagnostic[]>([]);
 
   const demoMode = isDemoModeEnabled();
+  const demoOverrideAllowed = isDemoOverrideAllowed();
+  const runtimeSurface = getRuntimeSurface();
   const envDemoDefault = getEnvDemoModeDefault();
   const sessionDemoOverride =
     typeof window !== 'undefined' ? window.localStorage.getItem(DEMO_MODE_STORAGE_KEY) : null;
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
   const microsoftAuthority = 'login.microsoftonline.com/organizations';
-  const redirectUri =
-    import.meta.env.VITE_MICROSOFT_REDIRECT_URI ||
-    (typeof window !== 'undefined' ? window.location.origin : 'Current origin');
+  const redirectUri = typeof window !== 'undefined' ? window.location.origin : 'Current origin';
   const hasTenantContext = Boolean(tenantId || user?.tenantId);
   const hasDiscoveryResult = Boolean(scanResult);
   const diagnosticIssueCount = localDiagnostics.filter((event) =>
@@ -143,6 +145,13 @@ export const AdminCenter = () => {
   }, [demoMode, refreshDiagnostics]);
 
   const applyDemoMode = (enabled: boolean) => {
+    if (!demoOverrideAllowed) {
+      toast.info('Runtime mode is locked for this domain', {
+        description: `${runtimeSurface} is controlled by deployment configuration.`,
+      });
+      return;
+    }
+
     window.localStorage.setItem(DEMO_MODE_STORAGE_KEY, String(enabled));
     setDemoMode(enabled);
     toast.success(enabled ? 'Demo Mode enabled' : 'Live Mode enabled', {
@@ -152,6 +161,13 @@ export const AdminCenter = () => {
   };
 
   const resetDemoOverride = () => {
+    if (!demoOverrideAllowed) {
+      toast.info('Runtime mode is locked for this domain', {
+        description: `${runtimeSurface} is controlled by deployment configuration.`,
+      });
+      return;
+    }
+
     window.localStorage.removeItem(DEMO_MODE_STORAGE_KEY);
     setDemoMode(envDemoDefault);
     toast.success('Demo override cleared', {
@@ -271,7 +287,8 @@ export const AdminCenter = () => {
             <button
               type="button"
               onClick={() => applyDemoMode(!demoMode)}
-              className="flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-[#00F0FF]/25 bg-[#00F0FF]/10 px-4 text-xs font-black uppercase tracking-[0.16em] text-[#00F0FF] transition hover:bg-[#00F0FF]/20"
+              disabled={!demoOverrideAllowed}
+              className="flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-[#00F0FF]/25 bg-[#00F0FF]/10 px-4 text-xs font-black uppercase tracking-[0.16em] text-[#00F0FF] transition hover:bg-[#00F0FF]/20 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {demoMode ? <ToggleRight className="h-5 w-5" /> : <ToggleLeft className="h-5 w-5" />}
               {demoMode ? 'Use Live Mode' : 'Use Demo Mode'}
@@ -340,7 +357,7 @@ export const AdminCenter = () => {
               </p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-xs font-bold text-slate-300">
-              {demoMode ? 'Demo Mode active' : 'Live Mode active'}
+              {demoMode ? 'Demo Mode active' : 'Live Mode active'} - {runtimeSurface} surface
             </div>
           </div>
 
@@ -593,6 +610,8 @@ export const AdminCenter = () => {
                 label="Env Default"
                 value={envDemoDefault ? 'VITE_DEMO_MODE=true' : 'VITE_DEMO_MODE=false'}
               />
+              <AdminRow label="Runtime Surface" value={runtimeSurface} />
+              <AdminRow label="Demo Override" value={demoOverrideAllowed ? 'Allowed' : 'Domain locked'} />
               <AdminRow
                 label="Browser Override"
                 value={sessionDemoOverride === null ? 'None' : `aethos_demo_mode=${sessionDemoOverride}`}
@@ -638,14 +657,16 @@ export const AdminCenter = () => {
               <button
                 type="button"
                 onClick={() => applyDemoMode(false)}
-                className="min-h-11 rounded-xl border border-emerald-300/25 bg-emerald-400/10 px-4 text-xs font-black uppercase tracking-[0.16em] text-emerald-200 transition hover:bg-emerald-400/20"
+                disabled={!demoOverrideAllowed}
+                className="min-h-11 rounded-xl border border-emerald-300/25 bg-emerald-400/10 px-4 text-xs font-black uppercase tracking-[0.16em] text-emerald-200 transition hover:bg-emerald-400/20 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Force Live Mode
               </button>
               <button
                 type="button"
                 onClick={resetDemoOverride}
-                className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 text-xs font-black uppercase tracking-[0.16em] text-slate-300 transition hover:bg-white/[0.08]"
+                disabled={!demoOverrideAllowed}
+                className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 text-xs font-black uppercase tracking-[0.16em] text-slate-300 transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <RefreshCw className="h-4 w-4" />
                 Reset Override

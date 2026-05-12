@@ -27,10 +27,13 @@ import {
 } from 'lucide-react';
 import { motion as Motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
+import { getRuntimeSurface, isDemoOverrideAllowed } from '@/app/config/demoMode';
 
 export const VersionToggle: React.FC = () => {
   const { version, setVersion, metadata, isDemoMode, setDemoMode } = useVersion();
   const { isDaylight } = useTheme();
+  const demoOverrideAllowed = isDemoOverrideAllowed();
+  const runtimeSurface = getRuntimeSurface();
   const [isExpanded, setIsExpanded] = useState(false);
   const [showFeaturePreview, setShowFeaturePreview] = useState<Version | null>(null);
 
@@ -304,19 +307,26 @@ export const VersionToggle: React.FC = () => {
                   
                   <button
                     onClick={() => {
+                      if (!demoOverrideAllowed) {
+                        toast.info('Runtime mode is locked for this domain', {
+                          description: `${runtimeSurface} is controlled by deployment configuration.`,
+                        });
+                        return;
+                      }
                       setDemoMode(!isDemoMode);
                       toast.info(
                         isDemoMode ? 'Demo Mode Disabled' : 'Demo Mode Enabled',
                         { duration: 2000 }
                       );
                     }}
+                    disabled={!demoOverrideAllowed}
                     className={`relative w-12 h-6 rounded-full transition-all ${
                       isDemoMode 
                         ? 'bg-[#00F0FF]' 
                         : isDaylight 
                           ? 'bg-slate-200' 
                           : 'bg-white/10'
-                    }`}
+                    } disabled:cursor-not-allowed disabled:opacity-60`}
                   >
                     <Motion.div
                       animate={{ x: isDemoMode ? 24 : 0 }}
@@ -329,7 +339,9 @@ export const VersionToggle: React.FC = () => {
                 </div>
                 
                 <p className="text-[9px] text-slate-500 mt-2 leading-relaxed">
-                  Overrides the VITE_DEMO_MODE startup default for this browser session
+                  {demoOverrideAllowed
+                    ? 'Overrides the startup default for this browser session.'
+                    : `Locked by the ${runtimeSurface} deployment surface.`}
                 </p>
               </div>
 

@@ -645,7 +645,9 @@ export const OracleSearchBridgeV2 = () => {
                   <div className="w-px h-3 bg-white/5" />
                   <div className="flex items-center gap-3">
                     <Layers className="w-3.5 h-3.5 text-slate-600" />
-                    <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Federated Anchors: 4 Active</span>
+                  <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">
+                    {globalDemoMode ? 'Federated Anchors: 4 Active' : 'Live Source: Microsoft 365 Metadata'}
+                  </span>
                   </div>
                 </div>
                 
@@ -688,7 +690,7 @@ export const OracleSearchBridgeV2 = () => {
                   <div className="space-y-3">
                     <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Providers</label>
                     <div className="flex flex-wrap gap-2">
-                      {['Microsoft', 'Slack', 'Box', 'Local'].map(provider => (
+                      {(globalDemoMode ? ['Microsoft', 'Slack', 'Box', 'Local'] : ['Microsoft']).map(provider => (
                         <button
                           key={provider}
                           className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[9px] font-black uppercase tracking-wider text-slate-400 hover:text-[#00F0FF] hover:border-[#00F0FF]/30 transition-all"

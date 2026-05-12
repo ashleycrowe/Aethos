@@ -24,9 +24,18 @@ import { toast } from 'sonner';
 
 const MICROSOFT_AUTHORITY = 'https://login.microsoftonline.com/organizations';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
-const DEFAULT_MICROSOFT_REDIRECT_URI = window.location.origin;
-const MICROSOFT_REDIRECT_URI =
-  import.meta.env.VITE_MICROSOFT_REDIRECT_URI || DEFAULT_MICROSOFT_REDIRECT_URI;
+const KNOWN_AETHOS_HOSTS = new Set([
+  'app.aethoswork.com',
+  'demo.aethoswork.com',
+  'app.aethos.com',
+  'demo.aethos.com',
+]);
+const getMicrosoftRedirectUri = () => {
+  const hostname = window.location.hostname.toLowerCase();
+  if (KNOWN_AETHOS_HOSTS.has(hostname)) return window.location.origin;
+  return import.meta.env.VITE_MICROSOFT_REDIRECT_URI || window.location.origin;
+};
+const MICROSOFT_REDIRECT_URI = getMicrosoftRedirectUri();
 
 // MSAL Configuration
 const msalConfig = {

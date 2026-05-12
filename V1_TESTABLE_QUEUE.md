@@ -67,11 +67,18 @@ This file is the short-cycle engineering queue. Keep `IMPLEMENTATION_TASKS.md` a
 - [x] Add Admin control to force Live Mode or Demo Mode.
 - [x] Add Admin action to run Microsoft Discovery against the signed-in Microsoft tenant.
 - [x] Stop Oracle metadata search from silently falling back to demo results in Live Mode.
-- [ ] Add a global visual status that distinguishes `Live: real tenant data` from `Demo: fixture data`.
+- [x] Add a global visual status that distinguishes `Live: real tenant data` from `Demo: fixture data`.
+- [x] Lock `app.aethoswork.com` to Live Mode and `demo.aethoswork.com` to Demo Mode.
 - [ ] Audit all V1 screens for mock data in Live Mode.
 - [x] Add clear empty states for real tenants with little or no Microsoft content.
 - [ ] Preserve seeded Supabase/demo fixtures for Demo Mode.
-- [ ] Document how to switch between Live Mode and Demo Mode for testing.
+- [x] Document deployment surfaces and how to switch between Live Mode and Demo Mode for testing.
+
+Known follow-up from the latest audit:
+
+- [x] Stop Metadata Intelligence from falling back to sample metrics when the Live Mode metrics API fails.
+- [x] Remove demo-only federated provider claims from Live Mode Oracle/Workspace copy.
+- [ ] Finish a full pass on secondary Intelligence tabs for remaining prototype-only controls.
 
 ---
 
@@ -155,6 +162,7 @@ This file is the short-cycle engineering queue. Keep `IMPLEMENTATION_TASKS.md` a
 - [ ] Observability/logging pass with structured logs.
 - [ ] AppSource preparation docs, privacy policy, support docs, and demo video checklist.
 - [ ] Advanced bundle tuning after first lazy-loading pass.
+- [ ] Add formal feature promotion flags for `pre-release -> demo -> live` rollout.
 
 ---
 

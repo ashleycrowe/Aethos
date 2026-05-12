@@ -757,20 +757,20 @@ export const WorkspaceEngine = () => {
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-10 mb-8 md:mb-12 relative z-10">
                          <div className="p-5 md:p-8 rounded-3xl bg-white/[0.02] border border-white/5">
                             <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-4">Redundant Bloat</span>
-                            <div className="text-3xl md:text-4xl font-black text-[#FF5733]">1.2 TB</div>
+                            <div className="text-3xl md:text-4xl font-black text-[#FF5733]">{isDemoMode ? '1.2 TB' : '0 B'}</div>
                          </div>
                          <div className="p-5 md:p-8 rounded-3xl bg-white/[0.02] border border-white/5">
                             <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-4">Exposure Risks</span>
-                            <div className="text-3xl md:text-4xl font-black text-white">04</div>
+                            <div className="text-3xl md:text-4xl font-black text-white">{isDemoMode ? '04' : '0'}</div>
                          </div>
                          <div className="p-5 md:p-8 rounded-3xl bg-white/[0.02] border border-white/5">
                             <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-4">Orphaned Nodes</span>
-                            <div className="text-3xl md:text-4xl font-black text-white">12</div>
+                            <div className="text-3xl md:text-4xl font-black text-white">{isDemoMode ? '12' : '0'}</div>
                          </div>
                       </div>
 
                       <button className="w-full min-h-[44px] px-4 py-5 md:py-6 rounded-2xl bg-[#FF5733]/10 border border-[#FF5733]/30 text-[#FF5733] text-[10px] md:text-[11px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] hover:bg-[#FF5733] hover:text-black transition-all shadow-xl shadow-[#FF5733]/10">
-                         Simulate Global Cleanup Protocol
+                         {isDemoMode ? 'Simulate Global Cleanup Protocol' : 'Run Remediation Dry Run'}
                       </button>
                    </div>
                 </Motion.div>
@@ -792,21 +792,29 @@ export const WorkspaceEngine = () => {
                  
                  <div className="space-y-6">
                     <p className="text-xl md:text-2xl font-black uppercase tracking-tight leading-tight text-white">
-                      Synthesizing <span className="text-[#00F0FF]">Project Intelligence...</span>
+                      {isDemoMode ? 'Synthesizing' : 'Reviewing'} <span className="text-[#00F0FF]">Workspace Intelligence...</span>
                     </p>
                     <div className="p-5 md:p-6 rounded-3xl bg-white/5 border border-white/5 font-medium text-[12px] leading-relaxed text-slate-400 italic">
-                       "Alpha Strategy is heavily weighted toward M365 Excel. However, high-velocity discussion in Slack suggests a budget pivot is imminent. Recommend anchoring the 'Slack Pivot Thread' to the key resources."
+                       {isDemoMode
+                         ? '"Alpha Strategy is heavily weighted toward M365 Excel. However, high-velocity discussion in Slack suggests a budget pivot is imminent. Recommend anchoring the Slack Pivot Thread to the key resources."'
+                         : selectedWorkspace.pinnedItems.length > 0
+                           ? `"${selectedWorkspace.name}" has ${selectedWorkspace.pinnedItems.length} indexed Microsoft artifact${selectedWorkspace.pinnedItems.length === 1 ? '' : 's'} anchored. Add approved metadata tags to improve future workspace automation.`
+                           : `"${selectedWorkspace.name}" is ready. Add indexed Microsoft files or run Discovery to populate workspace intelligence.`}
                     </div>
                  </div>
 
                  <button 
                   onClick={() => {
                     setOracleOpen(true);
-                    oracleSearch(`Summarize the delta between the Excel budget and the latest Slack pivots in ${selectedWorkspace.name}.`);
+                    oracleSearch(
+                      isDemoMode
+                        ? `Summarize the delta between the Excel budget and the latest Slack pivots in ${selectedWorkspace.name}.`
+                        : `Find files related to ${selectedWorkspace.name}.`
+                    );
                   }}
                   className="w-full min-h-[44px] px-4 py-5 rounded-2xl bg-[#00F0FF] text-black text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] flex items-center justify-center gap-4 shadow-xl shadow-[#00F0FF]/20 hover:scale-105 transition-all"
                  >
-                   <Cpu className="w-4 h-4" /> Deconstruct Delta
+                   <Cpu className="w-4 h-4" /> {isDemoMode ? 'Deconstruct Delta' : 'Search Workspace Files'}
                  </button>
                </div>
             </div>

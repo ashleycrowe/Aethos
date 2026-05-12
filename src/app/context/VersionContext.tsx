@@ -12,7 +12,11 @@
  */
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { DEMO_MODE_STORAGE_KEY } from '@/app/config/demoMode';
+import {
+  DEMO_MODE_STORAGE_KEY,
+  isDemoModeEnabled,
+  isDemoOverrideAllowed,
+} from '@/app/config/demoMode';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -453,8 +457,7 @@ export const VersionProvider: React.FC<VersionProviderProps> = ({
   });
   
   const [isDemoMode, setDemoMode] = useState<boolean>(() => {
-    const saved = localStorage.getItem(DEMO_MODE_STORAGE_KEY);
-    return saved !== null ? saved === 'true' : demoMode;
+    return isDemoModeEnabled();
   });
 
   // Persist version to localStorage
@@ -464,9 +467,11 @@ export const VersionProvider: React.FC<VersionProviderProps> = ({
     console.log(`[VersionContext] Switched to ${newVersion}`);
   };
 
-  // Persist demo mode to localStorage
+  // Persist demo mode to localStorage only where browser overrides are allowed.
   useEffect(() => {
-    localStorage.setItem(DEMO_MODE_STORAGE_KEY, String(isDemoMode));
+    if (isDemoOverrideAllowed()) {
+      localStorage.setItem(DEMO_MODE_STORAGE_KEY, String(isDemoMode));
+    }
   }, [isDemoMode]);
 
   const value: VersionContextValue = {

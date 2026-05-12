@@ -50,23 +50,23 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   // State for real data from API
-  const [intelligenceScore, setIntelligenceScore] = useState(68);
+  const [intelligenceScore, setIntelligenceScore] = useState(0);
   const [sourceQuality, setSourceQuality] = useState<MetadataQuality>({
-    totalFiles: 4567,
-    filesWithDescriptions: 548,
-    filesWithTags: 365,
-    filesWithMeaningfulNames: 502,
-    avgNameLength: 18
+    totalFiles: 0,
+    filesWithDescriptions: 0,
+    filesWithTags: 0,
+    filesWithMeaningfulNames: 0,
+    avgNameLength: 0
   });
   const [enrichmentStatus, setEnrichmentStatus] = useState<EnrichmentStatus>({
-    filesCategorized: 4293,
-    departmentsInferred: 3973,
-    keywordsGenerated: 4567,
-    timePeriodsExtracted: 3471,
-    avgConfidenceScore: 0.84,
-    filesNowDiscoverable: 3456
+    filesCategorized: 0,
+    departmentsInferred: 0,
+    keywordsGenerated: 0,
+    timePeriodsExtracted: 0,
+    avgConfidenceScore: 0,
+    filesNowDiscoverable: 0
   });
-  const [categories, setCategories] = useState<CategoryBreakdown[]>([
+  const demoCategories: CategoryBreakdown[] = [
     { category: 'Financial Planning', count: 1234, percentage: 31, color: '#00F0FF' },
     { category: 'HR Documents', count: 567, percentage: 14, color: '#FF5733' },
     { category: 'Engineering', count: 432, percentage: 11, color: '#9B59B6' },
@@ -75,8 +75,9 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
     { category: 'Operations', count: 245, percentage: 6, color: '#2ECC71' },
     { category: 'Legal', count: 189, percentage: 5, color: '#F39C12' },
     { category: 'Uncategorized', count: 643, percentage: 16, color: '#95A5A6' }
-  ]);
-  const [opportunities, setOpportunities] = useState<ImprovementOpportunity[]>([
+  ];
+  const [categories, setCategories] = useState<CategoryBreakdown[]>([]);
+  const demoOpportunities: ImprovementOpportunity[] = [
     {
       priority: 'high',
       title: 'Low Confidence Files',
@@ -101,13 +102,32 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
       action: 'Consider reorganizing source systems',
       icon: <FolderOpen className="w-5 h-5" />
     }
-  ]);
+  ];
+  const [opportunities, setOpportunities] = useState<ImprovementOpportunity[]>([]);
 
   // Fetch data from API on component mount
   useEffect(() => {
     const fetchIntelligenceMetrics = async () => {
       if (globalDemoMode) {
         setIsDemoMode(true);
+        setIntelligenceScore(68);
+        setSourceQuality({
+          totalFiles: 4567,
+          filesWithDescriptions: 548,
+          filesWithTags: 365,
+          filesWithMeaningfulNames: 502,
+          avgNameLength: 18
+        });
+        setEnrichmentStatus({
+          filesCategorized: 4293,
+          departmentsInferred: 3973,
+          keywordsGenerated: 4567,
+          timePeriodsExtracted: 3471,
+          avgConfidenceScore: 0.84,
+          filesNowDiscoverable: 3456
+        });
+        setCategories(demoCategories);
+        setOpportunities(demoOpportunities);
         setIsLoading(false);
         return;
       }
@@ -117,9 +137,6 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
         setIsLoading(true);
         setError(null);
 
-        // Get tenant ID from somewhere - for now using a placeholder
-        // In real app, this would come from auth context or URL params
-        const activeTenantId = tenantId || '00000000-0000-0000-0000-000000000101'; // Test tenant
         const accessToken = await getAccessToken();
 
         const response = await fetch('/api/intelligence/metrics', {
@@ -128,7 +145,7 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
             'Content-Type': 'application/json',
             ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
           },
-          body: JSON.stringify({ tenantId: activeTenantId }),
+          body: JSON.stringify({ tenantId }),
         });
 
         if (!response.ok) {
@@ -145,10 +162,27 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
         setOpportunities(data.opportunities);
 
       } catch (err) {
-        console.warn('Failed to fetch intelligence metrics, falling back to demo data:', err);
+        console.warn('Failed to fetch live intelligence metrics:', err);
         setError(err instanceof Error ? err.message : 'Unknown error');
-        setIsDemoMode(true);
-        // Keep the mock data that's already set in state
+        setIsDemoMode(false);
+        setIntelligenceScore(0);
+        setSourceQuality({
+          totalFiles: 0,
+          filesWithDescriptions: 0,
+          filesWithTags: 0,
+          filesWithMeaningfulNames: 0,
+          avgNameLength: 0
+        });
+        setEnrichmentStatus({
+          filesCategorized: 0,
+          departmentsInferred: 0,
+          keywordsGenerated: 0,
+          timePeriodsExtracted: 0,
+          avgConfidenceScore: 0,
+          filesNowDiscoverable: 0
+        });
+        setCategories([]);
+        setOpportunities([]);
       } finally {
         setIsLoading(false);
       }
@@ -156,62 +190,6 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
 
     fetchIntelligenceMetrics();
   }, [tenantId, getAccessToken, globalDemoMode]);
-
-  // Mock data - kept for fallback
-  const mockData = {
-    intelligenceScore: 68,
-    sourceQuality: {
-      totalFiles: 4567,
-      filesWithDescriptions: 548,
-      filesWithTags: 365,
-      filesWithMeaningfulNames: 502,
-      avgNameLength: 18
-    },
-    enrichmentStatus: {
-      filesCategorized: 4293,
-      departmentsInferred: 3973,
-      keywordsGenerated: 4567,
-      timePeriodsExtracted: 3471,
-      avgConfidenceScore: 0.84,
-      filesNowDiscoverable: 3456
-    },
-    categories: [
-      { category: 'Financial Planning', count: 1234, percentage: 31, color: '#00F0FF' },
-      { category: 'HR Documents', count: 567, percentage: 14, color: '#FF5733' },
-      { category: 'Engineering', count: 432, percentage: 11, color: '#9B59B6' },
-      { category: 'Sales', count: 389, percentage: 10, color: '#3498DB' },
-      { category: 'Marketing', count: 301, percentage: 8, color: '#E74C3C' },
-      { category: 'Operations', count: 245, percentage: 6, color: '#2ECC71' },
-      { category: 'Legal', count: 189, percentage: 5, color: '#F39C12' },
-      { category: 'Uncategorized', count: 643, percentage: 16, color: '#95A5A6' }
-    ],
-    opportunities: [
-      {
-        priority: 'high',
-        title: 'Low Confidence Files',
-        description: '456 files with confidence <0.5',
-        count: 456,
-        action: 'Enable Content Reading for better results',
-        icon: <AlertCircle className="w-5 h-5" />
-      },
-      {
-        priority: 'medium',
-        title: 'Generic File Names',
-        description: '2,347 files named "Document1", "Untitled", etc.',
-        count: 2347,
-        action: 'Low discoverability - consider renaming',
-        icon: <FileQuestion className="w-5 h-5" />
-      },
-      {
-        priority: 'low',
-        title: 'No Path Context',
-        description: '890 files in root folders',
-        count: 890,
-        action: 'Consider reorganizing source systems',
-        icon: <FolderOpen className="w-5 h-5" />
-      }
-    ]
-  };
 
   const getScoreColor = (score: number): string => {
     if (score >= 80) return 'text-[#00F0FF]';
@@ -234,6 +212,13 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
       default: return 'border-[#95A5A6]';
     }
   };
+
+  const getPercentage = (value: number, total: number) => {
+    if (!total) return 0;
+    return Math.round((value / total) * 100);
+  };
+
+  const hasLiveData = sourceQuality.totalFiles > 0;
 
   return (
     <motion.div
@@ -275,7 +260,12 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
               <p className="text-sm text-[#A0A8B8]">AI-powered enrichment & discovery analytics</p>
               {isDemoMode && (
                 <p className="text-xs text-[#6B7280] mt-1">
-                  Showing sample data - API not available in production
+                  Showing optimized fixture data for demo walkthroughs
+                </p>
+              )}
+              {!isDemoMode && error && (
+                <p className="text-xs text-[#FF5733] mt-1">
+                  Live metrics unavailable: {error}
                 </p>
               )}
             </div>
@@ -319,6 +309,13 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
 
         {!isLoading && (
           <>
+            {!isDemoMode && error && (
+              <div className="rounded-xl border border-[#FF5733]/30 bg-[#FF5733]/10 p-5 text-sm text-[#FFB4A3]">
+                Live Mode is active, so sample metrics are hidden. Run Microsoft Discovery from Admin or
+                check the intelligence metrics API before expecting this screen to populate.
+              </div>
+            )}
+
             {/* Intelligence Score Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -340,7 +337,9 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
                 </span>
               </div>
               <p className="text-slate-400 text-sm mb-4">
-                Most files are discoverable - Aethos enrichment is working effectively
+                {isDemoMode || hasLiveData
+                  ? 'Most files are discoverable - Aethos enrichment is working effectively'
+                  : 'Run live discovery to calculate tenant-specific metadata quality'}
               </p>
               <div className="flex items-end gap-4">
                 <div className={`text-6xl font-bold ${getScoreColor(intelligenceScore)}`}>
@@ -460,13 +459,13 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
                   <div className="flex items-center justify-between text-sm mb-2">
                     <span className="text-slate-400">Files with descriptions</span>
                     <span className="text-white font-medium">
-                      {Math.round((sourceQuality.filesWithDescriptions / sourceQuality.totalFiles) * 100)}%
+                  {getPercentage(sourceQuality.filesWithDescriptions, sourceQuality.totalFiles)}%
                     </span>
                   </div>
                   <div className="h-2 bg-white/5 rounded-full overflow-hidden">
                     <div 
                       className="h-full bg-[#FF5733] rounded-full"
-                      style={{ width: `${(sourceQuality.filesWithDescriptions / sourceQuality.totalFiles) * 100}%` }}
+                      style={{ width: `${getPercentage(sourceQuality.filesWithDescriptions, sourceQuality.totalFiles)}%` }}
                     />
                   </div>
                 </div>
@@ -475,13 +474,13 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
                   <div className="flex items-center justify-between text-sm mb-2">
                     <span className="text-slate-400">Files with tags/categories</span>
                     <span className="text-white font-medium">
-                      {Math.round((sourceQuality.filesWithTags / sourceQuality.totalFiles) * 100)}%
+                  {getPercentage(sourceQuality.filesWithTags, sourceQuality.totalFiles)}%
                     </span>
                   </div>
                   <div className="h-2 bg-white/5 rounded-full overflow-hidden">
                     <div 
                       className="h-full bg-[#FF5733] rounded-full"
-                      style={{ width: `${(sourceQuality.filesWithTags / sourceQuality.totalFiles) * 100}%` }}
+                      style={{ width: `${getPercentage(sourceQuality.filesWithTags, sourceQuality.totalFiles)}%` }}
                     />
                   </div>
                 </div>
@@ -490,13 +489,13 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
                   <div className="flex items-center justify-between text-sm mb-2">
                     <span className="text-slate-400">Files with meaningful names</span>
                     <span className="text-white font-medium">
-                      {Math.round((sourceQuality.filesWithMeaningfulNames / sourceQuality.totalFiles) * 100)}%
+                  {getPercentage(sourceQuality.filesWithMeaningfulNames, sourceQuality.totalFiles)}%
                     </span>
                   </div>
                   <div className="h-2 bg-white/5 rounded-full overflow-hidden">
                     <div 
                       className="h-full bg-[#FF5733] rounded-full"
-                      style={{ width: `${(sourceQuality.filesWithMeaningfulNames / sourceQuality.totalFiles) * 100}%` }}
+                      style={{ width: `${getPercentage(sourceQuality.filesWithMeaningfulNames, sourceQuality.totalFiles)}%` }}
                     />
                   </div>
                 </div>
@@ -512,7 +511,9 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
               <div className="mt-6 p-4 bg-[#FF5733]/10 rounded-lg border border-[#FF5733]/30">
                 <p className="text-sm text-[#FF5733] flex items-center gap-2">
                   <AlertCircle className="w-4 h-4" />
-                  Without Aethos, 89% of your files are unsearchable
+                  {isDemoMode || hasLiveData
+                    ? 'Without Aethos, many files are hard to discover'
+                    : 'Live tenant metadata quality has not been calculated yet'}
                 </p>
               </div>
             </motion.div>
@@ -537,13 +538,13 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
                   <div className="flex items-center justify-between text-sm mb-2">
                     <span className="text-slate-400">Files auto-categorized</span>
                     <span className="text-white font-medium">
-                      {Math.round((enrichmentStatus.filesCategorized / sourceQuality.totalFiles) * 100)}%
+                  {getPercentage(enrichmentStatus.filesCategorized, sourceQuality.totalFiles)}%
                     </span>
                   </div>
                   <div className="h-2 bg-white/5 rounded-full overflow-hidden">
                     <div 
                       className="h-full bg-gradient-to-r from-[#00F0FF] to-[#9B59B6] rounded-full"
-                      style={{ width: `${(enrichmentStatus.filesCategorized / sourceQuality.totalFiles) * 100}%` }}
+                      style={{ width: `${getPercentage(enrichmentStatus.filesCategorized, sourceQuality.totalFiles)}%` }}
                     />
                   </div>
                 </div>
@@ -552,13 +553,13 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
                   <div className="flex items-center justify-between text-sm mb-2">
                     <span className="text-slate-400">Departments inferred</span>
                     <span className="text-white font-medium">
-                      {Math.round((enrichmentStatus.departmentsInferred / sourceQuality.totalFiles) * 100)}%
+                  {getPercentage(enrichmentStatus.departmentsInferred, sourceQuality.totalFiles)}%
                     </span>
                   </div>
                   <div className="h-2 bg-white/5 rounded-full overflow-hidden">
                     <div 
                       className="h-full bg-gradient-to-r from-[#00F0FF] to-[#9B59B6] rounded-full"
-                      style={{ width: `${(enrichmentStatus.departmentsInferred / sourceQuality.totalFiles) * 100}%` }}
+                      style={{ width: `${getPercentage(enrichmentStatus.departmentsInferred, sourceQuality.totalFiles)}%` }}
                     />
                   </div>
                 </div>
@@ -567,13 +568,13 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
                   <div className="flex items-center justify-between text-sm mb-2">
                     <span className="text-slate-400">Keywords generated</span>
                     <span className="text-white font-medium">
-                      {Math.round((enrichmentStatus.keywordsGenerated / sourceQuality.totalFiles) * 100)}%
+                  {getPercentage(enrichmentStatus.keywordsGenerated, sourceQuality.totalFiles)}%
                     </span>
                   </div>
                   <div className="h-2 bg-white/5 rounded-full overflow-hidden">
                     <div 
                       className="h-full bg-gradient-to-r from-[#00F0FF] to-[#9B59B6] rounded-full"
-                      style={{ width: `${(enrichmentStatus.keywordsGenerated / sourceQuality.totalFiles) * 100}%` }}
+                      style={{ width: `${getPercentage(enrichmentStatus.keywordsGenerated, sourceQuality.totalFiles)}%` }}
                     />
                   </div>
                 </div>
@@ -582,13 +583,13 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
                   <div className="flex items-center justify-between text-sm mb-2">
                     <span className="text-slate-400">Time periods extracted</span>
                     <span className="text-white font-medium">
-                      {Math.round((enrichmentStatus.timePeriodsExtracted / sourceQuality.totalFiles) * 100)}%
+                  {getPercentage(enrichmentStatus.timePeriodsExtracted, sourceQuality.totalFiles)}%
                     </span>
                   </div>
                   <div className="h-2 bg-white/5 rounded-full overflow-hidden">
                     <div 
                       className="h-full bg-gradient-to-r from-[#00F0FF] to-[#9B59B6] rounded-full"
-                      style={{ width: `${(enrichmentStatus.timePeriodsExtracted / sourceQuality.totalFiles) * 100}%` }}
+                      style={{ width: `${getPercentage(enrichmentStatus.timePeriodsExtracted, sourceQuality.totalFiles)}%` }}
                     />
                   </div>
                 </div>

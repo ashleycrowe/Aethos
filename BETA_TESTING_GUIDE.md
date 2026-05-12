@@ -28,13 +28,14 @@ These are expected during the first testable V1 preparation phase.
 
 ---
 
-## Live/Demo Toggle
+## Live/Demo Surfaces
 
-- `VITE_DEMO_MODE=false` should start testers in Live Mode.
-- The floating version toggle remains visible in Live Mode so testers can deliberately switch browser-session Demo Mode on or off.
-- The Demo Mode setting is persisted in localStorage for the current browser profile.
-- Use Demo Mode when validating layout and fallback behavior without depending on live backend data.
+- `app.aethoswork.com` is the live-client surface and should run Live Mode.
+- `demo.aethoswork.com` is the customer demo surface and should run Demo Mode.
+- Localhost can still use the floating version toggle for browser-session mode switching.
+- Use Demo Mode when validating demo storytelling, layout, and fixture-based feature walkthroughs.
 - Use Live Mode when testing Microsoft auth, Supabase-backed data, API error handling, workspace APIs, and remediation dry-run behavior.
+- See `docs/DEPLOYMENT_SURFACES.md` for environment variables and the future pre-release demo lane.
 
 ---
 
@@ -43,8 +44,9 @@ These are expected during the first testable V1 preparation phase.
 - [ ] App loads on the Vercel URL without a blank screen.
 - [ ] Sidebar navigation works across V1-visible sections.
 - [ ] Search input focuses or routes to the Oracle experience.
-- [ ] Floating toggle starts as `Live Mode` when `VITE_DEMO_MODE=false`.
-- [ ] Demo Mode can be enabled and disabled from the floating toggle.
+- [ ] `app.aethoswork.com` shows `Live: real tenant data`.
+- [ ] `demo.aethoswork.com` shows `Demo: fixture data`.
+- [ ] Demo Mode can be enabled and disabled from the floating toggle on localhost/internal QA only.
 - [ ] Loading states appear when switching lazy-loaded views.
 - [ ] No overlapping text or broken layout on desktop.
 - [ ] Key screens render on mobile/tablet viewport widths.

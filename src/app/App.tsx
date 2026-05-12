@@ -16,6 +16,7 @@ import { Toaster } from 'sonner';
 // Components
 import { Sidebar } from '@/app/components/Sidebar';
 import { VersionToggle } from '@/app/components/VersionToggle';
+import { RuntimeModeBadge } from '@/app/components/RuntimeModeBadge';
 import { Search, Bell, Settings, LogIn, ShieldCheck } from 'lucide-react';
 
 const AdminCenter = lazy(() => import('@/app/components/AdminCenter').then((module) => ({ default: module.AdminCenter })));
@@ -307,6 +308,7 @@ const Layout: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-3 sm:gap-6 ml-3 sm:ml-10">
+            <RuntimeModeBadge />
             <button className="p-2 text-slate-500 hover:text-[#00F0FF] transition-colors relative">
               <Bell size={20} />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#FF5733] rounded-full border border-[#0B0F19]" />
