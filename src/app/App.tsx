@@ -56,7 +56,7 @@ const VoyagerWorkbench = lazy(() =>
 );
 const WorkspaceEngine = lazy(() => import('@/app/components/WorkspaceEngine').then((module) => ({ default: module.WorkspaceEngine })));
 
-const V1_CORE_TABS = new Set(['oracle', 'insights', 'nexus', 'archival']);
+const V1_CORE_TABS = new Set(['oracle', 'insights', 'nexus', 'archival', 'admin']);
 
 const COMING_SOON_LABELS: Record<string, string> = {
   admin: 'Admin Center',

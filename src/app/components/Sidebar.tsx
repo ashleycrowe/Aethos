@@ -78,6 +78,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       collapsible: true,
       items: [
         { id: 'archival', icon: Archive, label: 'Remediation', description: 'Archival & cleanup protocols', minVersion: 'V1' },
+        { id: 'admin', icon: Settings, label: 'Admin', description: 'Tenant, auth, and deployment controls', minVersion: 'V1' },
       ]
     }
   ];

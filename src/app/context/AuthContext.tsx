@@ -4,7 +4,7 @@
  * PURPOSE: Handle Microsoft authentication and session management
  * FLOW:
  * 1. User clicks "Login with Microsoft"
- * 2. MSAL popup opens for Microsoft login
+ * 2. MSAL redirects to Microsoft login
  * 3. User authenticates and grants permissions
  * 4. Access token received
  * 5. User saved to Supabase database
@@ -386,13 +386,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       const msal = await initializeMsal();
 
-      if (!msal) {
-        // MSAL not configured, exit early
-        return;
-      }
-
-      await msal.logoutRedirect();
-
       setUser(null);
       setAccessToken(null);
       setTenantIdState(null);
@@ -401,7 +394,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       localStorage.removeItem('aethos_tenant_id');
       localStorage.removeItem('aethos_user_id');
 
-      toast.success('Logged out successfully');
+      if (!msal) {
+        toast.success('Logged out successfully');
+        return;
+      }
+
+      await msal.logoutRedirect({
+        account: user ?? undefined,
+        postLogoutRedirectUri: window.location.origin,
+      });
     } catch (error) {
       console.error('Logout error:', error);
       toast.error('Logout failed', {
