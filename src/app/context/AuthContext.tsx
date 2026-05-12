@@ -18,7 +18,6 @@ import {
   AuthenticationResult,
   InteractionRequiredAuthError,
 } from '@azure/msal-browser';
-import { supabase, setTenantContext } from '@/lib/supabase';
 import { getCurrentUser } from '@/lib/microsoftGraph';
 import { isDemoModeEnabled } from '@/app/config/demoMode';
 import { toast } from 'sonner';
@@ -197,9 +196,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   /**
    * Handle post-login tasks:
    * 1. Get user info from Microsoft Graph
-   * 2. Create/update user in Supabase
-   * 3. Create/update tenant in Supabase
-   * 4. Set tenant context for RLS
+   * 2. Provision tenant/user through the protected backend auth helper
+   * 3. Store resolved tenant context for API calls
    */
   const handlePostLogin = async (response: AuthenticationResult) => {
     try {
@@ -211,131 +209,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         throw new Error('Microsoft tenant ID was not present in the authentication response');
       }
 
-      if (!isDemoModeEnabled()) {
-        try {
-          const session = await provisionSessionViaApi(response.accessToken);
-          if (session) {
-            setTenantIdState(session.tenantId);
-            if (session.userId) setUserId(session.userId);
-            localStorage.setItem('aethos_tenant_id', session.tenantId);
-            if (session.userId) localStorage.setItem('aethos_user_id', session.userId);
+      if (isDemoModeEnabled()) {
+        setTenantIdState(null);
+        setUserId(null);
+        localStorage.removeItem('aethos_tenant_id');
+        localStorage.removeItem('aethos_user_id');
 
-            toast.success('Logged in successfully!', {
-              description: `Welcome back, ${graphUser.displayName}`,
-            });
-            return;
-          }
-        } catch (sessionError) {
-          console.warn('Backend session provisioning unavailable; falling back to browser Supabase flow:', sessionError);
-        }
-      }
-
-      // Check if Supabase is configured for local/frontend-only fallback.
-      if (!supabase) {
-        console.warn('Supabase not configured - skipping database operations');
         toast.success('Logged in successfully!', {
-          description: 'Running in demo mode without database',
+          description: `Welcome back, ${graphUser.displayName}`,
         });
         return;
       }
 
-      const tenantName = graphUser.companyName || graphUser.displayName + '\'s Organization';
+      try {
+        const session = await provisionSessionViaApi(response.accessToken);
+        if (session) {
+          setTenantIdState(session.tenantId);
+          if (session.userId) setUserId(session.userId);
+          localStorage.setItem('aethos_tenant_id', session.tenantId);
+          if (session.userId) localStorage.setItem('aethos_user_id', session.userId);
 
-      // Just-in-time tenant provisioning for multitenant self-serve signups.
-      const { data: tenant, error: tenantError } = await supabase
-        .from('tenants')
-        .upsert(
-          {
-            name: tenantName,
-            microsoft_tenant_id: microsoftTenantId,
-            subscription_tier: 'v1',
-            status: 'active',
-            metadata: {
-              enrollment: 'jit',
-              source: 'AuthContext',
-              enrolled_at: new Date().toISOString(),
-            },
-          },
-          { onConflict: 'microsoft_tenant_id' }
-        )
-        .select()
-        .single();
-
-      if (tenantError || !tenant) {
-        console.error('Error provisioning tenant:', tenantError);
-        throw tenantError || new Error('Unable to provision tenant');
-      }
-
-      if (tenant.created_at === tenant.updated_at) {
-        toast.success('Welcome to Aethos!', {
-          description: 'Your organization has been set up.',
-        });
-      }
-
-      // Check if user exists in Supabase
-      const { data: existingUser } = await supabase
-        .from('users')
-        .select('*')
-        .eq('microsoft_id', response.account.homeAccountId)
-        .single();
-
-      let dbUser;
-
-      if (!existingUser) {
-        const { count: tenantUserCount } = await supabase
-          .from('users')
-          .select('id', { count: 'exact', head: true })
-          .eq('tenant_id', tenant.id);
-
-        // Create new user
-        const { data: newUser, error: userError } = await supabase
-          .from('users')
-          .insert({
-            tenant_id: tenant.id,
-            email: graphUser.mail || graphUser.userPrincipalName,
-            name: graphUser.displayName,
-            microsoft_id: response.account.homeAccountId,
-            role: tenantUserCount === 0 ? 'admin' : 'user',
-            last_login: new Date().toISOString(),
-            metadata: {
-              enrollment: 'jit',
-              source: 'AuthContext',
-            },
-          })
-          .select()
-          .single();
-
-        if (userError) {
-          console.error('Error creating user:', userError);
-          throw userError;
+          toast.success('Logged in successfully!', {
+            description: `Welcome back, ${graphUser.displayName}`,
+          });
+          return;
         }
-
-        dbUser = newUser;
-      } else {
-        // Update last login
-        const { data: updatedUser } = await supabase
-          .from('users')
-          .update({ last_login: new Date().toISOString() })
-          .eq('id', existingUser.id)
-          .select()
-          .single();
-
-        dbUser = updatedUser;
+      } catch (sessionError) {
+        console.error('Backend session provisioning failed:', sessionError);
+        throw sessionError;
       }
 
-      // Set tenant context for RLS
-      await setTenantContext(tenant.id, dbUser.id);
-
-      setTenantIdState(tenant.id);
-      setUserId(dbUser.id);
-
-      // Store in localStorage for persistence
-      localStorage.setItem('aethos_tenant_id', tenant.id);
-      localStorage.setItem('aethos_user_id', dbUser.id);
-
-      toast.success('Logged in successfully!', {
-        description: `Welcome back, ${graphUser.displayName}`,
-      });
+      throw new Error('Session provisioning did not return tenant context');
     } catch (error) {
       console.error('Error in post-login flow:', error);
       toast.error('Authentication failed', {

@@ -1,9 +1,12 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
+const SUPABASE_SERVER_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+
 export const supabase = createClient(
-  process.env.SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+  SUPABASE_SERVER_URL || 'https://placeholder.supabase.co',
+  SUPABASE_SERVICE_ROLE_KEY || 'placeholder-service-role-key'
 );
 
 type ApiAuthOptions = {
@@ -168,6 +171,18 @@ export async function requireApiContext(
 
   if (!methods.includes(req.method || '')) {
     res.status(405).json({ success: false, error: 'Method not allowed' });
+    return null;
+  }
+
+  if (!SUPABASE_SERVER_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    console.error('Supabase server environment is not configured', {
+      hasSupabaseUrl: Boolean(SUPABASE_SERVER_URL),
+      hasServiceRoleKey: Boolean(SUPABASE_SERVICE_ROLE_KEY),
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Server Supabase environment is not configured',
+    });
     return null;
   }
 
