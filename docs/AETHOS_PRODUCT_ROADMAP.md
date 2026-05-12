@@ -57,10 +57,12 @@ By 2028, Aethos becomes the **Enterprise Knowledge Operating System**:
 ✅ **Discovery (The Constellation)**
 
 - M365 metadata scan (SharePoint, Teams, OneDrive)
+- V1 data scope: files/documents, containers, ownership, permissions, activity, and metadata signals
 - Storage intelligence dashboard
 - Waste detection (stale, orphaned, duplicate files)
 - Exposure visibility (external shares, guest access)
 - Basic remediation (archive, revoke links)
+- Explicitly defer SharePoint Lists and SharePoint pages/news from first testable V1
 
 ✅ **Workspaces (The Nexus)**
 
@@ -140,6 +142,18 @@ V1.5 introduces **content reading capabilities** as a **paid upgrade tier**.
 - Content-based duplicate detection (not just metadata)
 - Topic clustering (group similar documents)
 - Key entity extraction (people, companies, dates, locations)
+- SharePoint pages/news inventory as Published Knowledge
+- SharePoint Lists discovery spike focused on list inventory and schema intelligence, not default row-level ingestion
+
+### Data Scope Notes
+
+V1.5 expands from file metadata into content intelligence and published knowledge, but it should not become a full structured-data platform in the same release. SharePoint Lists are likely high-value for clients with mature SharePoint usage, especially AI-readiness work, but the recommended path is staged:
+
+1. Inventory lists by site, owner, item count, modified date, and permissions.
+2. Classify list schema and likely business purpose.
+3. Flag stale, ownerless, exposed, or business-critical lists.
+4. Add row sampling only with explicit customer permission.
+5. Defer full searchable row-level ingestion until governance controls are designed.
 
 ### Pricing Impact
 

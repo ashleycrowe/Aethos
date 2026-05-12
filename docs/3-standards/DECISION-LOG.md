@@ -32,6 +32,7 @@
 | DEC-TEC-008 | Canonical Files Schema | 2026-04-30 | Approved | Critical |
 | DEC-SEC-001 | Golden API Auth Helper | 2026-04-30 | Approved | Critical |
 | DEC-SEC-002 | Self-Serve Microsoft Tenant Enrollment | 2026-04-30 | Approved | Critical |
+| DEC-PROD-001 | Knowledge Object Data Scope | 2026-05-12 | Approved | High |
 
 ---
 
@@ -113,6 +114,41 @@ Use `https://login.microsoftonline.com/organizations` as the MSAL authority. On 
 3. Backend service-role provisioning avoids relying on browser-side RLS bypass behavior.
 
 ---
+## APPROVED PRODUCT DECISIONS
+
+### Decision DEC-PROD-001: Knowledge Object Data Scope
+**Date:** 2026-05-12  
+**Status:** Approved  
+**Category:** Product  
+**Impact:** High  
+**Decision Owner:** Product & Engineering
+
+**Context:**  
+Aethos currently centers on Microsoft 365 document metadata, but real clients will also rely on SharePoint pages, news, lists, sites, libraries, permissions, and activity data. SharePoint Lists in particular are likely to become important for clients with mature SharePoint usage and AI-readiness needs.
+
+**Decision:**  
+Use "knowledge objects" as the long-term product model, but keep V1 implementation focused on files/documents and their operational metadata. Expand V1.5 into file content intelligence and SharePoint pages/news inventory as Published Knowledge. Treat SharePoint Lists as a staged structured-data track: inventory and schema intelligence first, row-level ingestion only after explicit customer permission and governance controls.
+
+**Implementation Notes:**
+- V1 data classes: files/documents, containers, metadata, permissions, activity, workspaces, remediation signals.
+- V1.5 data classes: document content chunks/embeddings/summaries, PII signals, SharePoint pages/news inventory.
+- SharePoint Lists should not block first testable V1.
+- SharePoint Lists should be piloted as inventory/schema intelligence before row-level search.
+- UI labels should distinguish Document, Published Knowledge, Structured List, Container, and Signal.
+
+**Rationale:**
+1. Documents are the sharpest first wedge and already map to discovery, search, workspaces, remediation, and reporting.
+2. Pages/news are important for AI-readiness because stale published knowledge can mislead employees and AI assistants.
+3. Lists may contain business-critical process data, but full row ingestion has higher privacy and governance complexity.
+4. Staging the expansion keeps product trust high while leaving room for a strong structured-data feature.
+
+**References:**
+- `/docs/DATA_CLASSIFICATION_STRATEGY.md`
+- `/V1_TESTABLE_QUEUE.md`
+- `/docs/AETHOS_PRODUCT_ROADMAP.md`
+
+---
+
 ## 🚨 ASSUMED DECISIONS (REQUIRE TEAM VERIFICATION)
 
 These decisions have been made provisionally and require formal team verification before proceeding.

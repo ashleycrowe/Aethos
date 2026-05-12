@@ -44,6 +44,8 @@ This document serves as the **single source of truth** for which features are av
 **V1 Summary:**
 - Microsoft 365 only (SharePoint, Teams, OneDrive)
 - Metadata-only (no content reading)
+- Data scope focuses on files/documents, containers, ownership, permissions, activity, and workspace membership
+- SharePoint Lists and SharePoint pages/news are not required for first testable V1
 - Tag-based workspace auto-sync (the retention engine)
 - Basic remediation (archive, revoke links)
 
@@ -67,6 +69,8 @@ This document serves as the **single source of truth** for which features are av
 - Vector embeddings for semantic search
 - AI summarization on demand
 - PII detection (SSN, credit cards, emails)
+- SharePoint pages/news become Published Knowledge inventory candidates
+- SharePoint Lists begin as inventory/schema intelligence only; full row-level ingestion is not default
 - Pricing: Base tier + $199/mo
 
 ---

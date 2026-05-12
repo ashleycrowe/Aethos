@@ -102,6 +102,20 @@ This file is the short-cycle engineering queue. Keep `IMPLEMENTATION_TASKS.md` a
 
 ---
 
+## Active Product Boundary - Data Classification
+
+**Principle:** Aethos will eventually understand multiple Microsoft 365 knowledge-object types, but V1 remains disciplined around files/documents and their operational metadata.
+
+- [x] Define V1 data scope as files/documents, metadata, permissions, activity, containers, workspaces, and safe remediation.
+- [x] Define V1.5 direction as content intelligence plus SharePoint pages/news inventory as published knowledge.
+- [ ] Keep SharePoint Lists out of first testable V1 implementation.
+- [ ] Add SharePoint Lists as a V1.5/V2 discovery spike after Live Mode auth, discovery, search, and workspace creation are stable.
+- [ ] Add data-class labels to future search/results UX: Document, Published Knowledge, Structured List, Container, Signal.
+- [ ] Validate customer demand for SharePoint Lists with pilot users before ingesting row-level list data.
+- [ ] Keep full row-level SharePoint List ingestion opt-in only until privacy/governance controls are designed.
+
+---
+
 ## P1 - Important Before Beta
 
 - [ ] Re-enable Vercel API deployment after backend P0 hardening.
