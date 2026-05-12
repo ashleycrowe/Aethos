@@ -86,6 +86,8 @@ This file is the short-cycle engineering queue. Keep `IMPLEMENTATION_TASKS.md` a
 - [ ] Add Admin capability status: connected, missing permission, needs admin consent, unavailable.
 - [ ] Keep Sign Out visible and confirm it clears local Aethos session state.
 - [ ] Add a reset/debug section for local demo override and cached MSAL state guidance.
+- [x] Add V1 diagnostics capture for browser errors, console warnings/errors, and unhandled promise rejections.
+- [ ] Add Admin diagnostics viewer for recent `app_diagnostics` events.
 
 ---
 

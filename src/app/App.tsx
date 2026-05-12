@@ -10,6 +10,7 @@ import { UserProvider } from '@/app/context/UserContext';
 import { VersionProvider, useVersion } from '@/app/context/VersionContext';
 import { AuthProvider, useAuth } from '@/app/context/AuthContext';
 import { isDemoModeEnabled } from '@/app/config/demoMode';
+import { installDiagnostics, updateDiagnosticsContext } from '@/app/utils/diagnostics';
 import { Toaster } from 'sonner';
 
 // Components
@@ -180,6 +181,23 @@ const LoginGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   );
 };
 
+const DiagnosticsBridge = () => {
+  const { isAuthenticated, tenantId, userId } = useAuth();
+  const { isDemoMode, version } = useVersion();
+
+  useEffect(() => {
+    updateDiagnosticsContext({
+      isAuthenticated,
+      tenantId,
+      userId,
+      demoMode: isDemoMode,
+      version,
+    });
+  }, [isAuthenticated, tenantId, userId, isDemoMode, version]);
+
+  return null;
+};
+
 const Layout: React.FC = () => {
   const [activeTab, setActiveTab] = useState('insights');
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -321,6 +339,10 @@ const Layout: React.FC = () => {
 export default function App() {
   const demoMode = isDemoModeEnabled();
 
+  useEffect(() => {
+    installDiagnostics();
+  }, []);
+
   if (isMicrosoftAuthPopupResponse()) {
     return <PopupAuthResponseFallback />;
   }
@@ -329,6 +351,7 @@ export default function App() {
     <ThemeProvider>
       <VersionProvider defaultVersion="V1" demoMode={demoMode}>
         <AuthProvider>
+          <DiagnosticsBridge />
           <LoginGate>
             <AethosProvider>
               <UserProvider>
