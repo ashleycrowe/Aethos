@@ -32,14 +32,21 @@ type IntelligenceView = 'dashboard' | 'stream' | 'metadata' | 'identity';
 
 export const IntelligenceDashboard = () => {
   const { isDaylight } = useTheme();
+  const { isDemoMode } = useVersion();
   const [activeView, setActiveView] = useState<IntelligenceView>('dashboard');
 
   const views = [
     { id: 'dashboard' as IntelligenceView, label: 'Overview', icon: Sparkles },
     { id: 'stream' as IntelligenceView, label: 'Stream', icon: Activity },
     { id: 'metadata' as IntelligenceView, label: 'Metadata', icon: Brain },
-    { id: 'identity' as IntelligenceView, label: 'Identity', icon: Fingerprint },
+    ...(isDemoMode ? [{ id: 'identity' as IntelligenceView, label: 'Identity', icon: Fingerprint }] : []),
   ];
+
+  useEffect(() => {
+    if (!isDemoMode && activeView === 'identity') {
+      setActiveView('dashboard');
+    }
+  }, [activeView, isDemoMode]);
 
   const renderView = () => {
     switch (activeView) {

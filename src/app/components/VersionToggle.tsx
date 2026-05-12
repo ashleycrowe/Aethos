@@ -34,6 +34,7 @@ export const VersionToggle: React.FC = () => {
   const { isDaylight } = useTheme();
   const demoOverrideAllowed = isDemoOverrideAllowed();
   const runtimeSurface = getRuntimeSurface();
+  const showFloatingSwitcher = demoOverrideAllowed || runtimeSurface === 'demo' || runtimeSurface === 'pre-release';
   const [isExpanded, setIsExpanded] = useState(false);
   const [showFeaturePreview, setShowFeaturePreview] = useState<Version | null>(null);
 
@@ -68,6 +69,8 @@ export const VersionToggle: React.FC = () => {
     const delta = getVersionDelta(v);
     return Object.keys(delta).length;
   };
+
+  if (!showFloatingSwitcher) return null;
 
   return (
     <>

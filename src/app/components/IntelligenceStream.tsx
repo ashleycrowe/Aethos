@@ -17,15 +17,19 @@ import {
 } from 'lucide-react';
 import { useOracle, OracleInsight } from '../context/OracleContext';
 import { useTheme } from '../context/ThemeContext';
+import { useVersion } from '@/app/context/VersionContext';
 import { GlassCard } from './GlassCard';
 
 export const IntelligenceStream = () => {
   const { insights } = useOracle();
   const { isDaylight } = useTheme();
+  const { isDemoMode } = useVersion();
   const [filter, setFilter] = useState<'all' | 'waste' | 'identity' | 'governance'>('all');
   const [isStoryMode, setIsStoryMode] = useState(false);
 
-  const filteredInsights = insights.filter(ins => filter === 'all' || ins.type === filter);
+  const liveInsights: OracleInsight[] = [];
+  const sourceInsights = isDemoMode ? insights : liveInsights;
+  const filteredInsights = sourceInsights.filter(ins => filter === 'all' || ins.type === filter);
 
   return (
     <div className="h-full overflow-y-auto custom-scrollbar">
@@ -40,15 +44,18 @@ export const IntelligenceStream = () => {
               <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">Live Intelligence Stream</h2>
             </div>
             <h1 className={`text-fluid-3xl font-black uppercase tracking-tighter leading-[0.8] ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
-              Operational<br /><span className="text-[#00F0FF]">Insights</span>
+              Operational<br /><span className="text-[#00F0FF]">{isDemoMode ? 'Insights' : 'Signal Queue'}</span>
             </h1>
             <div className="flex items-center gap-6">
               <p className={`text-sm ${isDaylight ? 'text-slate-500' : 'text-slate-400'} max-w-xl italic font-medium leading-relaxed`}>
-                "Predictive heuristics identifying Dead Capital, Identity Decay, and Workspace Drag in real-time."
+                {isDemoMode
+                  ? '"Predictive heuristics identifying Dead Capital, Identity Decay, and Workspace Drag in real-time."'
+                  : 'Live intelligence will populate after Microsoft Discovery and enrichment generate tenant-specific signals.'}
               </p>
               <div className="w-px h-10 bg-white/10" />
               <button 
                 onClick={() => setIsStoryMode(!isStoryMode)}
+                disabled={!isDemoMode}
                 className={`flex items-center gap-3 px-6 py-3 rounded-2xl border transition-all ${isStoryMode ? 'bg-[#00F0FF] border-[#00F0FF] text-black shadow-[0_0_20px_rgba(0,240,255,0.3)]' : 'bg-white/5 border-white/10 text-slate-500 hover:text-white'}`}
               >
                 <Cpu size={14} className={isStoryMode ? 'animate-pulse' : ''} />
@@ -79,9 +86,24 @@ export const IntelligenceStream = () => {
           {/* Main Feed */}
           <div className="xl:col-span-8 space-y-8">
             <AnimatePresence mode="popLayout">
-              {filteredInsights.map((insight, idx) => (
-                <InsightCard key={insight.id} insight={insight} index={idx} isDaylight={isDaylight} isStoryMode={isStoryMode} />
-              ))}
+              {filteredInsights.length > 0 ? (
+                filteredInsights.map((insight, idx) => (
+                  <InsightCard key={insight.id} insight={insight} index={idx} isDaylight={isDaylight} isStoryMode={isStoryMode} />
+                ))
+              ) : (
+                <GlassCard className="p-10 border border-white/10 bg-white/[0.03]">
+                  <div className="flex flex-col items-center justify-center py-10 text-center">
+                    <Sparkles className="mb-5 h-10 w-10 text-[#00F0FF]" />
+                    <h3 className={`mb-3 text-xl font-black uppercase tracking-tight ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
+                      No Live Intelligence Signals Yet
+                    </h3>
+                    <p className="max-w-xl text-sm leading-6 text-slate-500">
+                      Run Microsoft Discovery from Admin, then use Search and Metadata enrichment to generate
+                      real tenant-specific operational signals. Demo-only recommendations are hidden in Live Mode.
+                    </p>
+                  </div>
+                </GlassCard>
+              )}
             </AnimatePresence>
           </div>
 
@@ -94,20 +116,20 @@ export const IntelligenceStream = () => {
                 <div className="space-y-3">
                   <div className="flex justify-between items-end">
                     <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Inference Confidence</span>
-                    <span className="text-xl font-black text-white font-mono">98.4%</span>
+                    <span className="text-xl font-black text-white font-mono">{isDemoMode ? '98.4%' : '0%'}</span>
                   </div>
                   <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                    <div className="h-full bg-[#00F0FF] shadow-[0_0_10px_#00F0FF]" style={{ width: '98.4%' }} />
+                    <div className="h-full bg-[#00F0FF] shadow-[0_0_10px_#00F0FF]" style={{ width: isDemoMode ? '98.4%' : '0%' }} />
                   </div>
                 </div>
 
                 <div className="space-y-3">
                   <div className="flex justify-between items-end">
                     <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Reconciliation Velocity</span>
-                    <span className="text-xl font-black text-white font-mono">1.2s</span>
+                    <span className="text-xl font-black text-white font-mono">{isDemoMode ? '1.2s' : 'Pending'}</span>
                   </div>
                   <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                    <div className="h-full bg-indigo-500" style={{ width: '85%' }} />
+                    <div className="h-full bg-indigo-500" style={{ width: isDemoMode ? '85%' : '0%' }} />
                   </div>
                 </div>
               </div>
@@ -115,7 +137,9 @@ export const IntelligenceStream = () => {
               <div className="p-6 rounded-2xl bg-white/5 border border-white/5 space-y-4">
                 <h4 className="text-[9px] font-black text-[#00F0FF] uppercase tracking-widest">Architect Tip</h4>
                 <p className="text-[11px] text-slate-400 italic leading-relaxed">
-                  "Oracle insights are prioritized by capital recovery potential. Focus on 'Supernova' orange flags to maximize 30-day ROI."
+                  {isDemoMode
+                    ? "Oracle insights are prioritized by capital recovery potential. Focus on high-impact flags to maximize 30-day ROI."
+                    : 'Live Mode hides demo recommendations until discovery produces real tenant signals.'}
                 </p>
               </div>
             </GlassCard>
