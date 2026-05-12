@@ -116,6 +116,22 @@ This file is the short-cycle engineering queue. Keep `IMPLEMENTATION_TASKS.md` a
 
 ---
 
+## Active Product Pillar - Metadata Classification
+
+**Principle:** Auto-metadata classification and metadata suggestions are a core selling point. They should be audited and built with the same care as Search, Workspaces, Discovery, and Remediation.
+
+- [x] Capture current metadata classification audit notes.
+- [ ] Review `docs/METADATA_CLASSIFICATION_AUDIT.md` at the start of the next working session.
+- [ ] Audit live vs demo behavior for tag suggestions, AI titles, categories, and intelligence scores.
+- [ ] Decide the V1 suggestion lifecycle: pending, accepted, edited, rejected, blocked.
+- [ ] Design a live-backed Metadata Suggestions panel after Discovery.
+- [ ] Add confidence and rationale to metadata suggestions.
+- [ ] Add bulk accept/edit/reject flows.
+- [ ] Tie accepted metadata directly into workspace suggestions and tag-based auto-sync.
+- [ ] Preserve an audit trail of metadata suggestion decisions.
+
+---
+
 ## P1 - Important Before Beta
 
 - [ ] Re-enable Vercel API deployment after backend P0 hardening.
