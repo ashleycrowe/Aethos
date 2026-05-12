@@ -140,6 +140,7 @@ export const OracleSearchBridgeV2 = () => {
   const [searchError, setSearchError] = useState<string | null>(null);
   const [isDemoMode, setIsDemoMode] = useState(isDemoModeEnabled());
   const [isSearchingFiles, setIsSearchingFiles] = useState(false);
+  const [hasLiveSearchRun, setHasLiveSearchRun] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -164,6 +165,7 @@ export const OracleSearchBridgeV2 = () => {
       setIsSearchingFiles(true);
       setSearchError(null);
       setIsDemoMode(false);
+      setHasLiveSearchRun(true);
 
       const token = await getAccessToken();
       const response = await searchFiles<SearchFileResult>({
@@ -177,9 +179,11 @@ export const OracleSearchBridgeV2 = () => {
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Search API unreachable';
       setSearchError(message);
-      setIsDemoMode(true);
-      setMetadataResults(demoSearchResults);
-      toast.warning('Search API unavailable - showing demo results');
+      setIsDemoMode(false);
+      setMetadataResults([]);
+      toast.error('Live search unavailable', {
+        description: message,
+      });
     } finally {
       setIsSearchingFiles(false);
     }
@@ -189,14 +193,18 @@ export const OracleSearchBridgeV2 = () => {
     e.preventDefault();
     if (!localQuery.trim()) return;
     const nextQuery = localQuery.trim();
-    search(nextQuery);
+    if (globalDemoMode) {
+      search(nextQuery);
+    }
     void runMetadataSearch(nextQuery);
     setLocalQuery('');
   };
 
   const executeCommand = (cmd: string) => {
     setLocalQuery(cmd);
-    search(cmd);
+    if (globalDemoMode) {
+      search(cmd);
+    }
     void runMetadataSearch(cmd);
     setShowQuickActions(false);
   };
@@ -306,7 +314,10 @@ export const OracleSearchBridgeV2 = () => {
                   <div className="max-w-xl space-y-4">
                     <h3 className="text-2xl font-black text-white uppercase tracking-tight">System Ready for Synthesis</h3>
                     <p className="text-xs text-slate-500 leading-relaxed">
-                      I am federated across your Microsoft 365, Slack, Box, and Local anchors. Ask me to audit waste, track budgets, analyze identity risks, or discover content patterns. Use <span className="text-[#00F0FF] font-black">/commands</span> for advanced workflows.
+                      {globalDemoMode
+                        ? 'I am federated across demo Microsoft 365, Slack, Box, and Local anchors. Ask me to audit waste, track budgets, analyze identity risks, or discover content patterns.'
+                        : 'Live Mode is active. Search queries will use indexed Microsoft 365 metadata from your tenant. If results look empty, run Microsoft Discovery from Admin first.'}
+                      {' '}Use <span className="text-[#00F0FF] font-black">/commands</span> for advanced workflows.
                     </p>
                   </div>
                   
@@ -468,7 +479,7 @@ export const OracleSearchBridgeV2 = () => {
                 )}
               </AnimatePresence>
 
-              {(metadataResults.length > 0 || isSearchingFiles || searchError) && (
+              {(metadataResults.length > 0 || isSearchingFiles || searchError || hasLiveSearchRun) && (
                 <div className="space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div>
@@ -476,8 +487,13 @@ export const OracleSearchBridgeV2 = () => {
                         Indexed Metadata Results
                       </h3>
                       {searchError && (
-                        <p className="mt-2 text-[10px] font-bold text-[#F39C12]">
-                          Search API fallback active: {searchError}
+                        <p className="mt-2 text-[10px] font-bold text-[#FF5733]">
+                          Live search error: {searchError}
+                        </p>
+                      )}
+                      {!searchError && hasLiveSearchRun && metadataResults.length === 0 && !isSearchingFiles && (
+                        <p className="mt-2 text-[10px] font-bold text-slate-500">
+                          No indexed Microsoft files matched. Run Admin Discovery if this tenant has not been indexed yet.
                         </p>
                       )}
                     </div>

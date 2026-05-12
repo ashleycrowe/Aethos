@@ -26,6 +26,23 @@ export interface SearchFilesResponse<T = unknown> {
   };
 }
 
+export interface DiscoveryScanRequest {
+  scanType?: 'full' | 'incremental';
+  accessToken?: string | null;
+}
+
+export interface DiscoveryScanResponse {
+  success: boolean;
+  scanId: string;
+  duration: number;
+  results: {
+    totalFiles: number;
+    totalSites: number;
+    newFiles: number;
+    errors: number;
+  };
+}
+
 async function request<T>(path: string, options: RequestInit = {}, accessToken?: string | null): Promise<T> {
   if (isDemoModeEnabled()) {
     throw new Error(DEMO_MODE_MESSAGE);
@@ -152,6 +169,20 @@ export async function searchFiles<T = unknown>({
     {
       method: 'POST',
       body: JSON.stringify(body),
+    },
+    accessToken
+  );
+}
+
+export async function runDiscoveryScan({
+  accessToken,
+  scanType = 'full',
+}: DiscoveryScanRequest): Promise<DiscoveryScanResponse> {
+  return request<DiscoveryScanResponse>(
+    '/discovery/scan',
+    {
+      method: 'POST',
+      body: JSON.stringify({ scanType }),
     },
     accessToken
   );

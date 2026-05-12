@@ -3,6 +3,7 @@ import {
   CheckCircle2,
   Database,
   ExternalLink,
+  FileSearch,
   KeyRound,
   LogIn,
   LogOut,
@@ -23,6 +24,7 @@ import {
   getEnvDemoModeDefault,
   isDemoModeEnabled,
 } from '@/app/config/demoMode';
+import { runDiscoveryScan, type DiscoveryScanResponse } from '@/lib/api';
 
 type AdminStatusCardProps = {
   icon: React.ElementType;
@@ -67,9 +69,12 @@ export const AdminCenter = () => {
     accessToken,
     isAuthenticated,
     isLoading,
+    getAccessToken,
     login,
     logout,
   } = useAuth();
+  const [isScanning, setIsScanning] = React.useState(false);
+  const [scanResult, setScanResult] = React.useState<DiscoveryScanResponse | null>(null);
 
   const demoMode = isDemoModeEnabled();
   const envDemoDefault = getEnvDemoModeDefault();
@@ -107,6 +112,34 @@ export const AdminCenter = () => {
     window.localStorage.setItem(DEMO_MODE_STORAGE_KEY, 'false');
     setDemoMode(false);
     void login();
+  };
+
+  const handleDiscoveryScan = async () => {
+    try {
+      setIsScanning(true);
+      setScanResult(null);
+      window.localStorage.setItem(DEMO_MODE_STORAGE_KEY, 'false');
+      setDemoMode(false);
+
+      const token = await getAccessToken();
+      if (!token) {
+        toast.error('Microsoft session required', {
+          description: 'Sign in again before running discovery.',
+        });
+        return;
+      }
+
+      const result = await runDiscoveryScan({ accessToken: token, scanType: 'full' });
+      setScanResult(result);
+      toast.success('Discovery scan complete', {
+        description: `${result.results.totalFiles.toLocaleString()} files found across ${result.results.totalSites.toLocaleString()} sites.`,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Discovery scan failed';
+      toast.error('Discovery scan failed', { description: message });
+    } finally {
+      setIsScanning(false);
+    }
   };
 
   return (
@@ -263,6 +296,31 @@ export const AdminCenter = () => {
         </div>
 
         <section className="grid gap-6 lg:grid-cols-3">
+          <div className="rounded-[28px] border border-[#00F0FF]/20 bg-[#00F0FF]/[0.06] p-5 backdrop-blur-xl">
+            <FileSearch className="mb-4 h-6 w-6 text-[#00F0FF]" />
+            <h3 className="mb-2 text-base font-black text-white">Microsoft Discovery</h3>
+            <p className="mb-5 text-sm leading-6 text-slate-400">
+              Live search reads from the indexed `files` table. Run discovery after signing in to populate it
+              from your Microsoft 365 tenant.
+            </p>
+            <button
+              type="button"
+              onClick={handleDiscoveryScan}
+              disabled={isScanning || !isAuthenticated}
+              className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-[#00F0FF]/30 bg-[#00F0FF] px-4 text-xs font-black uppercase tracking-[0.16em] text-slate-950 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <FileSearch className="h-4 w-4" />
+              {isScanning ? 'Scanning Microsoft 365' : 'Run Discovery Scan'}
+            </button>
+            {scanResult && (
+              <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4 text-xs leading-6 text-slate-300">
+                Found {scanResult.results.totalFiles.toLocaleString()} files across{' '}
+                {scanResult.results.totalSites.toLocaleString()} sites. New indexed files:{' '}
+                {scanResult.results.newFiles.toLocaleString()}.
+              </div>
+            )}
+          </div>
+
           <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5 backdrop-blur-xl">
             <MonitorCog className="mb-4 h-6 w-6 text-[#00F0FF]" />
             <h3 className="mb-2 text-base font-black text-white">Mode Control</h3>
