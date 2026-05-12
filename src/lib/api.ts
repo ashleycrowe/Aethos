@@ -124,6 +124,18 @@ export interface ReportSummaryResponse {
       missingOwnerFiles: number;
     };
     exposureReview: {
+      externalUsersTotal: number;
+      externalSharesOnStaleFiles: number;
+      providerBreakdown: Array<{
+        label: string;
+        fileCount: number;
+        totalBytes: number;
+      }>;
+      ownerBreakdown: Array<{
+        label: string;
+        fileCount: number;
+        totalBytes: number;
+      }>;
       topFiles: Array<{
         id: string;
         name: string;
@@ -137,6 +149,16 @@ export interface ReportSummaryResponse {
       }>;
     };
     staleContentReview: {
+      providerBreakdown: Array<{
+        label: string;
+        fileCount: number;
+        totalBytes: number;
+      }>;
+      ownerBreakdown: Array<{
+        label: string;
+        fileCount: number;
+        totalBytes: number;
+      }>;
       topFiles: Array<{
         id: string;
         name: string;
@@ -164,6 +186,11 @@ export interface ReportSummaryResponse {
     ownership: {
       uniqueOwners: number;
       unknownOwnerFiles: number;
+      ownerMetadataCoverage: {
+        filesWithOwner: number;
+        coveragePercent: number;
+        status: 'none' | 'partial' | 'complete';
+      };
       topRiskOwners: Array<{
         ownerEmail: string | null;
         ownerName: string | null;

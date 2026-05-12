@@ -246,7 +246,7 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
             </motion.div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold text-white font-['Inter']">Metadata Intelligence</h1>
+                <h1 className="text-2xl font-bold text-white font-['Inter']">Metadata Quality</h1>
                 {isDemoMode && (
                   <motion.span
                     initial={{ opacity: 0, scale: 0.8 }}
@@ -257,7 +257,14 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
                   </motion.span>
                 )}
               </div>
-              <p className="text-sm text-[#A0A8B8]">AI-powered enrichment & discovery analytics</p>
+              <p className="text-sm text-[#A0A8B8]">Metadata quality and AI readiness analytics</p>
+              <p className={`mt-2 w-fit rounded-full border px-3 py-1 text-[9px] font-black uppercase tracking-widest ${
+                isDemoMode
+                  ? 'border-[#F59E0B]/25 bg-[#F59E0B]/10 text-[#F59E0B]'
+                  : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400'
+              }`}>
+                Data source: {isDemoMode ? 'Demo fixtures' : 'Live tenant'}
+              </p>
               {isDemoMode && (
                 <p className="text-xs text-[#6B7280] mt-1">
                   Showing optimized fixture data for demo walkthroughs

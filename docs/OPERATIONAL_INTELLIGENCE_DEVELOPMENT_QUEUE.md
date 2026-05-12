@@ -27,7 +27,7 @@ The V1 surface must be honest in Live Mode and impressive in Demo Mode. Demo can
 - [x] Hide prototype Identity tab in Live Mode.
 - [x] Hide the bottom version/demo floater on locked live production domains.
 - [ ] Audit every tab under Operational Intelligence for static numbers, fake people, fake projects, or demo-only labels.
-- [ ] Add a persistent, subtle `Data source: Live tenant` / `Data source: Demo fixtures` label to each report card.
+- [x] Add a persistent, subtle `Data source: Live tenant` / `Data source: Demo fixtures` label to each report card.
 - [ ] Add a shared `LiveDataBoundary` helper/component for empty/error/fixture states.
 - [ ] Add tests for `demo.aethoswork.com` and `app.aethoswork.com` runtime decisions.
 
@@ -43,18 +43,18 @@ Acceptance:
 
 Replace the current broad tab concept with a V1 report-card layout:
 
-- [ ] Rename `Overview` to `Discovery Summary`.
-- [ ] Keep `Metadata` as `Metadata Quality`.
-- [ ] Replace `Stream` in Live Mode with `Signal Queue`.
+- [x] Rename `Overview` to `Discovery Summary`.
+- [x] Keep `Metadata` as `Metadata Quality`.
+- [x] Replace `Stream` in Live Mode with `Signal Queue`.
 - [ ] Add `Ownership` / `Offboarding Risk` as a V1 identity-adjacent report card.
 - [ ] Keep full `Identity Engine` demo-only until V1.5/V2.
 - [x] Add a top `Tenant Health Score` for executive/founder buyers.
-- [ ] Add a top `Last scan` strip: status, completed time, files, sites/Teams, errors.
-- [ ] Add CTA routing:
+- [x] Add a top `Last scan` strip: status, completed time, files, sites/Teams, errors.
+- [x] Add CTA routing:
   - No scan -> Admin: Run Discovery.
   - Scan with no data -> Path to Value checklist / Create Workspace / Demo walkthrough.
-  - Scan with risks -> Remediation.
-  - Scan with good metadata -> Oracle Search / Workspace.
+  - Scan with risks -> Signal Queue and Remediation.
+  - Scan with good metadata -> Search / Workspace.
 
 Acceptance:
 
@@ -268,6 +268,7 @@ Driver acceptance:
 - Drivers must deep-link to the relevant report or Signal Queue filter.
 - Drivers must not mention departed users until Entra status enrichment exists.
 - `Critical Knowledge Exposure` is the V1 high-risk label because it works for both technical admins and non-technical operators. Use `Sensitive Technical Liabilities` only as secondary/detail copy when the risk is specifically architectural or technical.
+- [x] Live Signal Queue is generated from report-summary counts and routes to Admin, Remediation, or Workspaces.
 
 ---
 
@@ -323,7 +324,7 @@ Report cards:
 
 Tasks:
 
-- [ ] Add exposure aggregation to `report-summary`.
+- [x] Add exposure aggregation to `report-summary`.
 - [x] Add top externally shared files table.
 - [x] Add filter handoff to Remediation: `issue=external_share`.
 - [x] Add exportable CSV data model.
@@ -350,7 +351,7 @@ Report cards:
 
 Tasks:
 
-- [ ] Add stale storage aggregation.
+- [x] Add stale storage aggregation.
 - [x] Add top stale files table.
 - [x] Add handoff to Remediation: `issue=stale`.
 - [ ] Avoid hard-coded dollar savings until pricing/storage assumptions are configurable.
@@ -394,8 +395,8 @@ Do not include in V1:
 
 Implementation tasks:
 
-- [ ] Add ownership aggregation to `report-summary`.
-- [ ] Add `ownerLiabilityScore` calculation:
+- [x] Add ownership aggregation to `report-summary`.
+- [x] Add `ownerLiabilityScore` calculation:
   - high-risk files
   - external shares
   - stale files
@@ -403,8 +404,8 @@ Implementation tasks:
   - OneDrive concentration
 - [x] Add `Ownership & Offboarding Risk` card to Operational Intelligence.
 - [x] Add owner drilldown table.
-- [ ] Add CTA: create workspace/handoff packet from selected owner risk group.
-- [ ] Add empty state when Graph does not return owner fields.
+- [x] Add CTA: create workspace/handoff packet from selected owner risk group.
+- [x] Add empty state when Graph does not return owner fields.
 - [x] Use `Ownership & Offboarding Risk` as the V1 product name.
 
 V1.5 implementation tasks:
@@ -469,8 +470,8 @@ Turn discovery into action, not inventory.
 Tasks:
 
 - [ ] Suggest workspaces from path/category/tag/owner clusters.
-- [ ] Suggest offboarding/handoff workspaces from owner risk.
-- [ ] Add `Create workspace from this report` CTA.
+- [x] Suggest offboarding/handoff workspaces from owner risk.
+- [x] Add `Create workspace from this report` CTA.
 - [ ] Allow manual workspace creation even with zero matching files.
 - [ ] Add preview count and sample files before workspace creation.
 

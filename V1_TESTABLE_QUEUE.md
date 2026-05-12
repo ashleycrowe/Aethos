@@ -118,6 +118,12 @@ See `docs/OPERATIONAL_INTELLIGENCE_DEVELOPMENT_QUEUE.md` for the detailed implem
 - [x] Add manual admin action exports: copy issue list, CSV, and dry-run-first PowerShell/Graph helper.
 - [x] Align Remediation playbooks with Operational Intelligence report drivers.
 - [x] Add V1.5 identity readiness boundary for Entra owner-status enrichment.
+- [x] Rename Operational Intelligence tabs to Discovery Summary, Signal Queue, and Metadata Quality with persistent data-source labels.
+- [x] Add a persisted Last Scan strip to Operational Intelligence.
+- [x] Back Live Mode Signal Queue with report-summary signals and actionable routing.
+- [x] Add exposure and stale-content aggregation breakdowns to live report cards.
+- [x] Add owner-risk handoff workspace opportunities and owner-row handoff CTAs.
+- [x] Add owner metadata coverage and missing-owner empty states for live reports.
 - [ ] Add V1.5 identity enrichment spike for Entra active/disabled/departed owner status.
 - [ ] Add smoke tests for demo route, live empty tenant, live first discovery, ownership/offboarding risk, and V1.5 content intelligence.
 - [ ] Keep mock `ReportingCenterV1` hidden from Live Mode until it is live-backed.

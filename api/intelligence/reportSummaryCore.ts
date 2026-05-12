@@ -64,6 +64,12 @@ export type ReportFileSample = {
   externalUserCount: number;
 };
 
+export type ReportBucket = {
+  label: string;
+  fileCount: number;
+  totalBytes: number;
+};
+
 export type ReportSummary = {
   tenantId: string;
   generatedAt: string;
@@ -110,9 +116,15 @@ export type ReportSummary = {
     missingOwnerFiles: number;
   };
   exposureReview: {
+    externalUsersTotal: number;
+    externalSharesOnStaleFiles: number;
+    providerBreakdown: ReportBucket[];
+    ownerBreakdown: ReportBucket[];
     topFiles: ReportFileSample[];
   };
   staleContentReview: {
+    providerBreakdown: ReportBucket[];
+    ownerBreakdown: ReportBucket[];
     topFiles: ReportFileSample[];
   };
   remediationDryRun: {
@@ -130,6 +142,11 @@ export type ReportSummary = {
   ownership: {
     uniqueOwners: number;
     unknownOwnerFiles: number;
+    ownerMetadataCoverage: {
+      filesWithOwner: number;
+      coveragePercent: number;
+      status: 'none' | 'partial' | 'complete';
+    };
     topRiskOwners: Array<{
       ownerEmail: string | null;
       ownerName: string | null;
@@ -321,6 +338,23 @@ function buildWorkspaceOpportunities(files: ReportFileRow[]): ReportSummary['wor
   const externalFiles = files.filter((file) => file.has_external_share);
   const staleFiles = files.filter(isStale);
   const unknownOwnerFiles = files.filter((file) => !hasOwner(file));
+  const topOwnerRiskGroup = buildOwnerGroups(files)
+    .filter((group) => group.ownerEmail || (group.ownerName && group.ownerName !== 'Unknown Owner'))
+    .map((group) => {
+      const externalCount = group.files.filter((file) => file.has_external_share).length;
+      const highRiskCount = group.files.filter(isHighRisk).length;
+      const staleCount = group.files.filter(isStale).length;
+      const oneDriveCount = group.files.filter(isOneDrive).length;
+      const riskSignalCount = externalCount + highRiskCount + staleCount + oneDriveCount;
+
+      return {
+        ownerLabel: group.ownerName || group.ownerEmail || 'Owner',
+        fileCount: group.files.length,
+        riskSignalCount,
+      };
+    })
+    .filter((group) => group.riskSignalCount > 0)
+    .sort((a, b) => b.riskSignalCount - a.riskSignalCount || b.fileCount - a.fileCount)[0];
 
   return [
     externalFiles.length > 0
@@ -347,6 +381,14 @@ function buildWorkspaceOpportunities(files: ReportFileRow[]): ReportSummary['wor
           suggestedTags: ['missing-owner', 'handoff'],
         }
       : null,
+    topOwnerRiskGroup
+      ? {
+          label: `${topOwnerRiskGroup.ownerLabel} Handoff Review`,
+          reason: 'Create an owner-focused workspace before cleanup, offboarding, or stewardship changes.',
+          fileCount: topOwnerRiskGroup.fileCount,
+          suggestedTags: ['owner-risk', 'handoff', topOwnerRiskGroup.ownerLabel.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')],
+        }
+      : null,
   ].filter(Boolean) as ReportSummary['workspaceOpportunities'];
 }
 
@@ -362,6 +404,22 @@ function toFileSample(file: ReportFileRow): ReportFileSample {
     riskScore: file.risk_score || 0,
     externalUserCount: file.external_user_count || 0,
   };
+}
+
+function buildBuckets(files: ReportFileRow[], getLabel: (file: ReportFileRow) => string): ReportBucket[] {
+  const buckets = new Map<string, ReportBucket>();
+
+  files.forEach((file) => {
+    const label = getLabel(file) || 'Unknown';
+    const current = buckets.get(label) || { label, fileCount: 0, totalBytes: 0 };
+    current.fileCount += 1;
+    current.totalBytes += file.size_bytes || 0;
+    buckets.set(label, current);
+  });
+
+  return Array.from(buckets.values())
+    .sort((a, b) => b.fileCount - a.fileCount || b.totalBytes - a.totalBytes)
+    .slice(0, 5);
 }
 
 export function buildReportSummary({
@@ -384,6 +442,13 @@ export function buildReportSummary({
   const highRiskFiles = files.filter(isHighRisk);
   const missingOwnerFiles = files.filter((file) => !hasOwner(file));
   const oneDriveFiles = files.filter(isOneDrive);
+  const filesWithOwner = totalFiles - missingOwnerFiles.length;
+  const ownerCoveragePercent = totalFiles > 0 ? clampScore((filesWithOwner / totalFiles) * 100) : 0;
+  const ownerCoverageStatus = totalFiles === 0 || filesWithOwner === 0
+    ? 'none'
+    : filesWithOwner === totalFiles
+    ? 'complete'
+    : 'partial';
 
   const dataMaturity = getDataMaturity(totalFiles, totalSites);
   const externalScore = ratioScore(externallySharedFiles.length, totalFiles, 35);
@@ -519,9 +584,15 @@ export function buildReportSummary({
       missingOwnerFiles: missingOwnerFiles.length,
     },
     exposureReview: {
+      externalUsersTotal: externallySharedFiles.reduce((sum, file) => sum + (file.external_user_count || 0), 0),
+      externalSharesOnStaleFiles: externallySharedFiles.filter(isStale).length,
+      providerBreakdown: buildBuckets(externallySharedFiles, (file) => file.provider_type || 'Microsoft 365'),
+      ownerBreakdown: buildBuckets(externallySharedFiles, (file) => file.owner_name || file.owner_email || 'Unknown Owner'),
       topFiles: topExposureFiles,
     },
     staleContentReview: {
+      providerBreakdown: buildBuckets(staleFiles, (file) => file.provider_type || 'Microsoft 365'),
+      ownerBreakdown: buildBuckets(staleFiles, (file) => file.owner_name || file.owner_email || 'Unknown Owner'),
       topFiles: topStaleFiles,
     },
     remediationDryRun: {
@@ -539,6 +610,11 @@ export function buildReportSummary({
     ownership: {
       uniqueOwners,
       unknownOwnerFiles: missingOwnerFiles.length,
+      ownerMetadataCoverage: {
+        filesWithOwner,
+        coveragePercent: ownerCoveragePercent,
+        status: ownerCoverageStatus,
+      },
       topRiskOwners,
     },
     workspaceOpportunities: buildWorkspaceOpportunities(files),

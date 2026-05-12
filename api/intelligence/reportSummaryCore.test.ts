@@ -102,8 +102,23 @@ describe('buildReportSummary', () => {
     expect(summary.globalRisk.tenantExposureIndex).not.toBeNull();
     expect(summary.healthScore.drivers[0]).toBe('Unsecured External Shares');
     expect(summary.ownership.topRiskOwners[0].ownerLiabilityScore).toBeGreaterThan(0);
+    expect(summary.ownership.ownerMetadataCoverage).toMatchObject({
+      filesWithOwner: 45,
+      coveragePercent: 75,
+      status: 'partial',
+    });
     expect(summary.risk.externallySharedFiles).toBe(20);
     expect(summary.risk.missingOwnerFiles).toBe(15);
+    expect(summary.exposureReview.externalUsersTotal).toBe(0);
+    expect(summary.exposureReview.externalSharesOnStaleFiles).toBe(0);
+    expect(summary.exposureReview.providerBreakdown[0]).toMatchObject({
+      label: 'onedrive',
+      fileCount: 20,
+    });
+    expect(summary.staleContentReview.providerBreakdown[0]).toMatchObject({
+      label: 'sharepoint',
+      fileCount: 15,
+    });
     expect(summary.exposureReview.topFiles.length).toBeGreaterThan(0);
     expect(summary.staleContentReview.topFiles.length).toBeGreaterThan(0);
     expect(summary.exposureReview.topFiles[0]).toMatchObject({
@@ -116,5 +131,13 @@ describe('buildReportSummary', () => {
       actionType: 'revoke_links',
       fileCount: 3,
     });
+    expect(summary.workspaceOpportunities).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          label: 'Alex Handoff Review',
+          suggestedTags: expect.arrayContaining(['owner-risk', 'handoff']),
+        }),
+      ])
+    );
   });
 });

@@ -62,6 +62,10 @@ function formatAction(value: string) {
   return value.replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
+function formatScanStatus(value: string) {
+  return value.replace(/_/g, ' ').toUpperCase();
+}
+
 function openRemediation(issue?: string) {
   if (typeof window === 'undefined') return;
   window.dispatchEvent(new CustomEvent('aethos:navigate', {
@@ -76,15 +80,89 @@ function openAppTab(tab: string) {
   }));
 }
 
+const DataSourceBadge = ({ mode }: { mode: 'live' | 'demo' }) => (
+  <span className={`w-fit rounded-full border px-3 py-1 text-[9px] font-black uppercase tracking-widest ${
+    mode === 'live'
+      ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400'
+      : 'border-[#F59E0B]/25 bg-[#F59E0B]/10 text-[#F59E0B]'
+  }`}>
+    Data source: {mode === 'live' ? 'Live tenant' : 'Demo fixtures'}
+  </span>
+);
+
+const LastScanStrip = ({
+  reportSummary,
+  isDaylight,
+}: {
+  reportSummary: ReportSummaryResponse['summary'];
+  isDaylight: boolean;
+}) => {
+  const status = reportSummary.lastScan.status;
+  const statusColor =
+    status === 'completed' ? '#10B981' :
+    status === 'partial' ? '#F59E0B' :
+    status === 'failed' ? '#FF5733' :
+    status === 'running' ? '#00F0FF' :
+    '#94A3B8';
+
+  const stats = [
+    ['Completed', formatDate(reportSummary.lastScan.completedAt)],
+    ['Files', reportSummary.lastScan.filesDiscovered.toLocaleString()],
+    ['Sites/Teams', reportSummary.lastScan.sitesDiscovered.toLocaleString()],
+    ['New Files', reportSummary.lastScan.newFiles.toLocaleString()],
+    ['Errors', reportSummary.lastScan.errorCount.toLocaleString()],
+  ];
+
+  return (
+    <GlassCard className="p-4 md:p-5">
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border"
+            style={{ borderColor: `${statusColor}40`, backgroundColor: `${statusColor}14`, color: statusColor }}
+          >
+            {status === 'running' ? <Loader2 className="h-5 w-5 animate-spin" /> : <Clock className="h-5 w-5" />}
+          </div>
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <p className={`text-sm font-black uppercase tracking-widest ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
+                Last Scan: {formatScanStatus(status)}
+              </p>
+              <DataSourceBadge mode="live" />
+            </div>
+            <p className="mt-1 text-xs text-slate-500">
+              Persisted discovery summary from the latest Microsoft 365 scan.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-5 xl:min-w-[640px]">
+          {stats.map(([label, value]) => (
+            <div
+              key={label}
+              className={`rounded-xl border p-3 ${isDaylight ? 'border-slate-200 bg-slate-50' : 'border-white/10 bg-white/[0.03]'}`}
+            >
+              <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">{label}</p>
+              <p className={`mt-1 truncate text-sm font-black ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
+                {value}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </GlassCard>
+  );
+};
+
 export const IntelligenceDashboard = () => {
   const { isDaylight } = useTheme();
   const { isDemoMode } = useVersion();
   const [activeView, setActiveView] = useState<IntelligenceView>('dashboard');
 
   const views = [
-    { id: 'dashboard' as IntelligenceView, label: 'Overview', icon: Sparkles },
-    { id: 'stream' as IntelligenceView, label: 'Stream', icon: Activity },
-    { id: 'metadata' as IntelligenceView, label: 'Metadata', icon: Brain },
+    { id: 'dashboard' as IntelligenceView, label: 'Discovery Summary', icon: Sparkles },
+    { id: 'stream' as IntelligenceView, label: isDemoMode ? 'Stream' : 'Signal Queue', icon: Activity },
+    { id: 'metadata' as IntelligenceView, label: 'Metadata Quality', icon: Brain },
     ...(isDemoMode ? [{ id: 'identity' as IntelligenceView, label: 'Identity', icon: Fingerprint }] : []),
   ];
 
@@ -103,7 +181,7 @@ export const IntelligenceDashboard = () => {
       case 'identity':
         return <IdentityEngine />;
       default:
-        return <OverviewDashboard />;
+        return <OverviewDashboard onOpenSignalQueue={() => setActiveView('stream')} />;
     }
   };
 
@@ -170,7 +248,7 @@ export const IntelligenceDashboard = () => {
   );
 };
 
-const OverviewDashboard = () => {
+const OverviewDashboard = ({ onOpenSignalQueue }: { onOpenSignalQueue?: () => void }) => {
   const { isDaylight } = useTheme();
   const { version, isDemoMode } = useVersion();
   const { getAccessToken } = useAuth();
@@ -216,6 +294,13 @@ const OverviewDashboard = () => {
   const maturity = reportSummary?.healthScore.dataMaturity ?? 'none';
   const lastScanStatus = reportSummary?.lastScan.status ?? 'none';
   const shouldShowPathToValue = !isDemoMode && reportSummary?.healthScore.label === 'not_enough_data';
+  const ownerMetadataState = reportSummary
+    ? reportSummary.discovery.totalFiles === 0
+      ? 'no_files'
+      : reportSummary.ownership.uniqueOwners === 0
+      ? 'missing_owner_metadata'
+      : 'available'
+    : 'loading';
 
   const metrics = [
     {
@@ -330,11 +415,15 @@ const OverviewDashboard = () => {
       )}
 
       {!isDemoMode && reportSummary && (
+        <LastScanStrip reportSummary={reportSummary} isDaylight={isDaylight} />
+      )}
+
+      {!isDemoMode && reportSummary && (
         <GlassCard className="p-5 md:p-8 border-[#00F0FF]/20 bg-[#00F0FF]/[0.03]">
           <div className="grid gap-5 lg:grid-cols-[220px_1fr_auto] lg:items-center">
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.35em] text-slate-500">
-                Data source: Live tenant
+                Discovery Summary
               </p>
               <p className={`mt-3 text-4xl font-black ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
                 {healthDisplay}
@@ -342,6 +431,9 @@ const OverviewDashboard = () => {
               <p className="mt-1 text-xs font-black uppercase tracking-widest text-[#00F0FF]">
                 Tenant Health Score
               </p>
+              <div className="mt-3">
+                <DataSourceBadge mode="live" />
+              </div>
             </div>
             <div>
               <p className={`text-sm font-semibold ${isDaylight ? 'text-slate-700' : 'text-slate-200'}`}>
@@ -366,7 +458,7 @@ const OverviewDashboard = () => {
             <button
               onClick={() => healthLabel === 'not_enough_data'
                 ? openAppTab('admin')
-                : openRemediation(reportSummary.riskDrivers[0]?.filterTarget.split('issue=')[1])
+                : onOpenSignalQueue?.()
               }
               className="min-h-[44px] rounded-xl bg-white px-5 py-3 text-xs font-black uppercase tracking-[0.2em] text-[#0B0F19] transition hover:bg-[#00F0FF]"
             >
@@ -393,6 +485,7 @@ const OverviewDashboard = () => {
             <span className="w-fit rounded-full border border-[#00F0FF]/20 bg-[#00F0FF]/10 px-3 py-1 text-[9px] font-black uppercase tracking-widest text-[#00F0FF]">
               {reportSummary.discovery.totalFiles.toLocaleString()} files / {reportSummary.discovery.totalSites.toLocaleString()} sites
             </span>
+            <DataSourceBadge mode="live" />
           </div>
 
           <div className="grid grid-cols-1 gap-3 lg:grid-cols-5">
@@ -475,13 +568,17 @@ const OverviewDashboard = () => {
             <div className="relative z-10 space-y-4">
               <div className="flex items-center justify-between">
                 <metric.icon className="w-5 h-5" style={{ color: metric.color }} />
-                <span className={`text-xs font-bold px-2 py-1 rounded-full ${
-                  metric.trend === 'up' 
-                    ? 'bg-emerald-500/10 text-emerald-500' 
-                    : 'bg-slate-500/10 text-slate-500'
-                }`}>
-                  {metric.change}
-                </span>
+                {isDemoMode ? (
+                  <DataSourceBadge mode="demo" />
+                ) : (
+                  <span className={`text-xs font-bold px-2 py-1 rounded-full ${
+                    metric.trend === 'up'
+                      ? 'bg-emerald-500/10 text-emerald-500'
+                      : 'bg-slate-500/10 text-slate-500'
+                  }`}>
+                    {metric.change}
+                  </span>
+                )}
               </div>
               <div>
                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">
@@ -493,6 +590,11 @@ const OverviewDashboard = () => {
                 <p className="text-[9px] text-slate-500 mt-2 italic">
                   {metric.description}
                 </p>
+                {!isDemoMode && (
+                  <p className="mt-3 text-[9px] font-black uppercase tracking-widest text-slate-500">
+                    Data source: Live tenant
+                  </p>
+                )}
               </div>
             </div>
           </GlassCard>
@@ -510,10 +612,11 @@ const OverviewDashboard = () => {
                 <h3 className={`mt-2 text-xl font-black uppercase tracking-tight ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
                   Owner Liability Queue
                 </h3>
+                <p className="mt-2 text-xs leading-5 text-slate-500">
+                  Owner metadata coverage: {reportSummary.ownership.ownerMetadataCoverage.coveragePercent}% ({reportSummary.ownership.ownerMetadataCoverage.status})
+                </p>
               </div>
-              <span className="w-fit rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[9px] font-black uppercase tracking-widest text-emerald-400">
-                Data source: Live tenant
-              </span>
+              <DataSourceBadge mode="live" />
             </div>
 
             {reportSummary.ownership.topRiskOwners.length > 0 ? (
@@ -560,13 +663,53 @@ const OverviewDashboard = () => {
                           ))}
                         </div>
                       </div>
+                      <div className="mt-4 flex flex-wrap gap-2 border-t border-white/10 pt-4">
+                        <button
+                          onClick={() => openAppTab('nexus')}
+                          className="min-h-[40px] rounded-xl bg-white px-4 py-2 text-[9px] font-black uppercase tracking-widest text-[#0B0F19] transition hover:bg-[#00F0FF]"
+                        >
+                          Handoff Workspace
+                        </button>
+                        <button
+                          onClick={() => openRemediation(owner.missingOwnerCount > 0 ? 'missing_owner' : owner.externalShareCount > 0 ? 'external_share' : owner.staleCount > 0 ? 'stale' : 'high_risk')}
+                          className="min-h-[40px] rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-[9px] font-black uppercase tracking-widest text-slate-300 transition hover:border-[#00F0FF]/40 hover:text-white"
+                        >
+                          Review Files
+                        </button>
+                        <span className="flex items-center text-[10px] leading-5 text-slate-500">
+                          Workspace creation keeps source files in Microsoft 365 and collects context for stewardship.
+                        </span>
+                      </div>
                     </div>
                   );
                 })}
               </div>
             ) : (
-              <div className="rounded-xl border border-white/10 bg-white/[0.03] p-6 text-sm text-slate-400">
-                No owner groups are available yet. Run Discovery against SharePoint, Teams, and OneDrive to populate owner liability.
+              <div className="rounded-xl border border-white/10 bg-white/[0.03] p-6">
+                <p className={`text-sm font-black uppercase tracking-widest ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
+                  {ownerMetadataState === 'missing_owner_metadata'
+                    ? 'Owner metadata not available yet'
+                    : 'No owner groups yet'}
+                </p>
+                <p className="mt-3 text-sm leading-6 text-slate-400">
+                  {ownerMetadataState === 'missing_owner_metadata'
+                    ? 'Aethos indexed files, but Microsoft Graph did not return usable owner fields for this scan. Review missing-owner candidates and confirm discovery permissions before treating this as departed-user risk.'
+                    : 'Run Discovery against SharePoint, Teams, and OneDrive to populate owner liability.'}
+                </p>
+                <div className="mt-5 flex flex-wrap gap-3">
+                  <button
+                    onClick={() => ownerMetadataState === 'missing_owner_metadata' ? openRemediation('missing_owner') : openAppTab('admin')}
+                    className="min-h-[40px] rounded-xl bg-white px-4 py-2 text-[9px] font-black uppercase tracking-widest text-[#0B0F19] transition hover:bg-[#00F0FF]"
+                  >
+                    {ownerMetadataState === 'missing_owner_metadata' ? 'Review Missing Owners' : 'Run Discovery'}
+                  </button>
+                  <button
+                    onClick={() => openAppTab('admin')}
+                    className="min-h-[40px] rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-[9px] font-black uppercase tracking-widest text-slate-300 transition hover:border-[#00F0FF]/40 hover:text-white"
+                  >
+                    Check Permissions
+                  </button>
+                </div>
               </div>
             )}
           </GlassCard>
@@ -581,7 +724,10 @@ const OverviewDashboard = () => {
                   Risk Snapshot
                 </h3>
               </div>
-              <ShieldAlert className="h-5 w-5 text-[#FF5733]" />
+              <div className="flex flex-col items-end gap-3">
+                <DataSourceBadge mode="live" />
+                <ShieldAlert className="h-5 w-5 text-[#FF5733]" />
+              </div>
             </div>
 
             <div className="space-y-3">
@@ -649,6 +795,12 @@ const OverviewDashboard = () => {
               issue: 'external_share',
               empty: 'No externally shared files are currently indexed.',
               files: reportSummary.exposureReview.topFiles,
+              summaryStats: [
+                ['External Users', reportSummary.exposureReview.externalUsersTotal.toLocaleString()],
+                ['Stale & Shared', reportSummary.exposureReview.externalSharesOnStaleFiles.toLocaleString()],
+              ],
+              providerBreakdown: reportSummary.exposureReview.providerBreakdown,
+              ownerBreakdown: reportSummary.exposureReview.ownerBreakdown,
               accent: '#FF5733',
               meta: (file: ReportSummaryResponse['summary']['exposureReview']['topFiles'][number]) =>
                 `${file.externalUserCount.toLocaleString()} external user${file.externalUserCount === 1 ? '' : 's'} | Risk ${file.riskScore}/100`,
@@ -660,6 +812,12 @@ const OverviewDashboard = () => {
               issue: 'stale',
               empty: 'No stale files are currently indexed.',
               files: reportSummary.staleContentReview.topFiles,
+              summaryStats: [
+                ['Stale Files', reportSummary.risk.staleFiles.toLocaleString()],
+                ['Stale Storage', formatBytes(reportSummary.risk.staleBytes)],
+              ],
+              providerBreakdown: reportSummary.staleContentReview.providerBreakdown,
+              ownerBreakdown: reportSummary.staleContentReview.ownerBreakdown,
               accent: '#10B981',
               meta: (file: ReportSummaryResponse['summary']['staleContentReview']['topFiles'][number]) =>
                 `${formatBytes(file.sizeBytes)} | Modified ${formatDate(file.modifiedAt)}`,
@@ -667,23 +825,74 @@ const OverviewDashboard = () => {
           ].map((card) => (
             <GlassCard key={card.title} className="p-5 md:p-8">
               <div className="mb-6 flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.35em] text-slate-500">
-                    {card.eyebrow}
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.35em] text-slate-500">
+                  {card.eyebrow}
                   </p>
                   <h3 className={`mt-2 text-xl font-black uppercase tracking-tight ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
                     {card.title}
                   </h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-400">
-                    {card.description}
-                  </p>
+                <p className="mt-2 text-sm leading-6 text-slate-400">
+                  {card.description}
+                </p>
+              </div>
+                <div className="flex flex-col items-end gap-3">
+                  <DataSourceBadge mode="live" />
+                  <button
+                    onClick={() => openRemediation(card.issue)}
+                    className="min-h-[40px] rounded-xl border border-white/10 bg-white/[0.04] px-3 text-[9px] font-black uppercase tracking-widest text-slate-300 transition hover:border-[#00F0FF]/40 hover:text-white"
+                  >
+                    Review
+                  </button>
                 </div>
-                <button
-                  onClick={() => openRemediation(card.issue)}
-                  className="min-h-[40px] rounded-xl border border-white/10 bg-white/[0.04] px-3 text-[9px] font-black uppercase tracking-widest text-slate-300 transition hover:border-[#00F0FF]/40 hover:text-white"
-                >
-                  Review
-                </button>
+              </div>
+
+              <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {card.summaryStats.map(([label, value]) => (
+                  <div
+                    key={label}
+                    className={`rounded-xl border p-4 ${isDaylight ? 'border-slate-200 bg-slate-50' : 'border-white/10 bg-white/[0.03]'}`}
+                  >
+                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">
+                      {label}
+                    </p>
+                    <p className={`mt-1 text-xl font-black ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
+                      {value}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mb-5 grid grid-cols-1 gap-3 lg:grid-cols-2">
+                {[
+                  ['Provider Pattern', card.providerBreakdown],
+                  ['Owner Pattern', card.ownerBreakdown],
+                ].map(([label, buckets]) => (
+                  <div
+                    key={label as string}
+                    className={`rounded-xl border p-4 ${isDaylight ? 'border-slate-200 bg-slate-50' : 'border-white/10 bg-white/[0.03]'}`}
+                  >
+                    <p className="mb-3 text-[9px] font-black uppercase tracking-widest text-slate-500">
+                      {label as string}
+                    </p>
+                    {(buckets as ReportSummaryResponse['summary']['exposureReview']['providerBreakdown']).length > 0 ? (
+                      <div className="space-y-2">
+                        {(buckets as ReportSummaryResponse['summary']['exposureReview']['providerBreakdown']).slice(0, 3).map((bucket) => (
+                          <div key={bucket.label} className="flex items-center justify-between gap-3 text-xs">
+                            <span className={`truncate font-semibold ${isDaylight ? 'text-slate-700' : 'text-slate-300'}`}>
+                              {bucket.label}
+                            </span>
+                            <span className="shrink-0 font-black text-slate-500">
+                              {bucket.fileCount.toLocaleString()} files
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-500">No pattern available yet.</p>
+                    )}
+                  </div>
+                ))}
               </div>
 
               {card.files.length > 0 ? (
@@ -737,12 +946,15 @@ const OverviewDashboard = () => {
                 Suggested workspaces collect related review items without moving source files.
               </p>
             </div>
-            <button
-              onClick={() => openAppTab('nexus')}
-              className="min-h-[44px] rounded-xl bg-white px-5 py-3 text-xs font-black uppercase tracking-[0.2em] text-[#0B0F19] transition hover:bg-[#00F0FF]"
-            >
-              Open Workspaces
-            </button>
+            <div className="flex flex-col items-start gap-3 md:items-end">
+              <DataSourceBadge mode="live" />
+              <button
+                onClick={() => openAppTab('nexus')}
+                className="min-h-[44px] rounded-xl bg-white px-5 py-3 text-xs font-black uppercase tracking-[0.2em] text-[#0B0F19] transition hover:bg-[#00F0FF]"
+              >
+                Open Workspaces
+              </button>
+            </div>
           </div>
 
           {reportSummary.workspaceOpportunities.length > 0 ? (
@@ -803,12 +1015,15 @@ const OverviewDashboard = () => {
                   Dry runs log intent and affected files without changing Microsoft 365.
                 </p>
               </div>
-              <button
-                onClick={() => openAppTab('archival')}
-                className="min-h-[44px] rounded-xl bg-white px-5 py-3 text-xs font-black uppercase tracking-[0.2em] text-[#0B0F19] transition hover:bg-[#00F0FF]"
-              >
-                Open Remediation
-              </button>
+              <div className="flex flex-col items-start gap-3 md:items-end">
+                <DataSourceBadge mode="live" />
+                <button
+                  onClick={() => openAppTab('archival')}
+                  className="min-h-[44px] rounded-xl bg-white px-5 py-3 text-xs font-black uppercase tracking-[0.2em] text-[#0B0F19] transition hover:bg-[#00F0FF]"
+                >
+                  Open Remediation
+                </button>
+              </div>
             </div>
 
             <div className="mb-5 rounded-xl border border-[#00F0FF]/20 bg-[#00F0FF]/10 p-4">
@@ -855,6 +1070,9 @@ const OverviewDashboard = () => {
 
           <GlassCard className="p-5 md:p-8">
             <div className="mb-6">
+              <div className="mb-4">
+                <DataSourceBadge mode="live" />
+              </div>
               <p className="text-[10px] font-black uppercase tracking-[0.35em] text-slate-500">
                 V1.5 Identity Readiness
               </p>
@@ -894,8 +1112,11 @@ const OverviewDashboard = () => {
         <div className="xl:col-span-2">
           <GlassCard className="p-5 md:p-8">
             <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 mb-6 flex items-center justify-between">
-              Recent Activity
-              <Activity className="w-4 h-4 text-[#00F0FF]" />
+              <span>Recent Activity</span>
+              <span className="flex items-center gap-3">
+                <DataSourceBadge mode={isDemoMode ? 'demo' : 'live'} />
+                <Activity className="w-4 h-4 text-[#00F0FF]" />
+              </span>
             </h3>
             <div className="space-y-4">
               {(isDemoMode ? recentActivity : liveActivity).map((activity) => (
@@ -940,8 +1161,11 @@ const OverviewDashboard = () => {
         <div>
           <GlassCard className="p-5 md:p-8">
             <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 mb-6 flex items-center justify-between">
-              Provider Status
-              <Database className="w-4 h-4 text-[#00F0FF]" />
+              <span>Provider Status</span>
+              <span className="flex items-center gap-3">
+                <DataSourceBadge mode={isDemoMode ? 'demo' : 'live'} />
+                <Database className="w-4 h-4 text-[#00F0FF]" />
+              </span>
             </h3>
             <div className="space-y-4">
               {providerStatus.map((provider) => (
@@ -985,8 +1209,9 @@ const OverviewDashboard = () => {
 
       {/* Quick Actions */}
       <GlassCard className="p-5 md:p-8">
-        <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 mb-6">
-          Quick Actions
+        <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 mb-6 flex items-center justify-between">
+          <span>Quick Actions</span>
+          <DataSourceBadge mode={isDemoMode ? 'demo' : 'live'} />
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <button className="min-h-[44px] p-5 md:p-6 rounded-2xl bg-[#00F0FF]/5 border border-[#00F0FF]/20 hover:bg-[#00F0FF]/10 transition-all text-left group">
