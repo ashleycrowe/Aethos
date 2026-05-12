@@ -208,9 +208,35 @@ export const AdminCenter = () => {
 
     try {
       await navigator.clipboard.writeText(JSON.stringify(bundle, null, 2));
-      toast.success('Diagnostics copied');
+      toast.success('All diagnostics copied');
     } catch {
       toast.error('Unable to copy diagnostics');
+    }
+  };
+
+  const copyDiagnosticEvent = async (event: StoredDiagnostic) => {
+    const bundle = {
+      exportedAt: new Date().toISOString(),
+      route: typeof window !== 'undefined' ? window.location.href : 'unknown',
+      mode: demoMode ? 'demo' : 'live',
+      actionTaken: event.actionTaken || 'No recent UI action captured',
+      expectedResult:
+        event.expectedResult || 'The selected app action completes without a browser or API error.',
+      actualResult: event.actualResult || event.message,
+      errorMessage: event.message,
+      errorType: event.eventName,
+      severity: event.severity,
+      source: event.source,
+      eventRoute: event.route,
+      occurredAt: event.createdAt,
+      metadata: event.metadata,
+    };
+
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(bundle, null, 2));
+      toast.success('Diagnostic event copied');
+    } catch {
+      toast.error('Unable to copy diagnostic event');
     }
   };
 
@@ -404,7 +430,7 @@ export const AdminCenter = () => {
                   className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#00F0FF]/25 bg-[#00F0FF]/10 px-4 text-xs font-black uppercase tracking-[0.14em] text-[#00F0FF] transition hover:bg-[#00F0FF]/20 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <Clipboard className="h-4 w-4" />
-                  Copy
+                  Copy All
                 </button>
                 <button
                   type="button"
@@ -420,13 +446,16 @@ export const AdminCenter = () => {
 
             {localDiagnostics.length > 0 ? (
               <div className="grid gap-3">
-                {localDiagnostics.slice(0, 10).map((event) => (
+                {localDiagnostics.slice(0, 10).map((event, index) => (
                   <div
                     key={event.id}
                     className="rounded-2xl border border-white/10 bg-black/25 p-4"
                   >
                     <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                       <div className="flex flex-wrap items-center gap-2">
+                        <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-slate-300">
+                          Event {index + 1}
+                        </span>
                         <span
                           className={`rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${
                             event.severity === 'error' || event.severity === 'fatal'
@@ -442,12 +471,53 @@ export const AdminCenter = () => {
                           {event.eventName}
                         </span>
                       </div>
-                      <span className="text-xs font-semibold text-slate-500">
-                        {new Date(event.createdAt).toLocaleString()}
-                      </span>
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                        <span className="text-xs font-semibold text-slate-500">
+                          {new Date(event.createdAt).toLocaleString()}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => copyDiagnosticEvent(event)}
+                          className="flex min-h-10 items-center justify-center gap-2 rounded-xl border border-[#00F0FF]/25 bg-[#00F0FF]/10 px-3 text-[10px] font-black uppercase tracking-[0.14em] text-[#00F0FF] transition hover:bg-[#00F0FF]/20"
+                        >
+                          <Clipboard className="h-3.5 w-3.5" />
+                          Copy Event
+                        </button>
+                      </div>
                     </div>
-                    <p className="break-words text-sm font-semibold text-slate-100">{event.message}</p>
-                    <p className="mt-2 break-words text-xs text-slate-500">{event.route}</p>
+                    <div className="grid gap-3 md:grid-cols-3">
+                      <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                        <p className="mb-2 text-[9px] font-black uppercase tracking-[0.18em] text-slate-500">
+                          Action Taken
+                        </p>
+                        <p className="break-words text-xs font-semibold leading-5 text-slate-200">
+                          {event.actionTaken || 'No recent UI action captured'}
+                        </p>
+                      </div>
+                      <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                        <p className="mb-2 text-[9px] font-black uppercase tracking-[0.18em] text-slate-500">
+                          Expected Result
+                        </p>
+                        <p className="break-words text-xs font-semibold leading-5 text-slate-200">
+                          {event.expectedResult || 'The selected app action completes without a browser or API error.'}
+                        </p>
+                      </div>
+                      <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                        <p className="mb-2 text-[9px] font-black uppercase tracking-[0.18em] text-slate-500">
+                          Actual Result
+                        </p>
+                        <p className="break-words text-xs font-semibold leading-5 text-slate-200">
+                          {event.actualResult || event.message}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-3 rounded-xl border border-white/10 bg-black/20 p-3">
+                      <p className="mb-2 text-[9px] font-black uppercase tracking-[0.18em] text-slate-500">
+                        Error Message
+                      </p>
+                      <p className="break-words text-sm font-semibold text-slate-100">{event.message}</p>
+                      <p className="mt-2 break-words text-xs text-slate-500">{event.route}</p>
+                    </div>
                   </div>
                 ))}
               </div>

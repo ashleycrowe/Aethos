@@ -6,6 +6,7 @@ const DIAGNOSTICS_ENABLED =
 const SESSION_STORAGE_KEY = 'aethos_diagnostics_session_id';
 const LOCAL_DIAGNOSTICS_KEY = 'aethos_local_diagnostics';
 const MAX_LOCAL_DIAGNOSTICS = 75;
+const DEFAULT_EXPECTED_RESULT = 'The selected app action completes without a browser or API error.';
 
 export type Severity = 'debug' | 'info' | 'warn' | 'error' | 'fatal';
 
@@ -33,11 +34,20 @@ export type StoredDiagnostic = {
   eventName: string;
   message: string;
   route: string;
+  actionTaken?: string;
+  expectedResult?: string;
+  actualResult?: string;
   metadata?: unknown;
 };
 
 let installed = false;
 let context: DiagnosticsContext = {};
+let lastAction: {
+  actionTaken: string;
+  expectedResult: string;
+  route: string;
+  occurredAt: string;
+} | null = null;
 
 function getSessionId() {
   const existing = window.sessionStorage.getItem(SESSION_STORAGE_KEY);
@@ -113,6 +123,35 @@ function storeLocalDiagnostic(event: StoredDiagnostic) {
   }
 }
 
+function compactText(value: string | null | undefined) {
+  return value?.replace(/\s+/g, ' ').trim().slice(0, 160) || '';
+}
+
+function getElementLabel(element: Element) {
+  const ariaLabel = compactText(element.getAttribute('aria-label'));
+  const title = compactText(element.getAttribute('title'));
+  const text = compactText(element.textContent);
+  const placeholder =
+    element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement
+      ? compactText(element.placeholder)
+      : '';
+  const value =
+    element instanceof HTMLInputElement && element.type === 'submit'
+      ? compactText(element.value)
+      : '';
+
+  return ariaLabel || title || value || placeholder || text || element.tagName.toLowerCase();
+}
+
+function rememberAction(actionTaken: string, expectedResult = DEFAULT_EXPECTED_RESULT) {
+  lastAction = {
+    actionTaken,
+    expectedResult,
+    route: `${window.location.pathname}${window.location.search}${window.location.hash}`,
+    occurredAt: new Date().toISOString(),
+  };
+}
+
 export function updateDiagnosticsContext(next: DiagnosticsContext) {
   context = { ...context, ...next };
 }
@@ -132,6 +171,7 @@ export function captureDiagnostic(event: DiagnosticEvent) {
     userAgent: window.navigator.userAgent,
     metadata: sanitize({
       ...event.metadata,
+      lastAction,
       demoMode: context.demoMode ?? isDemoModeEnabled(),
       demoOverride: window.localStorage.getItem(DEMO_MODE_STORAGE_KEY),
       isAuthenticated: context.isAuthenticated,
@@ -150,6 +190,9 @@ export function captureDiagnostic(event: DiagnosticEvent) {
     eventName: payload.eventName,
     message: payload.message,
     route: payload.route,
+    actionTaken: lastAction?.actionTaken || 'No recent UI action captured',
+    expectedResult: lastAction?.expectedResult || DEFAULT_EXPECTED_RESULT,
+    actualResult: payload.message,
     metadata: payload.metadata,
   });
 
@@ -175,6 +218,36 @@ export function captureDiagnostic(event: DiagnosticEvent) {
 export function installDiagnostics() {
   if (installed || !DIAGNOSTICS_ENABLED || typeof window === 'undefined') return;
   installed = true;
+
+  window.addEventListener(
+    'click',
+    (event) => {
+      const target = event.target instanceof Element ? event.target : null;
+      const actionable = target?.closest(
+        'button, a, input, select, textarea, [role="button"], [role="menuitem"], [data-diagnostic-action]'
+      );
+      if (!actionable) return;
+
+      const explicitAction = compactText(actionable.getAttribute('data-diagnostic-action'));
+      const label = explicitAction || getElementLabel(actionable);
+      rememberAction(`Clicked ${label}`);
+    },
+    true
+  );
+
+  window.addEventListener(
+    'submit',
+    (event) => {
+      const form = event.target instanceof HTMLFormElement ? event.target : null;
+      if (!form) return;
+      const label =
+        compactText(form.getAttribute('aria-label')) ||
+        compactText(form.getAttribute('name')) ||
+        'form';
+      rememberAction(`Submitted ${label}`);
+    },
+    true
+  );
 
   window.addEventListener('error', (event) => {
     captureDiagnostic({
