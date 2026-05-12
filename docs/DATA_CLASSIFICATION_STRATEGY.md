@@ -174,6 +174,39 @@ V1.5 should not yet promise:
 
 ---
 
+## Native AI Readiness Boundary
+
+Aethos can support native AI strategies in two stages:
+
+### Stage 1: Improve The Source Environment
+
+In V1 and V1.5, the most defensible claim is that Aethos improves the data estate native AI depends on:
+
+- better ownership
+- clearer titles
+- approved tags and categories
+- safer permissions
+- less stale or duplicate content
+- clearer workspace/context structure
+- visible AI-readiness gaps
+
+This helps Microsoft 365 Copilot indirectly because Copilot reasons over the Microsoft 365 tenant. Cleaner source data should produce better AI outcomes.
+
+### Stage 2: Expose Curated Aethos Intelligence
+
+Native AI tools do not automatically read Aethos-side metadata unless Aethos publishes or exposes it through a supported integration path.
+
+Future integration paths:
+
+- Write approved metadata improvements back to Microsoft 365 where appropriate.
+- Publish curated Aethos intelligence into Microsoft Graph through Microsoft 365 Copilot connectors.
+- Expose Aethos APIs or agents that native AI tools can call.
+- Repeat equivalent connector/agent patterns for Google and Slack as those ecosystems support them.
+
+Product language should avoid implying that Copilot sees unapproved Aethos-side suggestions automatically.
+
+---
+
 ## SharePoint Lists Roadmap
 
 Recommended staged approach:

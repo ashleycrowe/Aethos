@@ -104,6 +104,12 @@ By 2028, Aethos becomes the **Enterprise Knowledge Operating System**:
 **If users ask:** "Can't you search inside the document?" or "I can't find what I'm looking for by filename alone"  
 **Then:** AI+ content intelligence is validated for V1.5
 
+### Native AI Positioning
+
+V1 should position Aethos as an AI-readiness layer for Microsoft 365. Aethos improves native Copilot outcomes indirectly by making the source tenant cleaner: better ownership, safer permissions, clearer metadata, fewer stale files, and more useful workspace organization.
+
+Do not claim native Microsoft 365 Copilot automatically reads Aethos-side metadata. Direct Copilot visibility requires either approved source-system writeback or a later Microsoft Graph/Copilot connector path.
+
 ---
 
 ## V1.5: AI+ Content Intelligence (Months 3-4)
@@ -154,6 +160,18 @@ V1.5 expands from file metadata into content intelligence and published knowledg
 3. Flag stale, ownerless, exposed, or business-critical lists.
 4. Add row sampling only with explicit customer permission.
 5. Defer full searchable row-level ingestion until governance controls are designed.
+
+### Copilot And Native AI Integration Path
+
+V1.5 should make the metadata/classification layer strong enough to support future native-AI integrations:
+
+1. Generate and review Aethos-side metadata suggestions.
+2. Let users approve, edit, reject, or block suggestions.
+3. Distinguish Aethos-side classification from source-system metadata changes.
+4. Identify which approved improvements can write back to Microsoft 365.
+5. Prepare a future Microsoft 365 Copilot connector path for curated Aethos intelligence.
+
+This same pattern should guide later Google and Slack expansion: improve source-system clarity first, then expose approved Aethos intelligence through the native connector or agent ecosystem where available.
 
 ### Pricing Impact
 

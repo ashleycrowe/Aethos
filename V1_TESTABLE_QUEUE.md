@@ -129,6 +129,8 @@ This file is the short-cycle engineering queue. Keep `IMPLEMENTATION_TASKS.md` a
 - [ ] Add bulk accept/edit/reject flows.
 - [ ] Tie accepted metadata directly into workspace suggestions and tag-based auto-sync.
 - [ ] Preserve an audit trail of metadata suggestion decisions.
+- [ ] Add Copilot/native-AI readiness language that distinguishes Aethos-side suggestions from source-system improvements.
+- [ ] Define which approved metadata improvements can eventually write back to Microsoft 365 or publish through Copilot connectors.
 
 ---
 

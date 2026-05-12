@@ -20,6 +20,42 @@ This should be treated as a core product pillar, not a side utility.
 
 ---
 
+## Native AI And Copilot Readiness
+
+Aethos should be positioned as the intelligence and cleanup layer that makes native AI tools more useful, not as a replacement for Microsoft Copilot, Google Gemini, or Slack AI.
+
+The key distinction:
+
+- If Aethos stores better metadata only inside Aethos, native Copilot does not automatically benefit.
+- Native Copilot benefits indirectly when Aethos helps improve the Microsoft 365 source environment: cleaner files, better ownership, approved tags, clearer titles, safer permissions, less stale content, and better workspace structure.
+- Native Copilot can benefit directly later if Aethos publishes curated intelligence back into Microsoft Graph through Microsoft 365 Copilot connectors, or exposes an Aethos agent/API that Copilot can call.
+
+Recommended rollout path:
+
+1. **V1: AI-readiness through source clarity**
+   - Discover sprawl, stale content, exposure, weak ownership, weak metadata, and workspace gaps.
+   - Make the sales claim precise: Aethos improves the Microsoft 365 knowledge estate that Copilot depends on.
+
+2. **V1.5: Aethos-side classification layer**
+   - Generate suggested titles, tags, categories, summaries, and quality scores.
+   - Keep human review and approval in the loop.
+   - Do not imply native Copilot sees Aethos-side suggestions automatically.
+
+3. **V2: Copilot Readiness Score**
+   - Show what native AI is likely to struggle with: stale pages, unclear titles, missing owners, exposed files, duplicate/obsolete content, weak tags, and fragmented workspaces.
+   - Add recommendations that improve both Aethos and native AI outcomes.
+
+4. **V2/V3: Connector and agent path**
+   - Explore publishing approved Aethos intelligence into Microsoft Graph using Copilot connectors.
+   - Consider an Aethos Copilot agent/API for asking Aethos questions from inside Microsoft 365 Copilot.
+   - Repeat the same pattern for Google and Slack as their connector/agent ecosystems mature.
+
+Suggested sales language:
+
+> Aethos does not replace Microsoft Copilot. Aethos makes the enterprise knowledge layer Copilot depends on cleaner, safer, and more useful. Over time, Aethos can also expose curated intelligence back into native AI surfaces through connector and agent integrations.
+
+---
+
 ## Current Implementation Snapshot
 
 ### Database Support Exists
@@ -252,6 +288,11 @@ This lets the product show suggestions honestly without overwriting final fields
    - Track suggestion decisions.
    - Show accepted/rejected counts.
    - Preserve who changed what and when.
+
+7. **Copilot Readiness Mapping**
+   - For each suggestion, mark whether it improves Aethos only, the Microsoft 365 source system, or future native Copilot visibility.
+   - Add language that distinguishes Aethos-side metadata from approved source-system metadata.
+   - Use this to avoid overpromising while still making the AI-age value clear.
 
 ---
 
