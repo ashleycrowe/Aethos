@@ -4,8 +4,10 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 const DIAGNOSTICS_ENABLED =
   String(import.meta.env.VITE_DIAGNOSTICS_ENABLED ?? 'true').toLowerCase() !== 'false';
 const SESSION_STORAGE_KEY = 'aethos_diagnostics_session_id';
+const LOCAL_DIAGNOSTICS_KEY = 'aethos_local_diagnostics';
+const MAX_LOCAL_DIAGNOSTICS = 75;
 
-type Severity = 'debug' | 'info' | 'warn' | 'error' | 'fatal';
+export type Severity = 'debug' | 'info' | 'warn' | 'error' | 'fatal';
 
 type DiagnosticsContext = {
   tenantId?: string | null;
@@ -23,6 +25,17 @@ type DiagnosticEvent = {
   metadata?: Record<string, unknown>;
 };
 
+export type StoredDiagnostic = {
+  id: string;
+  createdAt: string;
+  severity: Severity;
+  source: string;
+  eventName: string;
+  message: string;
+  route: string;
+  metadata?: unknown;
+};
+
 let installed = false;
 let context: DiagnosticsContext = {};
 
@@ -38,7 +51,7 @@ function getSessionId() {
   return next;
 }
 
-function sanitize(value: unknown): unknown {
+function sanitize(value: unknown, seen = new WeakSet<object>()): unknown {
   if (value instanceof Error) {
     return {
       name: value.name,
@@ -53,15 +66,51 @@ function sanitize(value: unknown): unknown {
       .replace(/eyJ[A-Za-z0-9._-]+/g, '[jwt-redacted]');
   }
 
-  if (Array.isArray(value)) return value.map(sanitize);
+  if (Array.isArray(value)) return value.map((nested) => sanitize(nested, seen));
 
   if (value && typeof value === 'object') {
+    if (seen.has(value)) return '[circular]';
+    seen.add(value);
+
     return Object.fromEntries(
-      Object.entries(value as Record<string, unknown>).map(([key, nested]) => [key, sanitize(nested)])
+      Object.entries(value as Record<string, unknown>).map(([key, nested]) => [
+        key,
+        sanitize(nested, seen),
+      ])
     );
   }
 
   return value;
+}
+
+export function getLocalDiagnostics(): StoredDiagnostic[] {
+  if (typeof window === 'undefined') return [];
+
+  try {
+    const raw = window.localStorage.getItem(LOCAL_DIAGNOSTICS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+export function clearLocalDiagnostics() {
+  if (typeof window === 'undefined') return;
+  window.localStorage.removeItem(LOCAL_DIAGNOSTICS_KEY);
+}
+
+function storeLocalDiagnostic(event: StoredDiagnostic) {
+  if (typeof window === 'undefined') return;
+
+  try {
+    const existing = getLocalDiagnostics();
+    const next = [event, ...existing].slice(0, MAX_LOCAL_DIAGNOSTICS);
+    window.localStorage.setItem(LOCAL_DIAGNOSTICS_KEY, JSON.stringify(next));
+  } catch {
+    // Local diagnostics are best-effort and must never affect app behavior.
+  }
 }
 
 export function updateDiagnosticsContext(next: DiagnosticsContext) {
@@ -89,6 +138,20 @@ export function captureDiagnostic(event: DiagnosticEvent) {
       version: context.version,
     }),
   };
+
+  storeLocalDiagnostic({
+    id:
+      typeof crypto !== 'undefined' && 'randomUUID' in crypto
+        ? crypto.randomUUID()
+        : `local-diag-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    createdAt: new Date().toISOString(),
+    severity: payload.severity,
+    source: payload.source,
+    eventName: payload.eventName,
+    message: payload.message,
+    route: payload.route,
+    metadata: payload.metadata,
+  });
 
   const body = JSON.stringify(payload);
   const url = `${API_BASE_URL}/diagnostics/client-log`;

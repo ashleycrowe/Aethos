@@ -1,6 +1,8 @@
 import React from 'react';
 import {
+  Bug,
   CheckCircle2,
+  Clipboard,
   Database,
   ExternalLink,
   FileSearch,
@@ -11,6 +13,7 @@ import {
   RefreshCw,
   Server,
   ShieldCheck,
+  Trash2,
   ToggleLeft,
   ToggleRight,
   UserRound,
@@ -24,6 +27,11 @@ import {
   getEnvDemoModeDefault,
   isDemoModeEnabled,
 } from '@/app/config/demoMode';
+import {
+  clearLocalDiagnostics,
+  getLocalDiagnostics,
+  type StoredDiagnostic,
+} from '@/app/utils/diagnostics';
 import { runDiscoveryScan, type DiscoveryScanResponse } from '@/lib/api';
 
 type AdminStatusCardProps = {
@@ -108,6 +116,7 @@ export const AdminCenter = () => {
   } = useAuth();
   const [isScanning, setIsScanning] = React.useState(false);
   const [scanResult, setScanResult] = React.useState<DiscoveryScanResponse | null>(null);
+  const [localDiagnostics, setLocalDiagnostics] = React.useState<StoredDiagnostic[]>([]);
 
   const demoMode = isDemoModeEnabled();
   const envDemoDefault = getEnvDemoModeDefault();
@@ -120,6 +129,18 @@ export const AdminCenter = () => {
     (typeof window !== 'undefined' ? window.location.origin : 'Current origin');
   const hasTenantContext = Boolean(tenantId || user?.tenantId);
   const hasDiscoveryResult = Boolean(scanResult);
+  const diagnosticIssueCount = localDiagnostics.filter((event) =>
+    event.severity === 'error' || event.severity === 'fatal' || event.severity === 'warn'
+  ).length;
+
+  const refreshDiagnostics = React.useCallback(() => {
+    setLocalDiagnostics(getLocalDiagnostics());
+  }, []);
+
+  React.useEffect(() => {
+    if (!demoMode) return;
+    refreshDiagnostics();
+  }, [demoMode, refreshDiagnostics]);
 
   const applyDemoMode = (enabled: boolean) => {
     window.localStorage.setItem(DEMO_MODE_STORAGE_KEY, String(enabled));
@@ -175,6 +196,28 @@ export const AdminCenter = () => {
     } finally {
       setIsScanning(false);
     }
+  };
+
+  const copyDiagnostics = async () => {
+    const bundle = {
+      exportedAt: new Date().toISOString(),
+      route: typeof window !== 'undefined' ? window.location.href : 'unknown',
+      mode: demoMode ? 'demo' : 'live',
+      events: localDiagnostics,
+    };
+
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(bundle, null, 2));
+      toast.success('Diagnostics copied');
+    } catch {
+      toast.error('Unable to copy diagnostics');
+    }
+  };
+
+  const clearDiagnostics = () => {
+    clearLocalDiagnostics();
+    setLocalDiagnostics([]);
+    toast.success('Diagnostics cleared');
   };
 
   return (
@@ -321,6 +364,100 @@ export const AdminCenter = () => {
             />
           </div>
         </section>
+
+        {demoMode && (
+          <section className="rounded-[28px] border border-amber-300/20 bg-amber-300/[0.045] p-5 shadow-2xl backdrop-blur-2xl sm:p-6">
+            <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div className="flex gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-amber-300/25 bg-amber-300/10 text-amber-200">
+                  <Bug className="h-6 w-6" />
+                </div>
+                <div>
+                  <p className="mb-2 text-[10px] font-black uppercase tracking-[0.3em] text-amber-200">
+                    Demo Diagnostics
+                  </p>
+                  <h2 className="text-xl font-black text-white">
+                    {diagnosticIssueCount > 0
+                      ? `${diagnosticIssueCount} browser events captured`
+                      : 'No browser events captured'}
+                  </h2>
+                  <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
+                    This session view mirrors the client-side diagnostics sent to the backend. Use it during
+                    walkthroughs when a browser error needs to be shared for debugging.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
+                <button
+                  type="button"
+                  onClick={refreshDiagnostics}
+                  className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 text-xs font-black uppercase tracking-[0.14em] text-slate-200 transition hover:bg-white/[0.08]"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Refresh
+                </button>
+                <button
+                  type="button"
+                  onClick={copyDiagnostics}
+                  disabled={localDiagnostics.length === 0}
+                  className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#00F0FF]/25 bg-[#00F0FF]/10 px-4 text-xs font-black uppercase tracking-[0.14em] text-[#00F0FF] transition hover:bg-[#00F0FF]/20 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Clipboard className="h-4 w-4" />
+                  Copy
+                </button>
+                <button
+                  type="button"
+                  onClick={clearDiagnostics}
+                  disabled={localDiagnostics.length === 0}
+                  className="col-span-2 flex min-h-11 items-center justify-center gap-2 rounded-xl border border-rose-300/25 bg-rose-400/10 px-4 text-xs font-black uppercase tracking-[0.14em] text-rose-200 transition hover:bg-rose-400/20 disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-1"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Clear
+                </button>
+              </div>
+            </div>
+
+            {localDiagnostics.length > 0 ? (
+              <div className="grid gap-3">
+                {localDiagnostics.slice(0, 10).map((event) => (
+                  <div
+                    key={event.id}
+                    className="rounded-2xl border border-white/10 bg-black/25 p-4"
+                  >
+                    <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          className={`rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${
+                            event.severity === 'error' || event.severity === 'fatal'
+                              ? 'border-rose-300/25 bg-rose-400/10 text-rose-200'
+                              : event.severity === 'warn'
+                                ? 'border-amber-300/25 bg-amber-300/10 text-amber-200'
+                                : 'border-[#00F0FF]/25 bg-[#00F0FF]/10 text-[#00F0FF]'
+                          }`}
+                        >
+                          {event.severity}
+                        </span>
+                        <span className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">
+                          {event.eventName}
+                        </span>
+                      </div>
+                      <span className="text-xs font-semibold text-slate-500">
+                        {new Date(event.createdAt).toLocaleString()}
+                      </span>
+                    </div>
+                    <p className="break-words text-sm font-semibold text-slate-100">{event.message}</p>
+                    <p className="mt-2 break-words text-xs text-slate-500">{event.route}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-white/10 bg-black/20 p-5 text-sm leading-6 text-slate-400">
+                No local diagnostics have been captured in this browser session.
+              </div>
+            )}
+          </section>
+        )}
 
         <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
           <section className="rounded-[28px] border border-white/10 bg-[#0B0F19]/70 p-5 shadow-2xl backdrop-blur-2xl sm:p-6">
