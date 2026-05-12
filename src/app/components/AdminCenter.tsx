@@ -59,6 +59,39 @@ const AdminRow = ({ label, value }: { label: string; value: React.ReactNode }) =
   </div>
 );
 
+const SetupStep = ({
+  number,
+  title,
+  description,
+  complete,
+  action,
+}: {
+  number: number;
+  title: string;
+  description: string;
+  complete: boolean;
+  action?: React.ReactNode;
+}) => (
+  <div className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-white/[0.035] p-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex gap-4">
+      <div
+        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border text-sm font-black ${
+          complete
+            ? 'border-emerald-300/25 bg-emerald-400/10 text-emerald-300'
+            : 'border-[#00F0FF]/25 bg-[#00F0FF]/10 text-[#00F0FF]'
+        }`}
+      >
+        {complete ? <CheckCircle2 className="h-5 w-5" /> : number}
+      </div>
+      <div>
+        <h3 className="text-sm font-black text-white">{title}</h3>
+        <p className="mt-1 text-sm leading-6 text-slate-400">{description}</p>
+      </div>
+    </div>
+    {action && <div className="shrink-0">{action}</div>}
+  </div>
+);
+
 export const AdminCenter = () => {
   const { isDaylight } = useTheme();
   const { version, setDemoMode } = useVersion();
@@ -85,6 +118,8 @@ export const AdminCenter = () => {
   const redirectUri =
     import.meta.env.VITE_MICROSOFT_REDIRECT_URI ||
     (typeof window !== 'undefined' ? window.location.origin : 'Current origin');
+  const hasTenantContext = Boolean(tenantId || user?.tenantId);
+  const hasDiscoveryResult = Boolean(scanResult);
 
   const applyDemoMode = (enabled: boolean) => {
     window.localStorage.setItem(DEMO_MODE_STORAGE_KEY, String(enabled));
@@ -222,6 +257,70 @@ export const AdminCenter = () => {
             tone={accessToken ? 'green' : 'slate'}
           />
         </div>
+
+        <section className="rounded-[28px] border border-[#00F0FF]/20 bg-[#00F0FF]/[0.045] p-5 shadow-2xl backdrop-blur-2xl sm:p-6">
+          <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="mb-2 text-[10px] font-black uppercase tracking-[0.3em] text-[#00F0FF]">
+                Phase 1 Setup
+              </p>
+              <h2 className="text-xl font-black text-white">Live Tenant Walkthrough</h2>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
+                Use this checklist when testing a real Microsoft account. Demo data stays available in Demo Mode,
+                but Live Mode should only show what has been indexed from this tenant.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-xs font-bold text-slate-300">
+              {demoMode ? 'Demo Mode active' : 'Live Mode active'}
+            </div>
+          </div>
+
+          <div className="grid gap-3">
+            <SetupStep
+              number={1}
+              title="Confirm Microsoft session"
+              description={isAuthenticated ? 'Microsoft account is signed in.' : 'Sign in before testing live tenant data.'}
+              complete={isAuthenticated}
+              action={!isAuthenticated && (
+                <button
+                  type="button"
+                  onClick={handleLogin}
+                  className="min-h-11 rounded-xl border border-[#00F0FF]/25 bg-[#00F0FF] px-4 text-xs font-black uppercase tracking-[0.16em] text-slate-950 transition hover:bg-white"
+                >
+                  Sign In
+                </button>
+              )}
+            />
+            <SetupStep
+              number={2}
+              title="Verify tenant context"
+              description={hasTenantContext ? 'Aethos has resolved a tenant for this session.' : 'Tenant provisioning is still pending or failed.'}
+              complete={hasTenantContext}
+            />
+            <SetupStep
+              number={3}
+              title="Run Microsoft Discovery"
+              description={hasDiscoveryResult ? 'Discovery completed in this session.' : 'Populate the files table from this Microsoft tenant before expecting Search or Remediation results.'}
+              complete={hasDiscoveryResult}
+              action={
+                <button
+                  type="button"
+                  onClick={handleDiscoveryScan}
+                  disabled={isScanning || !isAuthenticated}
+                  className="min-h-11 rounded-xl border border-[#00F0FF]/30 bg-[#00F0FF]/10 px-4 text-xs font-black uppercase tracking-[0.16em] text-[#00F0FF] transition hover:bg-[#00F0FF]/20 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isScanning ? 'Scanning' : 'Run Scan'}
+                </button>
+              }
+            />
+            <SetupStep
+              number={4}
+              title="Create first workspace"
+              description="Open Nexus from the sidebar and create a manual workspace. This should work even when no files are indexed."
+              complete={false}
+            />
+          </div>
+        </section>
 
         <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
           <section className="rounded-[28px] border border-white/10 bg-[#0B0F19]/70 p-5 shadow-2xl backdrop-blur-2xl sm:p-6">
