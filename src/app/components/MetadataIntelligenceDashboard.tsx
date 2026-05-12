@@ -41,6 +41,14 @@ interface ImprovementOpportunity {
   icon: React.ReactNode;
 }
 
+interface AIReadinessBlocker {
+  id: string;
+  label: string;
+  count: number;
+  severity: 'high' | 'medium' | 'low';
+  recommendation: string;
+}
+
 export const MetadataIntelligenceDashboard: React.FC = () => {
   const { tenantId, getAccessToken } = useAuth();
   const { isDemoMode: globalDemoMode } = useVersion();
@@ -48,6 +56,9 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isDemoMode, setIsDemoMode] = useState(isDemoModeEnabled());
   const [error, setError] = useState<string | null>(null);
+  const [sourceMetadataScore, setSourceMetadataScore] = useState(0);
+  const [aethosEnrichmentScore, setAethosEnrichmentScore] = useState(0);
+  const [aiReadinessBlockers, setAiReadinessBlockers] = useState<AIReadinessBlocker[]>([]);
 
   // State for real data from API
   const [intelligenceScore, setIntelligenceScore] = useState(0);
@@ -111,6 +122,13 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
       if (globalDemoMode) {
         setIsDemoMode(true);
         setIntelligenceScore(68);
+        setSourceMetadataScore(42);
+        setAethosEnrichmentScore(68);
+        setAiReadinessBlockers([
+          { id: 'generic_names', label: 'Generic names', count: 2347, severity: 'medium', recommendation: 'Suggest clearer titles from filename and path context.' },
+          { id: 'missing_owner', label: 'Missing owners', count: 312, severity: 'high', recommendation: 'Assign stewardship before remediation.' },
+          { id: 'missing_tags', label: 'Missing tags/categories', count: 1829, severity: 'medium', recommendation: 'Generate Aethos-side suggestions for review.' },
+        ]);
         setSourceQuality({
           totalFiles: 4567,
           filesWithDescriptions: 548,
@@ -156,6 +174,9 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
 
         // Update state with real data
         setIntelligenceScore(data.intelligenceScore);
+        setSourceMetadataScore(data.sourceMetadataScore ?? 0);
+        setAethosEnrichmentScore(data.aethosEnrichmentScore ?? data.intelligenceScore ?? 0);
+        setAiReadinessBlockers(data.aiReadinessBlockers || []);
         setSourceQuality(data.sourceQuality);
         setEnrichmentStatus(data.enrichmentStatus);
         setCategories(data.categories);
@@ -166,6 +187,9 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
         setError(err instanceof Error ? err.message : 'Unknown error');
         setIsDemoMode(false);
         setIntelligenceScore(0);
+        setSourceMetadataScore(0);
+        setAethosEnrichmentScore(0);
+        setAiReadinessBlockers([]);
         setSourceQuality({
           totalFiles: 0,
           filesWithDescriptions: 0,
@@ -334,7 +358,7 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
-                <h2 className="text-lg font-semibold text-white">Metadata Intelligence Score</h2>
+                <h2 className="text-lg font-semibold text-white">AI Readiness Score</h2>
                 <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                   intelligenceScore >= 80 ? 'bg-[#00F0FF]/20 text-[#00F0FF]' :
                   intelligenceScore >= 60 ? 'bg-[#F39C12]/20 text-[#F39C12]' :
@@ -345,7 +369,7 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
               </div>
               <p className="text-slate-400 text-sm mb-4">
                 {isDemoMode || hasLiveData
-                  ? 'Most files are discoverable - Aethos enrichment is working effectively'
+                  ? 'Metadata, ownership, freshness, exposure, and Aethos-side enrichment signals combined for AI readiness.'
                   : 'Run live discovery to calculate tenant-specific metadata quality'}
               </p>
               <div className="flex items-end gap-4">
@@ -354,8 +378,8 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
                   <span className="text-2xl">/100</span>
                 </div>
                 <div className="flex items-center gap-2 text-[#00F0FF] mb-2">
-                  <TrendingUp className="w-5 h-5" />
-                  <span className="text-sm font-medium">+12 from last scan</span>
+                  <Info className="w-5 h-5" />
+                  <span className="text-sm font-medium">Aethos-side only</span>
                 </div>
               </div>
             </div>
@@ -404,6 +428,27 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
               style={{ width: `${intelligenceScore}%` }}
             />
           </div>
+          <div className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-2">
+            {[
+              ['Source Metadata', sourceMetadataScore, 'Filename, owner, freshness, exposure, and current discoverability.'],
+              ['Aethos Enrichment', aethosEnrichmentScore, 'Aethos-side tags, categories, and intelligence fields.'],
+            ].map(([label, score, detail]) => (
+              <div key={label as string} className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">{label as string}</p>
+                  <p className="text-lg font-black text-white">{score as number}/100</p>
+                </div>
+                <p className="mt-2 text-xs leading-5 text-slate-500">{detail as string}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-5 rounded-xl border border-[#00F0FF]/20 bg-[#00F0FF]/10 p-4">
+            <p className="text-[9px] font-black uppercase tracking-widest text-[#00F0FF]">V1 Claim Boundary</p>
+            <p className="mt-2 text-sm leading-6 text-slate-400">
+              Aethos identifies metadata and ownership gaps that can weaken Microsoft 365 search and Copilot readiness.
+              Source-system writeback remains explicit, reviewed, and outside the default V1 flow.
+            </p>
+          </div>
           </motion.div>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -445,6 +490,58 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
           </button>
           </motion.div>
         {selectedView === 'overview' && (
+          <div className="space-y-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.35 }}
+            className="bg-[rgba(20,24,36,0.7)] backdrop-blur-[20px] border border-white/10
+              rounded-xl p-6 shadow-[0_8px_32px_rgba(0,0,0,0.3),inset_0_1px_1px_rgba(255,255,255,0.1)]"
+          >
+            <div className="mb-5 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.35em] text-slate-500">
+                  AI Readiness Blockers
+                </p>
+                <h3 className="mt-2 text-lg font-semibold text-white">What Native AI Will Struggle With</h3>
+              </div>
+              <span className={`rounded-full border px-3 py-1 text-[9px] font-black uppercase tracking-widest ${
+                isDemoMode
+                  ? 'border-[#F59E0B]/25 bg-[#F59E0B]/10 text-[#F59E0B]'
+                  : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400'
+              }`}>
+                Data source: {isDemoMode ? 'Demo fixtures' : 'Live tenant'}
+              </span>
+            </div>
+
+            {aiReadinessBlockers.length > 0 ? (
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
+                {aiReadinessBlockers.map((blocker) => (
+                  <div key={blocker.id} className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                    <div className="mb-3 flex items-center justify-between gap-2">
+                      <span className={`rounded-full px-2 py-1 text-[8px] font-black uppercase tracking-widest ${
+                        blocker.severity === 'high'
+                          ? 'bg-[#FF5733]/10 text-[#FF5733]'
+                          : blocker.severity === 'medium'
+                          ? 'bg-[#F39C12]/10 text-[#F39C12]'
+                          : 'bg-[#10B981]/10 text-[#10B981]'
+                      }`}>
+                        {blocker.severity}
+                      </span>
+                      <span className="text-lg font-black text-white">{blocker.count.toLocaleString()}</span>
+                    </div>
+                    <p className="text-sm font-black text-white">{blocker.label}</p>
+                    <p className="mt-2 text-[11px] leading-5 text-slate-500">{blocker.recommendation}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-xl border border-white/10 bg-white/[0.03] p-5 text-sm text-slate-400">
+                Run Discovery to calculate tenant-specific AI readiness blockers.
+              </div>
+            )}
+          </motion.div>
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Source Metadata Quality */}
             <motion.div
@@ -616,6 +713,7 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
                 </p>
               </div>
             </motion.div>
+          </div>
           </div>
         )}
 

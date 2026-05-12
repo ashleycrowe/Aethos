@@ -160,8 +160,9 @@ See `docs/OPERATIONAL_INTELLIGENCE_DEVELOPMENT_QUEUE.md` for the detailed implem
 **Principle:** Auto-metadata classification and metadata suggestions are a core selling point. They should be audited and built with the same care as Search, Workspaces, Discovery, and Remediation.
 
 - [x] Capture current metadata classification audit notes.
-- [ ] Review `docs/METADATA_CLASSIFICATION_AUDIT.md` at the start of the next working session.
+- [x] Review `docs/METADATA_CLASSIFICATION_AUDIT.md` at the start of the next working session.
 - [ ] Audit live vs demo behavior for tag suggestions, AI titles, categories, and intelligence scores.
+- [x] Add source metadata score, Aethos enrichment score, and AI-readiness blockers to live Metadata Quality.
 - [ ] Decide the V1 suggestion lifecycle: pending, accepted, edited, rejected, blocked.
 - [ ] Design a live-backed Metadata Suggestions panel after Discovery.
 - [ ] Add confidence and rationale to metadata suggestions.

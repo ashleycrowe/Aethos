@@ -20,101 +20,51 @@ export default async function handler(
   const { tenantId } = context;
 
   try {
-    // Get total files count
-    const { count: totalFiles } = await supabase
+    const { data: files, error: filesError } = await supabase
       .from('files')
-      .select('*', { count: 'exact', head: true })
+      .select('name,path,owner_email,owner_name,is_stale,has_external_share,ai_suggested_title,ai_tags,ai_category,metadata,intelligence_score')
       .eq('tenant_id', tenantId);
 
-    // Files with descriptions (ai_suggested_title not null)
-    const { count: filesWithDescriptions } = await supabase
-      .from('files')
-      .select('*', { count: 'exact', head: true })
-      .eq('tenant_id', tenantId)
-      .not('ai_suggested_title', 'is', null);
+    if (filesError) throw filesError;
 
-    // Files with tags (ai_tags not empty)
-    const { count: filesWithTags } = await supabase
-      .from('files')
-      .select('*', { count: 'exact', head: true })
-      .eq('tenant_id', tenantId)
-      .neq('ai_tags', '{}');
+    const tenantFiles = files || [];
+    const totalFiles = tenantFiles.length;
+    const hasOwner = (file: any) => Boolean(file.owner_email?.trim() || file.owner_name?.trim());
+    const isMeaningfulName = (name?: string | null) => {
+      if (!name) return false;
+      return !/^(document|untitled|new|copy)(\b|[-_\s\d.])/i.test(name.trim());
+    };
 
-    // Files with meaningful names (not starting with generic terms)
-    const { count: filesWithMeaningfulNames } = await supabase
-      .from('files')
-      .select('*', { count: 'exact', head: true })
-      .eq('tenant_id', tenantId)
-      .not('name', 'ilike', 'Document%')
-      .not('name', 'ilike', 'Untitled%')
-      .not('name', 'ilike', 'New%');
-
-    // Average name length
-    const { data: nameLengths } = await supabase
-      .from('files')
-      .select('name')
-      .eq('tenant_id', tenantId);
-
-    const avgNameLength = nameLengths
-      ? Math.round(nameLengths.reduce((sum, file) => sum + file.name.length, 0) / nameLengths.length)
+    const filesWithDescriptions = tenantFiles.filter((file) => Boolean(file.ai_suggested_title)).length;
+    const filesWithTags = tenantFiles.filter((file) => Array.isArray(file.ai_tags) && file.ai_tags.length > 0).length;
+    const filesWithMeaningfulNames = tenantFiles.filter((file) => isMeaningfulName(file.name)).length;
+    const avgNameLength = totalFiles > 0
+      ? Math.round(tenantFiles.reduce((sum, file) => sum + (file.name?.length || 0), 0) / totalFiles)
       : 0;
 
     // Enrichment status
-    const { count: filesCategorized } = await supabase
-      .from('files')
-      .select('*', { count: 'exact', head: true })
-      .eq('tenant_id', tenantId)
-      .not('ai_category', 'is', null);
-
-    // For departments inferred, assuming ai_tags contain department info
-    // This is a simplification; in reality, you might have a separate field
-    const { count: departmentsInferred } = await supabase
-      .from('files')
-      .select('*', { count: 'exact', head: true })
-      .eq('tenant_id', tenantId)
-      .neq('ai_tags', '{}');
-
-    const { count: keywordsGenerated } = await supabase
-      .from('files')
-      .select('*', { count: 'exact', head: true })
-      .eq('tenant_id', tenantId)
-      .neq('ai_tags', '{}');
-
-    // Time periods extracted - assuming from metadata or tags
-    // Simplified: count files with some date-related metadata
-    const { count: timePeriodsExtracted } = await supabase
-      .from('files')
-      .select('*', { count: 'exact', head: true })
-      .eq('tenant_id', tenantId)
-      .not('metadata', 'is', null);
-
-    // Average confidence score - using intelligence_score / 100
-    const { data: scores } = await supabase
-      .from('files')
-      .select('intelligence_score')
-      .eq('tenant_id', tenantId)
-      .not('intelligence_score', 'is', null);
-
-    const avgConfidenceScore = scores && scores.length > 0
+    const filesCategorized = tenantFiles.filter((file) => Boolean(file.ai_category)).length;
+    const departmentsInferred = filesWithTags;
+    const keywordsGenerated = filesWithTags;
+    const timePeriodsExtracted = tenantFiles.filter((file) => file.metadata && Object.keys(file.metadata).length > 0).length;
+    const scores = tenantFiles.filter((file) => file.intelligence_score !== null && file.intelligence_score !== undefined);
+    const avgConfidenceScore = scores.length > 0
       ? scores.reduce((sum, file) => sum + (file.intelligence_score || 0), 0) / scores.length / 100
       : 0;
 
-    // Files now discoverable - files with ai_tags or ai_category
-    const { count: filesNowDiscoverable } = await supabase
-      .from('files')
-      .select('*', { count: 'exact', head: true })
-      .eq('tenant_id', tenantId)
-      .or('ai_tags.neq.{},ai_category.not.is.null');
+    const filesNowDiscoverable = tenantFiles.filter((file) =>
+      (Array.isArray(file.ai_tags) && file.ai_tags.length > 0) || Boolean(file.ai_category)
+    ).length;
+
+    const genericNameCount = totalFiles - filesWithMeaningfulNames;
+    const missingOwnerCount = tenantFiles.filter((file) => !hasOwner(file)).length;
+    const staleFileCount = tenantFiles.filter((file) => file.is_stale).length;
+    const externalExposureCount = tenantFiles.filter((file) => file.has_external_share).length;
+    const missingTagsOrCategoryCount = totalFiles - filesNowDiscoverable;
 
     // Categories breakdown
-    const { data: categoryData } = await supabase
-      .from('files')
-      .select('ai_category')
-      .eq('tenant_id', tenantId)
-      .not('ai_category', 'is', null);
-
     const categoryCounts: { [key: string]: number } = {};
-    categoryData?.forEach(file => {
+    tenantFiles.forEach(file => {
       if (file.ai_category) {
         categoryCounts[file.ai_category] = (categoryCounts[file.ai_category] || 0) + 1;
       }
@@ -128,54 +78,103 @@ export default async function handler(
     }));
 
     // Intelligence score - average of intelligence_score
-    const intelligenceScore = scores && scores.length > 0
+    const intelligenceScore = scores.length > 0
       ? Math.round(scores.reduce((sum, file) => sum + (file.intelligence_score || 0), 0) / scores.length)
+      : 0;
+    const sourceMetadataScore = totalFiles > 0
+      ? Math.round(
+          (filesWithMeaningfulNames / totalFiles) * 35 +
+          ((totalFiles - missingOwnerCount) / totalFiles) * 30 +
+          ((totalFiles - staleFileCount) / totalFiles) * 15 +
+          ((totalFiles - externalExposureCount) / totalFiles) * 10 +
+          (filesNowDiscoverable / totalFiles) * 10
+        )
       : 0;
 
     // Opportunities - simplified
     const opportunities = [
       {
         priority: 'high' as const,
-        title: 'Low Confidence Files',
-        description: `Files with intelligence_score < 50`,
-        count: scores ? scores.filter(s => (s.intelligence_score || 0) < 50).length : 0,
-        action: 'Enable Content Reading for better results',
+        title: 'Missing Ownership',
+        description: 'Files without usable owner metadata weaken search, stewardship, and Copilot readiness.',
+        count: missingOwnerCount,
+        action: 'Review missing-owner candidates before cleanup',
         icon: 'AlertCircle'
       },
       {
         priority: 'medium' as const,
         title: 'Generic File Names',
         description: 'Files named "Document", "Untitled", etc.',
-        count: (totalFiles || 0) - (filesWithMeaningfulNames || 0),
-        action: 'Low discoverability - consider renaming',
+        count: genericNameCount,
+        action: 'Use filename/path suggestions for safer review',
         icon: 'FileQuestion'
       },
       {
         priority: 'low' as const,
-        title: 'No Enrichment',
+        title: 'Missing Tags Or Categories',
         description: 'Files without AI tags or categories',
-        count: (totalFiles || 0) - (filesNowDiscoverable || 0),
-        action: 'Run AI enrichment to improve discoverability',
+        count: missingTagsOrCategoryCount,
+        action: 'Generate Aethos-side suggestions for human review',
         icon: 'FolderOpen'
       }
+    ];
+    const aiReadinessBlockers = [
+      {
+        id: 'generic_names',
+        label: 'Generic names',
+        count: genericNameCount,
+        severity: genericNameCount > 0 ? 'medium' : 'low',
+        recommendation: 'Suggest clearer titles from filename and path context before source-system writeback.',
+      },
+      {
+        id: 'missing_owner',
+        label: 'Missing owners',
+        count: missingOwnerCount,
+        severity: missingOwnerCount > 0 ? 'high' : 'low',
+        recommendation: 'Review ownership metadata and assign stewardship before remediation.',
+      },
+      {
+        id: 'stale_files',
+        label: 'Stale files',
+        count: staleFileCount,
+        severity: staleFileCount > 0 ? 'medium' : 'low',
+        recommendation: 'Create archive review workspaces before cleanup.',
+      },
+      {
+        id: 'external_exposure',
+        label: 'External exposure',
+        count: externalExposureCount,
+        severity: externalExposureCount > 0 ? 'high' : 'low',
+        recommendation: 'Review sharing posture before broad AI or search rollout.',
+      },
+      {
+        id: 'missing_tags',
+        label: 'Missing tags/categories',
+        count: missingTagsOrCategoryCount,
+        severity: missingTagsOrCategoryCount > 0 ? 'medium' : 'low',
+        recommendation: 'Generate conservative Aethos-side metadata suggestions for review.',
+      },
     ];
 
     res.status(200).json({
       intelligenceScore,
+      sourceMetadataScore,
+      aethosEnrichmentScore: intelligenceScore,
+      aiReadinessBlockers,
       sourceQuality: {
-        totalFiles: totalFiles || 0,
-        filesWithDescriptions: filesWithDescriptions || 0,
-        filesWithTags: filesWithTags || 0,
-        filesWithMeaningfulNames: filesWithMeaningfulNames || 0,
+        totalFiles,
+        filesWithDescriptions,
+        filesWithTags,
+        filesWithMeaningfulNames,
         avgNameLength
       },
       enrichmentStatus: {
-        filesCategorized: filesCategorized || 0,
-        departmentsInferred: departmentsInferred || 0,
-        keywordsGenerated: keywordsGenerated || 0,
-        timePeriodsExtracted: timePeriodsExtracted || 0,
+        filesCategorized,
+        departmentsInferred,
+        keywordsGenerated,
+        timePeriodsExtracted,
         avgConfidenceScore: Math.round(avgConfidenceScore * 100) / 100,
-        filesNowDiscoverable: filesNowDiscoverable || 0
+        filesNowDiscoverable
       },
       categories,
       opportunities

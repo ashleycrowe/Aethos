@@ -429,8 +429,8 @@ Tie discovery to the AI-readiness story without overpromising content intelligen
 
 V1 tasks:
 
-- [ ] Separate source metadata score from Aethos-side enrichment score.
-- [ ] Add `AI readiness blockers`:
+- [x] Separate source metadata score from Aethos-side enrichment score.
+- [x] Add `AI readiness blockers`:
   - generic names
   - missing owner
   - stale files
