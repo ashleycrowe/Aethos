@@ -564,7 +564,7 @@ Sales angle:
   - Live Mode dry-run is default.
   - Demo Mode uses fixtures.
 
-- [ ] `AdminCenter.test.tsx`
+- [x] `AdminCenter.test.ts`
   - Scan history renders.
   - Discovery errors show clearly.
   - Mode lock state renders correctly on known domains.
