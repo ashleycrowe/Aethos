@@ -216,16 +216,29 @@ See `docs/OPERATIONAL_INTELLIGENCE_DEVELOPMENT_QUEUE.md` for the detailed implem
 
 **Principle:** Aethos must be usable at 375px width without accidental horizontal overflow, unreadable controls, or hover-only workflows.
 
-- [ ] Audit core V1 screens at 375px, 768px, and 1024px.
-- [ ] Prioritize IntelligenceDashboard, OracleSearch, WorkspaceEngine, RemediationCenter, and AdminCenter.
+Priority order:
+1. IntelligenceDashboard.
+2. OracleSearch.
+3. WorkspaceEngine.
+4. RemediationCenter.
+5. AdminCenter.
+
+Audit rules:
+- [ ] Test at 375px, 390px, 768px, 820px, 1024px, 1280px, and 1920px.
+- [ ] Remove accidental horizontal overflow; allow only intentional tab/filter/stat-pill carousels.
 - [ ] Ensure primary touch targets are at least 44px x 44px.
-- [ ] Remove accidental horizontal overflow; allow only intentional tab/filter carousels.
-- [ ] Convert dense tables/lists to mobile card layouts where needed.
-- [ ] Make modals full-screen or bottom-sheet style on mobile.
-- [ ] Add `scrollbar-hide` and safe-area utilities if needed.
-- [ ] Reduce expensive blur/backdrop effects on mobile.
-- [ ] Verify dashboard grids use progressive breakpoints: 1 col mobile, 2 col small tablet, 3-4 col desktop.
-- [ ] Run manual smoke checks for mobile nav, forms, filters, charts, and report cards.
+- [ ] Keep interactive control text readable: `text-sm` preferred, `text-xs` acceptable for compact tabs/pills that scale up at `sm:`.
+- [ ] Preserve Aethos tiny metadata labels for non-interactive/supporting text only.
+- [ ] Use progressive dashboard grids: 1 col mobile, 2 col small tablet, 3-4 col desktop.
+- [ ] Keep primary dashboard/report cards stacked vertically on mobile instead of horizontal carousels.
+- [ ] Convert dense tables/lists to mobile cards using `hidden lg:block` desktop tables and `lg:hidden` card lists.
+- [ ] Make modals full-screen or bottom-sheet style on mobile, centered on desktop.
+- [ ] Keep forms readable with stacked fields/buttons and iOS keyboard-safe spacing.
+- [ ] Make charts responsive with aspect-ratio containers and reduced mobile axis labels.
+- [ ] Reduce expensive blur/backdrop effects on mobile: `backdrop-blur-sm sm:backdrop-blur-md lg:backdrop-blur-xl`.
+- [ ] Add `scrollbar-hide` and `safe-area-inset` utilities if missing; `snap-x` and `snap-start` are native Tailwind utilities.
+- [ ] Test with the existing bottom nav; do not replace it with a drawer unless testing proves the bottom nav fails.
+- [ ] Run a final smoke test on real iPhone SE or Chrome DevTools 375px: navigate core V1 screens, tap every button, open every modal, verify forms and charts.
 
 ---
 
