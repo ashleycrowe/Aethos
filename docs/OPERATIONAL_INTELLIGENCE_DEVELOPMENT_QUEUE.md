@@ -415,7 +415,7 @@ V1.5 implementation tasks:
 - [x] Surface owner-status enrichment in Ownership & Offboarding Risk.
 - [x] Add owner-status sync action with permission-required feedback.
 - [x] Add departed/inactive owner report.
-- [ ] Add handoff workflow: selected files -> suggested workspace -> assign steward.
+- [x] Add handoff workflow: selected files -> suggested workspace -> assign steward.
 
 Sales angle:
 

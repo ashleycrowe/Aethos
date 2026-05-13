@@ -433,10 +433,31 @@ function shouldReviewOwnerStatus(status?: ReportOwnerStatusRow): boolean {
   return status?.status === 'disabled' || status?.status === 'not_found';
 }
 
-function buildWorkspaceOpportunities(files: ReportFileRow[]): ReportSummary['workspaceOpportunities'] {
+function buildWorkspaceOpportunities(
+  files: ReportFileRow[],
+  ownerStatuses: ReportOwnerStatusRow[] = []
+): ReportSummary['workspaceOpportunities'] {
   const externalFiles = files.filter((file) => file.has_external_share);
   const staleFiles = files.filter(isStale);
   const unknownOwnerFiles = files.filter((file) => !hasOwner(file));
+  const ownerStatusMap = buildOwnerStatusMap(ownerStatuses);
+  const ownerStatusReviewGroup = buildOwnerGroups(files)
+    .filter((group) => group.ownerEmail)
+    .map((group) => {
+      const ownerStatus = group.ownerEmail ? ownerStatusMap.get(group.ownerEmail) : undefined;
+      return {
+        ownerLabel: group.ownerName || group.ownerEmail || 'Owner',
+        ownerEmail: group.ownerEmail,
+        status: ownerStatus?.status || 'unknown',
+        fileCount: group.files.length,
+        riskSignalCount:
+          group.files.filter((file) => file.has_external_share).length +
+          group.files.filter(isHighRisk).length +
+          group.files.filter(isStale).length,
+      };
+    })
+    .filter((group) => ['disabled', 'not_found'].includes(group.status))
+    .sort((a, b) => b.riskSignalCount - a.riskSignalCount || b.fileCount - a.fileCount)[0];
   const topOwnerRiskGroup = buildOwnerGroups(files)
     .filter((group) => group.ownerEmail || (group.ownerName && group.ownerName !== 'Unknown Owner'))
     .map((group) => {
@@ -486,6 +507,19 @@ function buildWorkspaceOpportunities(files: ReportFileRow[]): ReportSummary['wor
           reason: 'Create an owner-focused workspace before cleanup, offboarding, or stewardship changes.',
           fileCount: topOwnerRiskGroup.fileCount,
           suggestedTags: ['owner-risk', 'handoff', topOwnerRiskGroup.ownerLabel.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')],
+        }
+      : null,
+    ownerStatusReviewGroup
+      ? {
+          label: `${ownerStatusReviewGroup.ownerLabel} Status Handoff`,
+          reason: 'Create a handoff workspace for files owned by a disabled or not-found Entra account.',
+          fileCount: ownerStatusReviewGroup.fileCount,
+          suggestedTags: [
+            'owner-status',
+            'handoff',
+            ownerStatusReviewGroup.status,
+            slugify(ownerStatusReviewGroup.ownerLabel),
+          ],
         }
       : null,
   ].filter(Boolean) as ReportSummary['workspaceOpportunities'];
@@ -840,7 +874,7 @@ export function buildReportSummary({
       ownerStatusCoverage,
       ownerStatusReview,
     },
-    workspaceOpportunities: buildWorkspaceOpportunities(files),
+    workspaceOpportunities: buildWorkspaceOpportunities(files, ownerStatuses),
     riskDrivers: drivers,
   };
 }

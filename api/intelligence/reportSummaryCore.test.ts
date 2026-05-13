@@ -264,5 +264,13 @@ describe('buildReportSummary', () => {
         }),
       ])
     );
+    expect(summary.workspaceOpportunities).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          label: 'Disabled Owner Status Handoff',
+          suggestedTags: expect.arrayContaining(['owner-status', 'handoff', 'disabled']),
+        }),
+      ])
+    );
   });
 });
