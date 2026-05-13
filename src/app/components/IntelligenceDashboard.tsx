@@ -21,6 +21,7 @@ import { motion as Motion, AnimatePresence } from 'motion/react';
 import { useTheme } from '@/app/context/ThemeContext';
 import { useFeature, useVersion } from '@/app/context/VersionContext';
 import { GlassCard } from '@/app/components/GlassCard';
+import { LiveDataBoundary } from '@/app/components/LiveDataBoundary';
 import { IntelligenceStream } from '@/app/components/IntelligenceStream';
 import { MetadataIntelligenceDashboard } from '@/app/components/MetadataIntelligenceDashboard';
 import { IdentityEngine } from '@/app/components/IdentityEngine';
@@ -443,20 +444,32 @@ const OverviewDashboard = ({ onOpenSignalQueue }: { onOpenSignalQueue?: () => vo
       {/* Discovery Scan Simulation */}
       <DiscoveryScanSimulation />
 
+      {!isDemoMode && isLoadingSummary && (
+        <LiveDataBoundary
+          state="loading"
+          title="Loading Intelligence"
+          message="Aethos is loading the live report summary for this Microsoft tenant."
+        />
+      )}
+
       {!isDemoMode && summaryError && (
-        <GlassCard className="border-[#FF5733]/20 bg-[#FF5733]/5 p-5">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-[#FF5733]" />
-            <div>
-              <h3 className="text-sm font-black uppercase tracking-widest text-white">
-                Live Intelligence Unavailable
-              </h3>
-              <p className="mt-2 text-sm text-slate-400">
-                {summaryError}. Run Microsoft Discovery from Admin or check API configuration.
-              </p>
-            </div>
-          </div>
-        </GlassCard>
+        <LiveDataBoundary
+          state="error"
+          title="Live Intelligence Unavailable"
+          message={`${summaryError}. Run Microsoft Discovery from Admin or check API configuration.`}
+          actionLabel="Open Admin"
+          onAction={() => openAppTab('admin')}
+        />
+      )}
+
+      {!isDemoMode && !isLoadingSummary && !summaryError && !reportSummary && (
+        <LiveDataBoundary
+          state="empty"
+          title="No Report Summary Yet"
+          message="Connect Microsoft and run Discovery to generate the first live Operational Intelligence report."
+          actionLabel="Run Discovery"
+          onAction={() => openAppTab('admin')}
+        />
       )}
 
       {!isDemoMode && reportSummary && (
