@@ -27,7 +27,15 @@ export default async function handler(
 
     if (filesError) throw filesError;
 
+    const { data: metadataDecisions, error: metadataDecisionsError } = await supabase
+      .from('metadata_suggestion_decisions')
+      .select('decision_status,suggestion_type,affected_count,decided_at')
+      .eq('tenant_id', tenantId);
+
+    if (metadataDecisionsError) throw metadataDecisionsError;
+
     const tenantFiles = files || [];
+    const suggestionDecisions = metadataDecisions || [];
     const totalFiles = tenantFiles.length;
     const hasOwner = (file: any) => Boolean(file.owner_email?.trim() || file.owner_name?.trim());
     const isMeaningfulName = (name?: string | null) => {
@@ -90,6 +98,21 @@ export default async function handler(
           (filesNowDiscoverable / totalFiles) * 10
         )
       : 0;
+    const metadataDecisionSummary = {
+      totalDecisions: suggestionDecisions.length,
+      accepted: suggestionDecisions.filter((decision) => decision.decision_status === 'accepted').length,
+      edited: suggestionDecisions.filter((decision) => decision.decision_status === 'edited').length,
+      rejected: suggestionDecisions.filter((decision) => decision.decision_status === 'rejected').length,
+      blocked: suggestionDecisions.filter((decision) => decision.decision_status === 'blocked').length,
+      acceptedAffectedFiles: suggestionDecisions
+        .filter((decision) => decision.decision_status === 'accepted' || decision.decision_status === 'edited')
+        .reduce((sum, decision) => sum + (decision.affected_count || 0), 0),
+      latestDecisionAt: suggestionDecisions
+        .map((decision) => decision.decided_at)
+        .filter(Boolean)
+        .sort()
+        .reverse()[0] || null,
+    };
 
     // Opportunities - simplified
     const opportunities = [
@@ -218,6 +241,7 @@ export default async function handler(
       aethosEnrichmentScore: intelligenceScore,
       aiReadinessBlockers,
       metadataSuggestions,
+      metadataDecisionSummary,
       sourceQuality: {
         totalFiles,
         filesWithDescriptions,

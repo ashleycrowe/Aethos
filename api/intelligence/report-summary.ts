@@ -14,6 +14,7 @@ import {
   type ReportScanRow,
   type ReportSiteRow,
   type ReportOwnerStatusRow,
+  type ReportMetadataDecisionRow,
 } from './reportSummaryCore.js';
 
 async function fetchFiles(tenantId: string): Promise<ReportFileRow[]> {
@@ -68,6 +69,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       { data: scans, error: scansError },
       { data: remediationActions, error: remediationError, count: remediationDryRunCount },
       { data: ownerStatuses, error: ownerStatusError },
+      { data: metadataDecisions, error: metadataDecisionError },
       files,
     ] = await Promise.all([
       supabase
@@ -91,6 +93,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .from('owner_status_cache')
         .select('owner_email,owner_name,status,lookup_status,account_enabled,user_type,last_checked_at')
         .eq('tenant_id', tenantId),
+      supabase
+        .from('metadata_suggestion_decisions')
+        .select('suggestion_id,suggestion_type,decision_status,affected_count,decided_at,suggested_value,edited_value,metadata')
+        .eq('tenant_id', tenantId)
+        .order('decided_at', { ascending: false })
+        .limit(25),
       fetchFiles(tenantId),
     ]);
 
@@ -98,6 +106,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (scansError) throw scansError;
     if (remediationError) throw remediationError;
     if (ownerStatusError) throw ownerStatusError;
+    if (metadataDecisionError) throw metadataDecisionError;
 
     const summary = buildReportSummary({
       tenantId,
@@ -107,6 +116,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       remediationActions: (remediationActions || []) as ReportRemediationActionRow[],
       remediationDryRunTotal: remediationDryRunCount ?? undefined,
       ownerStatuses: (ownerStatuses || []) as ReportOwnerStatusRow[],
+      metadataDecisions: (metadataDecisions || []) as ReportMetadataDecisionRow[],
     });
 
     res.status(200).json({

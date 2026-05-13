@@ -174,7 +174,7 @@ See `docs/OPERATIONAL_INTELLIGENCE_DEVELOPMENT_QUEUE.md` for the detailed implem
 - [x] Design a live-backed Metadata Suggestions panel after Discovery.
 - [x] Add confidence and rationale to metadata suggestions.
 - [ ] Add bulk accept/edit/reject flows.
-- [ ] Tie accepted metadata directly into workspace suggestions and tag-based auto-sync.
+- [x] Tie accepted metadata directly into workspace suggestions and tag-based auto-sync.
 - [x] Preserve an audit trail of metadata suggestion decisions.
 - [ ] Add Copilot/native-AI readiness language that distinguishes Aethos-side suggestions from source-system improvements.
 - [ ] Define which approved metadata improvements can eventually write back to Microsoft 365 or publish through Copilot connectors.

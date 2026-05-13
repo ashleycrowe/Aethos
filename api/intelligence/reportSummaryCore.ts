@@ -55,6 +55,17 @@ export type ReportOwnerStatusRow = {
   last_checked_at: string | null;
 };
 
+export type ReportMetadataDecisionRow = {
+  suggestion_id: string;
+  suggestion_type: 'title' | 'tag' | 'category' | 'owner' | string;
+  decision_status: 'accepted' | 'edited' | 'rejected' | 'blocked' | string;
+  affected_count: number | null;
+  decided_at: string | null;
+  suggested_value: Record<string, unknown> | null;
+  edited_value: Record<string, unknown> | null;
+  metadata: Record<string, unknown> | null;
+};
+
 export type RiskDriver = {
   label: string;
   category: 'external' | 'ownership' | 'high_risk' | 'stale' | 'storage';
@@ -219,6 +230,7 @@ type BuildReportSummaryInput = {
   remediationActions?: ReportRemediationActionRow[];
   remediationDryRunTotal?: number;
   ownerStatuses?: ReportOwnerStatusRow[];
+  metadataDecisions?: ReportMetadataDecisionRow[];
   generatedAt?: string;
 };
 
@@ -435,7 +447,8 @@ function shouldReviewOwnerStatus(status?: ReportOwnerStatusRow): boolean {
 
 function buildWorkspaceOpportunities(
   files: ReportFileRow[],
-  ownerStatuses: ReportOwnerStatusRow[] = []
+  ownerStatuses: ReportOwnerStatusRow[] = [],
+  metadataDecisions: ReportMetadataDecisionRow[] = []
 ): ReportSummary['workspaceOpportunities'] {
   const externalFiles = files.filter((file) => file.has_external_share);
   const staleFiles = files.filter(isStale);
@@ -524,7 +537,40 @@ function buildWorkspaceOpportunities(
       : null,
   ].filter(Boolean) as ReportSummary['workspaceOpportunities'];
 
-  return [...riskOpportunities, ...buildMetadataWorkspaceClusters(files)];
+  return [
+    ...riskOpportunities,
+    ...buildAcceptedMetadataWorkspaceOpportunities(metadataDecisions),
+    ...buildMetadataWorkspaceClusters(files),
+  ];
+}
+
+function buildAcceptedMetadataWorkspaceOpportunities(
+  metadataDecisions: ReportMetadataDecisionRow[]
+): ReportSummary['workspaceOpportunities'] {
+  return metadataDecisions
+    .filter((decision) => decision.decision_status === 'accepted' || decision.decision_status === 'edited')
+    .filter((decision) => decision.suggestion_type === 'tag' || decision.suggestion_type === 'category')
+    .sort((a, b) => new Date(b.decided_at || 0).getTime() - new Date(a.decided_at || 0).getTime())
+    .slice(0, 2)
+    .map((decision) => {
+      const label = typeof decision.suggested_value?.label === 'string'
+        ? decision.suggested_value.label
+        : decision.suggestion_type === 'tag'
+        ? 'Approved Tag Review'
+        : 'Approved Category Review';
+
+      return {
+        label: `${label} Workspace`,
+        reason: 'Approved Aethos-side metadata can now seed workspace review without Microsoft 365 writeback.',
+        fileCount: decision.affected_count || 0,
+        suggestedTags: [
+          'approved-metadata',
+          decision.suggestion_type,
+          decision.decision_status,
+          slugify(decision.suggestion_id),
+        ],
+      };
+    });
 }
 
 function buildMetadataWorkspaceClusters(files: ReportFileRow[]): ReportSummary['workspaceOpportunities'] {
@@ -616,6 +662,7 @@ export function buildReportSummary({
   remediationActions = [],
   remediationDryRunTotal,
   ownerStatuses = [],
+  metadataDecisions = [],
   generatedAt = new Date().toISOString(),
 }: BuildReportSummaryInput): ReportSummary {
   const latestScan = scans[0];
@@ -874,7 +921,7 @@ export function buildReportSummary({
       ownerStatusCoverage,
       ownerStatusReview,
     },
-    workspaceOpportunities: buildWorkspaceOpportunities(files, ownerStatuses),
+    workspaceOpportunities: buildWorkspaceOpportunities(files, ownerStatuses, metadataDecisions),
     riskDrivers: drivers,
   };
 }

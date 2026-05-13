@@ -66,6 +66,16 @@ interface ConservativeMetadataSuggestion {
 
 type MetadataDecisionStatus = 'accepted' | 'edited' | 'rejected' | 'blocked';
 
+interface MetadataDecisionSummary {
+  totalDecisions: number;
+  accepted: number;
+  edited: number;
+  rejected: number;
+  blocked: number;
+  acceptedAffectedFiles: number;
+  latestDecisionAt: string | null;
+}
+
 function openRemediation(issue?: string) {
   if (typeof window === 'undefined') return;
   window.dispatchEvent(new CustomEvent('aethos:navigate', {
@@ -91,6 +101,15 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
   const [aethosEnrichmentScore, setAethosEnrichmentScore] = useState(0);
   const [aiReadinessBlockers, setAiReadinessBlockers] = useState<AIReadinessBlocker[]>([]);
   const [metadataSuggestions, setMetadataSuggestions] = useState<ConservativeMetadataSuggestion[]>([]);
+  const [metadataDecisionSummary, setMetadataDecisionSummary] = useState<MetadataDecisionSummary>({
+    totalDecisions: 0,
+    accepted: 0,
+    edited: 0,
+    rejected: 0,
+    blocked: 0,
+    acceptedAffectedFiles: 0,
+    latestDecisionAt: null,
+  });
   const [suggestionDecisions, setSuggestionDecisions] = useState<Record<string, MetadataDecisionStatus>>({});
   const [savingSuggestionId, setSavingSuggestionId] = useState<string | null>(null);
 
@@ -187,6 +206,15 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
             actionTarget: 'metadata_review',
           },
         ]);
+        setMetadataDecisionSummary({
+          totalDecisions: 7,
+          accepted: 3,
+          edited: 1,
+          rejected: 2,
+          blocked: 1,
+          acceptedAffectedFiles: 1380,
+          latestDecisionAt: '2026-05-12T00:00:00.000Z',
+        });
         setSourceQuality({
           totalFiles: 4567,
           filesWithDescriptions: 548,
@@ -236,6 +264,15 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
         setAethosEnrichmentScore(data.aethosEnrichmentScore ?? data.intelligenceScore ?? 0);
         setAiReadinessBlockers(data.aiReadinessBlockers || []);
         setMetadataSuggestions(data.metadataSuggestions || []);
+        setMetadataDecisionSummary(data.metadataDecisionSummary || {
+          totalDecisions: 0,
+          accepted: 0,
+          edited: 0,
+          rejected: 0,
+          blocked: 0,
+          acceptedAffectedFiles: 0,
+          latestDecisionAt: null,
+        });
         setSourceQuality(data.sourceQuality);
         setEnrichmentStatus(data.enrichmentStatus);
         setCategories(data.categories);
@@ -250,6 +287,15 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
         setAethosEnrichmentScore(0);
         setAiReadinessBlockers([]);
         setMetadataSuggestions([]);
+        setMetadataDecisionSummary({
+          totalDecisions: 0,
+          accepted: 0,
+          edited: 0,
+          rejected: 0,
+          blocked: 0,
+          acceptedAffectedFiles: 0,
+          latestDecisionAt: null,
+        });
         setSourceQuality({
           totalFiles: 0,
           filesWithDescriptions: 0,
@@ -374,6 +420,15 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
         },
       });
       setSuggestionDecisions((current) => ({ ...current, [suggestion.id]: decisionStatus }));
+      setMetadataDecisionSummary((current) => ({
+        ...current,
+        totalDecisions: current.totalDecisions + 1,
+        [decisionStatus]: current[decisionStatus] + 1,
+        acceptedAffectedFiles: ['accepted', 'edited'].includes(decisionStatus)
+          ? current.acceptedAffectedFiles + suggestion.count
+          : current.acceptedAffectedFiles,
+        latestDecisionAt: new Date().toISOString(),
+      }));
       toast.success(`Metadata suggestion ${decisionStatus}`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Unable to record metadata decision');
@@ -1002,9 +1057,33 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
               </div>
 
               {metadataSuggestions.length > 0 ? (
-                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                  {metadataSuggestions.map((suggestion) => (
-                    <div key={suggestion.id} className="rounded-xl border border-white/10 bg-white/[0.03] p-5">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
+                    {[
+                      ['Decisions', metadataDecisionSummary.totalDecisions],
+                      ['Accepted', metadataDecisionSummary.accepted],
+                      ['Edited', metadataDecisionSummary.edited],
+                      ['Rejected', metadataDecisionSummary.rejected],
+                      ['Blocked', metadataDecisionSummary.blocked],
+                      ['Files Improved', metadataDecisionSummary.acceptedAffectedFiles],
+                    ].map(([label, value]) => (
+                      <div key={label as string} className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">{label as string}</p>
+                        <p className="mt-2 text-xl font-black text-white">{(value as number).toLocaleString()}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="rounded-xl border border-[#00F0FF]/20 bg-[#00F0FF]/10 p-4">
+                    <p className="text-[9px] font-black uppercase tracking-widest text-[#00F0FF]">Accepted Metadata Impact</p>
+                    <p className="mt-2 text-sm leading-6 text-slate-400">
+                      Accepted or edited suggestions can seed Aethos-side workspace review and search context. Microsoft 365 writeback remains explicit and outside the default V1.5 flow.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                    {metadataSuggestions.map((suggestion) => (
+                      <div key={suggestion.id} className="rounded-xl border border-white/10 bg-white/[0.03] p-5">
                       <div className="mb-4 flex items-center justify-between gap-3">
                         <span className="rounded-full border border-[#00F0FF]/20 bg-[#00F0FF]/10 px-3 py-1 text-[9px] font-black uppercase tracking-widest text-[#00F0FF]">
                           {suggestion.type}
@@ -1064,8 +1143,9 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
                           );
                         })}
                       </div>
-                    </div>
-                  ))}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ) : (
                 <div className="rounded-xl border border-white/10 bg-white/[0.03] p-5 text-sm text-slate-400">

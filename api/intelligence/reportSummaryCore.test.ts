@@ -189,6 +189,48 @@ describe('buildReportSummary', () => {
     );
   });
 
+  it('suggests workspaces from accepted metadata decisions', () => {
+    const summary = buildReportSummary({
+      tenantId: 'tenant-1',
+      files: Array.from({ length: 5 }, (_, index) =>
+        baseFile({
+          id: `accepted-metadata-${index}`,
+          ai_tags: [],
+          ai_category: null,
+        })
+      ),
+      sites: [
+        { id: 'site-1', provider_type: 'sharepoint' },
+        { id: 'site-2', provider_type: 'teams' },
+        { id: 'site-3', provider_type: 'sharepoint' },
+      ],
+      scans: [],
+      metadataDecisions: [
+        {
+          suggestion_id: 'suggest-tags-categories',
+          suggestion_type: 'tag',
+          decision_status: 'accepted',
+          affected_count: 5,
+          decided_at: '2026-05-12T00:00:00.000Z',
+          suggested_value: { label: 'Budget Tags' },
+          edited_value: {},
+          metadata: { source_system_writeback: false },
+        },
+      ],
+      generatedAt: '2026-05-12T00:00:00.000Z',
+    });
+
+    expect(summary.workspaceOpportunities).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          label: 'Budget Tags Workspace',
+          fileCount: 5,
+          suggestedTags: expect.arrayContaining(['approved-metadata', 'tag', 'accepted']),
+        }),
+      ])
+    );
+  });
+
   it('includes owner status enrichment when cached', () => {
     const files = [
       baseFile({
