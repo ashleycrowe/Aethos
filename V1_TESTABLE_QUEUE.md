@@ -166,12 +166,12 @@ See `docs/OPERATIONAL_INTELLIGENCE_DEVELOPMENT_QUEUE.md` for the detailed implem
 - [x] Add source metadata score, Aethos enrichment score, and AI-readiness blockers to live Metadata Quality.
 - [x] Add conservative metadata suggestions panel with review-first lifecycle language.
 - [x] Tie metadata suggestions to review packets, remediation filters, and workspace review routing.
-- [ ] Decide the V1 suggestion lifecycle: pending, accepted, edited, rejected, blocked.
-- [ ] Design a live-backed Metadata Suggestions panel after Discovery.
+- [x] Decide the V1 suggestion lifecycle: pending, accepted, edited, rejected, blocked.
+- [x] Design a live-backed Metadata Suggestions panel after Discovery.
 - [x] Add confidence and rationale to metadata suggestions.
 - [ ] Add bulk accept/edit/reject flows.
 - [ ] Tie accepted metadata directly into workspace suggestions and tag-based auto-sync.
-- [ ] Preserve an audit trail of metadata suggestion decisions.
+- [x] Preserve an audit trail of metadata suggestion decisions.
 - [ ] Add Copilot/native-AI readiness language that distinguishes Aethos-side suggestions from source-system improvements.
 - [ ] Define which approved metadata improvements can eventually write back to Microsoft 365 or publish through Copilot connectors.
 

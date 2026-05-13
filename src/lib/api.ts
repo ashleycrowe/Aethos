@@ -238,6 +238,30 @@ export interface ExecuteRemediationResponse {
   };
 }
 
+export interface RecordMetadataSuggestionDecisionRequest {
+  accessToken?: string | null;
+  suggestionId: string;
+  suggestionType: 'title' | 'tag' | 'category' | 'owner';
+  decisionStatus: 'accepted' | 'edited' | 'rejected' | 'blocked';
+  affectedCount?: number;
+  confidence?: 'high' | 'medium' | 'low';
+  sourceSignals?: string[];
+  rationale?: string;
+  suggestedValue?: Record<string, unknown>;
+  editedValue?: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
+}
+
+export interface RecordMetadataSuggestionDecisionResponse {
+  success: boolean;
+  decision: {
+    id: string;
+    suggestionId: string;
+    decisionStatus: string;
+    decidedAt: string;
+  };
+}
+
 async function request<T>(path: string, options: RequestInit = {}, accessToken?: string | null): Promise<T> {
   if (isDemoModeEnabled()) {
     throw new Error(DEMO_MODE_MESSAGE);
@@ -419,6 +443,20 @@ export async function executeRemediation({
 }: ExecuteRemediationRequest): Promise<ExecuteRemediationResponse> {
   return request<ExecuteRemediationResponse>(
     '/remediation/execute',
+    {
+      method: 'POST',
+      body: JSON.stringify(body),
+    },
+    accessToken
+  );
+}
+
+export async function recordMetadataSuggestionDecision({
+  accessToken,
+  ...body
+}: RecordMetadataSuggestionDecisionRequest): Promise<RecordMetadataSuggestionDecisionResponse> {
+  return request<RecordMetadataSuggestionDecisionResponse>(
+    '/intelligence/metadata-suggestion-decision',
     {
       method: 'POST',
       body: JSON.stringify(body),

@@ -7,6 +7,7 @@ import {
 import { isDemoModeEnabled } from '@/app/config/demoMode';
 import { useAuth } from '@/app/context/AuthContext';
 import { useVersion } from '@/app/context/VersionContext';
+import { recordMetadataSuggestionDecision } from '@/lib/api';
 import { toast } from 'sonner';
 
 interface MetadataQuality {
@@ -63,6 +64,8 @@ interface ConservativeMetadataSuggestion {
   remediationIssue?: 'external_share' | 'stale' | 'missing_owner' | 'high_risk' | 'onedrive_silo';
 }
 
+type MetadataDecisionStatus = 'accepted' | 'edited' | 'rejected' | 'blocked';
+
 function openRemediation(issue?: string) {
   if (typeof window === 'undefined') return;
   window.dispatchEvent(new CustomEvent('aethos:navigate', {
@@ -88,6 +91,8 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
   const [aethosEnrichmentScore, setAethosEnrichmentScore] = useState(0);
   const [aiReadinessBlockers, setAiReadinessBlockers] = useState<AIReadinessBlocker[]>([]);
   const [metadataSuggestions, setMetadataSuggestions] = useState<ConservativeMetadataSuggestion[]>([]);
+  const [suggestionDecisions, setSuggestionDecisions] = useState<Record<string, MetadataDecisionStatus>>({});
+  const [savingSuggestionId, setSavingSuggestionId] = useState<string | null>(null);
 
   // State for real data from API
   const [intelligenceScore, setIntelligenceScore] = useState(0);
@@ -334,6 +339,47 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
     }
 
     void copySuggestionReviewPacket(suggestion);
+  };
+
+  const recordSuggestionDecision = async (
+    suggestion: ConservativeMetadataSuggestion,
+    decisionStatus: MetadataDecisionStatus
+  ) => {
+    if (isDemoMode) {
+      setSuggestionDecisions((current) => ({ ...current, [suggestion.id]: decisionStatus }));
+      toast.success(`Demo decision marked ${decisionStatus}`);
+      return;
+    }
+
+    try {
+      setSavingSuggestionId(suggestion.id);
+      const accessToken = await getAccessToken();
+      await recordMetadataSuggestionDecision({
+        accessToken,
+        suggestionId: suggestion.id,
+        suggestionType: suggestion.type,
+        decisionStatus,
+        affectedCount: suggestion.count,
+        confidence: suggestion.confidence,
+        sourceSignals: suggestion.sourceSignals,
+        rationale: suggestion.rationale,
+        suggestedValue: {
+          label: suggestion.label,
+          nextAction: suggestion.nextAction,
+        },
+        metadata: {
+          actionTarget: suggestion.actionTarget || 'metadata_review',
+          remediationIssue: suggestion.remediationIssue,
+          source: 'MetadataIntelligenceDashboard',
+        },
+      });
+      setSuggestionDecisions((current) => ({ ...current, [suggestion.id]: decisionStatus }));
+      toast.success(`Metadata suggestion ${decisionStatus}`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unable to record metadata decision');
+    } finally {
+      setSavingSuggestionId(null);
+    }
   };
 
   const getOpportunityIssue = (title: string) => {
@@ -992,8 +1038,31 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
                           {suggestion.nextAction}
                         </button>
                         <span className="text-[10px] leading-5 text-slate-500">
-                          Pending lifecycle: accept, edit, reject, or block.
+                          {suggestionDecisions[suggestion.id]
+                            ? `Decision recorded: ${suggestionDecisions[suggestion.id]}.`
+                            : 'Pending lifecycle: accept, edit, reject, or block.'}
                         </span>
+                      </div>
+                      <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                        {(['accepted', 'edited', 'rejected', 'blocked'] as MetadataDecisionStatus[]).map((status) => {
+                          const selected = suggestionDecisions[suggestion.id] === status;
+                          const isSaving = savingSuggestionId === suggestion.id;
+                          return (
+                            <button
+                              key={status}
+                              type="button"
+                              disabled={isSaving}
+                              onClick={() => void recordSuggestionDecision(suggestion, status)}
+                              className={`min-h-[34px] rounded-lg border px-3 py-2 text-[9px] font-black uppercase tracking-widest transition ${
+                                selected
+                                  ? 'border-[#00F0FF]/40 bg-[#00F0FF]/15 text-[#00F0FF]'
+                                  : 'border-white/10 bg-white/[0.03] text-slate-500 hover:border-white/20 hover:text-white'
+                              } ${isSaving ? 'cursor-wait opacity-60' : ''}`}
+                            >
+                              {isSaving ? 'Saving' : status}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   ))}

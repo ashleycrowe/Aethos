@@ -446,6 +446,8 @@ V1 tasks:
 
 V1.5 tasks:
 
+- [x] Add review lifecycle states: accepted, edited, rejected, blocked.
+- [x] Preserve an audit trail of metadata suggestion decisions.
 - [ ] Add content-aware tags/categories.
 - [ ] Add content-aware summaries.
 - [ ] Add PII/sensitive content flags.
