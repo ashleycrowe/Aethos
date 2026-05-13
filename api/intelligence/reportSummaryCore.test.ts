@@ -140,4 +140,47 @@ describe('buildReportSummary', () => {
       ])
     );
   });
+
+  it('suggests workspaces from repeated metadata clusters', () => {
+    const files = Array.from({ length: 6 }, (_, index) =>
+      baseFile({
+        id: `metadata-${index}`,
+        path: `/sites/finance/Budget/${index}.docx`,
+        ai_category: index < 4 ? 'financial-planning' : 'operations',
+        ai_tags: index < 5 ? ['budget', 'planning'] : ['policy'],
+      })
+    );
+
+    const summary = buildReportSummary({
+      tenantId: 'tenant-1',
+      files,
+      sites: [
+        { id: 'site-1', provider_type: 'sharepoint' },
+        { id: 'site-2', provider_type: 'teams' },
+        { id: 'site-3', provider_type: 'sharepoint' },
+      ],
+      scans: [],
+      generatedAt: '2026-05-12T00:00:00.000Z',
+    });
+
+    expect(summary.workspaceOpportunities).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          label: 'Finance Workspace',
+          fileCount: 6,
+          suggestedTags: ['path', 'finance'],
+        }),
+        expect.objectContaining({
+          label: 'Budget Workspace',
+          fileCount: 5,
+          suggestedTags: ['tag', 'budget'],
+        }),
+        expect.objectContaining({
+          label: 'Financial Planning Workspace',
+          fileCount: 4,
+          suggestedTags: ['category', 'financial-planning'],
+        }),
+      ])
+    );
+  });
 });

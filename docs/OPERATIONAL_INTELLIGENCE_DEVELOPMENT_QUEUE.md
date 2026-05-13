@@ -470,7 +470,7 @@ Turn discovery into action, not inventory.
 
 Tasks:
 
-- [ ] Suggest workspaces from path/category/tag/owner clusters.
+- [x] Suggest workspaces from path/category/tag/owner clusters.
 - [x] Suggest offboarding/handoff workspaces from owner risk.
 - [x] Add `Create workspace from this report` CTA.
 - [ ] Allow manual workspace creation even with zero matching files.

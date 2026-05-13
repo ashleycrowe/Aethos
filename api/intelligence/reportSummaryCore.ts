@@ -181,6 +181,7 @@ type BuildReportSummaryInput = {
 
 const HIGH_RISK_THRESHOLD = 70;
 const STALE_DAYS = 180;
+const MIN_WORKSPACE_CLUSTER_SIZE = 3;
 
 function clampScore(value: number): number {
   if (!Number.isFinite(value)) return 0;
@@ -220,6 +221,35 @@ function isStale(file: ReportFileRow): boolean {
   if (Number.isNaN(modified)) return false;
 
   return Date.now() - modified > STALE_DAYS * 24 * 60 * 60 * 1000;
+}
+
+function titleCase(value: string): string {
+  return value
+    .replace(/[-_]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+function getPathCluster(file: ReportFileRow): string | null {
+  if (!file.path) return null;
+
+  const ignoredSegments = new Set(['sites', 'drives', 'root', 'shared documents', 'documents', 'general']);
+  const segments = file.path
+    .split(/[\\/]/)
+    .map((segment) => segment.trim())
+    .filter(Boolean)
+    .filter((segment) => !ignoredSegments.has(segment.toLowerCase()))
+    .filter((segment, index, all) => index < all.length - 1 || !segment.includes('.'));
+
+  return segments[0] || null;
 }
 
 function getDataMaturity(fileCount: number, siteCount: number): ReportSummary['healthScore']['dataMaturity'] {
@@ -356,7 +386,7 @@ function buildWorkspaceOpportunities(files: ReportFileRow[]): ReportSummary['wor
     .filter((group) => group.riskSignalCount > 0)
     .sort((a, b) => b.riskSignalCount - a.riskSignalCount || b.fileCount - a.fileCount)[0];
 
-  return [
+  const riskOpportunities = [
     externalFiles.length > 0
       ? {
           label: 'External Sharing Review',
@@ -390,6 +420,59 @@ function buildWorkspaceOpportunities(files: ReportFileRow[]): ReportSummary['wor
         }
       : null,
   ].filter(Boolean) as ReportSummary['workspaceOpportunities'];
+
+  return [...riskOpportunities, ...buildMetadataWorkspaceClusters(files)];
+}
+
+function buildMetadataWorkspaceClusters(files: ReportFileRow[]): ReportSummary['workspaceOpportunities'] {
+  const clusters = new Map<string, { kind: 'path' | 'category' | 'tag'; label: string; reason: string; files: ReportFileRow[]; suggestedTags: string[] }>();
+
+  const addCluster = (
+    kind: 'path' | 'category' | 'tag',
+    rawLabel: string | null | undefined,
+    file: ReportFileRow,
+    reason: string
+  ) => {
+    const cleanLabel = rawLabel?.trim();
+    if (!cleanLabel) return;
+
+    const slug = slugify(cleanLabel);
+    if (!slug) return;
+
+    const key = `${kind}:${slug}`;
+    const existing = clusters.get(key) || {
+      kind,
+      label: `${titleCase(cleanLabel)} Workspace`,
+      reason,
+      files: [],
+      suggestedTags: [kind, slug],
+    };
+
+    existing.files.push(file);
+    clusters.set(key, existing);
+  };
+
+  files.forEach((file) => {
+    addCluster('path', getPathCluster(file), file, 'Files share a source-system path pattern that may be useful as working context.');
+    addCluster('category', file.ai_category, file, 'Files share an Aethos-side category that may be ready for workspace review.');
+    (file.ai_tags || []).forEach((tag) => {
+      addCluster('tag', tag, file, 'Files share an Aethos-side tag that may be ready for workspace review.');
+    });
+  });
+
+  const eligibleClusters = Array.from(clusters.values())
+    .filter((cluster) => cluster.files.length >= MIN_WORKSPACE_CLUSTER_SIZE)
+    .sort((a, b) => b.files.length - a.files.length || a.label.localeCompare(b.label));
+
+  return (['path', 'category', 'tag'] as const)
+    .map((kind) => eligibleClusters.find((cluster) => cluster.kind === kind))
+    .filter(Boolean)
+    .map((cluster) => ({
+      label: cluster!.label,
+      reason: cluster!.reason,
+      fileCount: cluster!.files.length,
+      suggestedTags: cluster!.suggestedTags,
+    }));
 }
 
 function toFileSample(file: ReportFileRow): ReportFileSample {
