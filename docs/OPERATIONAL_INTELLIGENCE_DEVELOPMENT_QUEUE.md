@@ -436,8 +436,9 @@ V1 tasks:
   - stale files
   - external exposure
   - missing tags/categories
-- [ ] Add conservative filename/path/owner-based suggestions.
-- [ ] Add CTA to Metadata Suggestions panel.
+- [x] Add conservative filename/path/owner-based suggestions.
+- [x] Add CTA to Metadata Suggestions panel.
+- [x] Route metadata suggestions to review packets, remediation filters, or workspace review.
 - [x] Add manual admin action helpers:
   - Copy issue list to clipboard.
   - Export CSV for review.

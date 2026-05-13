@@ -155,12 +155,69 @@ export default async function handler(
         recommendation: 'Generate conservative Aethos-side metadata suggestions for review.',
       },
     ];
+    const metadataSuggestions = [
+      genericNameCount > 0
+        ? {
+            id: 'suggest-clearer-titles',
+            type: 'title',
+            label: 'Suggest clearer titles',
+            count: genericNameCount,
+            sourceSignals: ['filename', 'path'],
+            confidence: 'medium',
+            rationale: 'Generic filenames reduce search quality. Aethos can suggest clearer titles from path and filename context for human review.',
+            nextAction: 'Review title suggestions',
+            actionTarget: 'metadata_review',
+          }
+        : null,
+      missingOwnerCount > 0
+        ? {
+            id: 'suggest-stewardship-review',
+            type: 'owner',
+            label: 'Suggest stewardship review',
+            count: missingOwnerCount,
+            sourceSignals: ['owner', 'path', 'provider'],
+            confidence: 'low',
+            rationale: 'Owner assignment needs human validation. Aethos can group missing-owner files for stewardship review without claiming departed-user detection.',
+            nextAction: 'Review missing owners',
+            actionTarget: 'remediation',
+            remediationIssue: 'missing_owner',
+          }
+        : null,
+      missingTagsOrCategoryCount > 0
+        ? {
+            id: 'suggest-tags-categories',
+            type: 'tag',
+            label: 'Suggest tags and categories',
+            count: missingTagsOrCategoryCount,
+            sourceSignals: ['filename', 'path', 'extension', 'owner'],
+            confidence: 'medium',
+            rationale: 'Metadata-only context can produce conservative Aethos-side tags and categories for approval.',
+            nextAction: 'Generate suggestions',
+            actionTarget: 'metadata_review',
+          }
+        : null,
+      staleFileCount > 0
+        ? {
+            id: 'suggest-archive-review',
+            type: 'category',
+            label: 'Suggest archive review groups',
+            count: staleFileCount,
+            sourceSignals: ['modified date', 'path', 'owner'],
+            confidence: 'high',
+            rationale: 'Stale files can be grouped for archive review before any cleanup action is taken.',
+            nextAction: 'Create review workspace',
+            actionTarget: 'workspace',
+            remediationIssue: 'stale',
+          }
+        : null,
+    ].filter(Boolean);
 
     res.status(200).json({
       intelligenceScore,
       sourceMetadataScore,
       aethosEnrichmentScore: intelligenceScore,
       aiReadinessBlockers,
+      metadataSuggestions,
       sourceQuality: {
         totalFiles,
         filesWithDescriptions,

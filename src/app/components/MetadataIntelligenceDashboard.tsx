@@ -7,6 +7,7 @@ import {
 import { isDemoModeEnabled } from '@/app/config/demoMode';
 import { useAuth } from '@/app/context/AuthContext';
 import { useVersion } from '@/app/context/VersionContext';
+import { toast } from 'sonner';
 
 interface MetadataQuality {
   totalFiles: number;
@@ -49,6 +50,33 @@ interface AIReadinessBlocker {
   recommendation: string;
 }
 
+interface ConservativeMetadataSuggestion {
+  id: string;
+  type: 'title' | 'tag' | 'category' | 'owner';
+  label: string;
+  count: number;
+  sourceSignals: string[];
+  confidence: 'high' | 'medium' | 'low';
+  rationale: string;
+  nextAction: string;
+  actionTarget?: 'metadata_review' | 'remediation' | 'workspace';
+  remediationIssue?: 'external_share' | 'stale' | 'missing_owner' | 'high_risk' | 'onedrive_silo';
+}
+
+function openRemediation(issue?: string) {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent('aethos:navigate', {
+    detail: { tab: 'archival', issue },
+  }));
+}
+
+function openAppTab(tab: string) {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent('aethos:navigate', {
+    detail: { tab },
+  }));
+}
+
 export const MetadataIntelligenceDashboard: React.FC = () => {
   const { tenantId, getAccessToken } = useAuth();
   const { isDemoMode: globalDemoMode } = useVersion();
@@ -59,6 +87,7 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
   const [sourceMetadataScore, setSourceMetadataScore] = useState(0);
   const [aethosEnrichmentScore, setAethosEnrichmentScore] = useState(0);
   const [aiReadinessBlockers, setAiReadinessBlockers] = useState<AIReadinessBlocker[]>([]);
+  const [metadataSuggestions, setMetadataSuggestions] = useState<ConservativeMetadataSuggestion[]>([]);
 
   // State for real data from API
   const [intelligenceScore, setIntelligenceScore] = useState(0);
@@ -129,6 +158,30 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
           { id: 'missing_owner', label: 'Missing owners', count: 312, severity: 'high', recommendation: 'Assign stewardship before remediation.' },
           { id: 'missing_tags', label: 'Missing tags/categories', count: 1829, severity: 'medium', recommendation: 'Generate Aethos-side suggestions for review.' },
         ]);
+        setMetadataSuggestions([
+          {
+            id: 'suggest-clearer-titles',
+            type: 'title',
+            label: 'Suggest clearer titles',
+            count: 2347,
+            sourceSignals: ['filename', 'path'],
+            confidence: 'medium',
+            rationale: 'Generic filenames reduce search quality. Aethos can suggest clearer titles from path and filename context for human review.',
+            nextAction: 'Review title suggestions',
+            actionTarget: 'metadata_review',
+          },
+          {
+            id: 'suggest-tags-categories',
+            type: 'tag',
+            label: 'Suggest tags and categories',
+            count: 1829,
+            sourceSignals: ['filename', 'path', 'extension', 'owner'],
+            confidence: 'medium',
+            rationale: 'Metadata-only context can produce conservative Aethos-side tags and categories for approval.',
+            nextAction: 'Generate suggestions',
+            actionTarget: 'metadata_review',
+          },
+        ]);
         setSourceQuality({
           totalFiles: 4567,
           filesWithDescriptions: 548,
@@ -177,6 +230,7 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
         setSourceMetadataScore(data.sourceMetadataScore ?? 0);
         setAethosEnrichmentScore(data.aethosEnrichmentScore ?? data.intelligenceScore ?? 0);
         setAiReadinessBlockers(data.aiReadinessBlockers || []);
+        setMetadataSuggestions(data.metadataSuggestions || []);
         setSourceQuality(data.sourceQuality);
         setEnrichmentStatus(data.enrichmentStatus);
         setCategories(data.categories);
@@ -190,6 +244,7 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
         setSourceMetadataScore(0);
         setAethosEnrichmentScore(0);
         setAiReadinessBlockers([]);
+        setMetadataSuggestions([]);
         setSourceQuality({
           totalFiles: 0,
           filesWithDescriptions: 0,
@@ -240,6 +295,64 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
   const getPercentage = (value: number, total: number) => {
     if (!total) return 0;
     return Math.round((value / total) * 100);
+  };
+
+  const openMetadataSuggestions = () => setSelectedView('opportunities');
+
+  const buildSuggestionReviewPacket = (suggestion: ConservativeMetadataSuggestion) => [
+    `Aethos metadata review packet: ${suggestion.label}`,
+    `Files affected: ${suggestion.count.toLocaleString()}`,
+    `Confidence: ${suggestion.confidence}`,
+    `Signals used: ${suggestion.sourceSignals.join(', ')}`,
+    `Rationale: ${suggestion.rationale}`,
+    'Default action: review first. No Microsoft 365 writeback is performed by this packet.',
+  ].join('\n');
+
+  const copySuggestionReviewPacket = async (suggestion: ConservativeMetadataSuggestion) => {
+    if (typeof navigator === 'undefined' || !navigator.clipboard) {
+      toast.error('Clipboard is unavailable in this browser');
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(buildSuggestionReviewPacket(suggestion));
+      toast.success('Metadata review packet copied');
+    } catch {
+      toast.error('Unable to copy metadata review packet');
+    }
+  };
+
+  const handleSuggestionAction = (suggestion: ConservativeMetadataSuggestion) => {
+    if (suggestion.actionTarget === 'remediation' && suggestion.remediationIssue) {
+      openRemediation(suggestion.remediationIssue);
+      return;
+    }
+
+    if (suggestion.actionTarget === 'workspace') {
+      openAppTab('nexus');
+      return;
+    }
+
+    void copySuggestionReviewPacket(suggestion);
+  };
+
+  const getOpportunityIssue = (title: string) => {
+    const normalized = title.toLowerCase();
+    if (normalized.includes('owner')) return 'missing_owner';
+    if (normalized.includes('stale')) return 'stale';
+    if (normalized.includes('external')) return 'external_share';
+    if (normalized.includes('risk')) return 'high_risk';
+    return null;
+  };
+
+  const handleOpportunityReview = (opp: ImprovementOpportunity) => {
+    const issue = getOpportunityIssue(opp.title);
+    if (issue) {
+      openRemediation(issue);
+      return;
+    }
+
+    openMetadataSuggestions();
   };
 
   const hasLiveData = sourceQuality.totalFiles > 0;
@@ -315,11 +428,12 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
+              onClick={openMetadataSuggestions}
               className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#00F0FF] to-[#9B59B6]
                 hover:opacity-90 transition-all duration-200 text-white font-medium flex items-center gap-2"
             >
               <Settings className="w-4 h-4" />
-              AI Settings
+              Review Suggestions
             </motion.button>
           </div>
         </motion.div>
@@ -815,6 +929,82 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
 
         {selectedView === 'opportunities' && (
           <div className="space-y-4">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.2 }}
+              className="bg-[rgba(20,24,36,0.7)] backdrop-blur-[20px] border border-white/10
+                rounded-xl p-6 shadow-[0_8px_32px_rgba(0,0,0,0.3),inset_0_1px_1px_rgba(255,255,255,0.1)]"
+            >
+              <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.35em] text-slate-500">
+                    Metadata Suggestions
+                  </p>
+                  <h3 className="mt-2 text-lg font-semibold text-white">Review-First, Aethos-Side Suggestions</h3>
+                  <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
+                    These suggestions use filename, path, owner, extension, and activity metadata. They do not read file bodies and do not write back to Microsoft 365.
+                  </p>
+                </div>
+                <span className={`w-fit rounded-full border px-3 py-1 text-[9px] font-black uppercase tracking-widest ${
+                  isDemoMode
+                    ? 'border-[#F59E0B]/25 bg-[#F59E0B]/10 text-[#F59E0B]'
+                    : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400'
+                }`}>
+                  Data source: {isDemoMode ? 'Demo fixtures' : 'Live tenant'}
+                </span>
+              </div>
+
+              {metadataSuggestions.length > 0 ? (
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                  {metadataSuggestions.map((suggestion) => (
+                    <div key={suggestion.id} className="rounded-xl border border-white/10 bg-white/[0.03] p-5">
+                      <div className="mb-4 flex items-center justify-between gap-3">
+                        <span className="rounded-full border border-[#00F0FF]/20 bg-[#00F0FF]/10 px-3 py-1 text-[9px] font-black uppercase tracking-widest text-[#00F0FF]">
+                          {suggestion.type}
+                        </span>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">
+                          {suggestion.confidence} confidence
+                        </span>
+                      </div>
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <h4 className="text-base font-black text-white">{suggestion.label}</h4>
+                          <p className="mt-2 text-sm leading-6 text-slate-400">{suggestion.rationale}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-2xl font-black text-white">{suggestion.count.toLocaleString()}</p>
+                          <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">files</p>
+                        </div>
+                      </div>
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {suggestion.sourceSignals.map((signal) => (
+                          <span key={signal} className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-[9px] font-black uppercase tracking-widest text-slate-500">
+                            {signal}
+                          </span>
+                        ))}
+                      </div>
+                      <div className="mt-5 flex flex-wrap items-center gap-3">
+                        <button
+                          onClick={() => handleSuggestionAction(suggestion)}
+                          className="min-h-[40px] rounded-xl bg-white px-4 py-2 text-[9px] font-black uppercase tracking-widest text-[#0B0F19] transition hover:bg-[#00F0FF]"
+                        >
+                          {suggestion.nextAction}
+                        </button>
+                        <span className="text-[10px] leading-5 text-slate-500">
+                          Pending lifecycle: accept, edit, reject, or block.
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-xl border border-white/10 bg-white/[0.03] p-5 text-sm text-slate-400">
+                  Run Discovery to produce conservative metadata suggestions.
+                </div>
+              )}
+            </motion.div>
+
             {opportunities.map((opp, index) => (
               <motion.div
                 key={index}
@@ -852,14 +1042,20 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
                   </div>
 
                   <div className="flex flex-col gap-2">
-                    <button className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 
-                      hover:bg-white/10 transition-all text-white text-sm font-medium">
+                    <button
+                      onClick={() => handleOpportunityReview(opp)}
+                      className="px-4 py-2 rounded-lg bg-white/5 border border-white/10
+                      hover:bg-white/10 transition-all text-white text-sm font-medium"
+                    >
                       Review Files
                     </button>
                     {opp.priority === 'high' && (
-                      <button className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#00F0FF] to-[#9B59B6] 
-                        hover:opacity-90 transition-all text-white text-sm font-medium flex items-center gap-2">
-                        Enable AI+
+                      <button
+                        onClick={() => handleOpportunityReview(opp)}
+                        className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#00F0FF] to-[#9B59B6]
+                        hover:opacity-90 transition-all text-white text-sm font-medium flex items-center gap-2"
+                      >
+                        Review Driver
                         <ArrowRight className="w-4 h-4" />
                       </button>
                     )}
@@ -880,26 +1076,29 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
                 <div>
                   <h3 className="text-lg font-semibold text-white mb-2">Want Better Results?</h3>
                   <p className="text-slate-400 text-sm mb-4">
-                    Enable Content Oracle to read file contents and improve categorization accuracy from 68% to 95%+
+                    Start with reviewed Aethos-side metadata suggestions. Content-aware enrichment remains an explicit AI+ step after V1 metadata review is working.
                   </p>
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2 text-[#00F0FF]">
                       <CheckCircle className="w-5 h-5" />
-                      <span className="text-sm font-medium">Semantic search</span>
+                      <span className="text-sm font-medium">Review suggestions</span>
                     </div>
                     <div className="flex items-center gap-2 text-[#00F0FF]">
                       <CheckCircle className="w-5 h-5" />
-                      <span className="text-sm font-medium">Document summaries</span>
+                      <span className="text-sm font-medium">Approve tags</span>
                     </div>
                     <div className="flex items-center gap-2 text-[#00F0FF]">
                       <CheckCircle className="w-5 h-5" />
-                      <span className="text-sm font-medium">Topic extraction</span>
+                      <span className="text-sm font-medium">Improve workspaces</span>
                     </div>
                   </div>
                 </div>
-                <button className="px-6 py-3 rounded-lg bg-gradient-to-r from-[#00F0FF] to-[#9B59B6] 
-                  hover:opacity-90 transition-all text-white font-medium flex items-center gap-2 whitespace-nowrap">
-                  Enable Content Oracle
+                <button
+                  onClick={openMetadataSuggestions}
+                  className="px-6 py-3 rounded-lg bg-gradient-to-r from-[#00F0FF] to-[#9B59B6]
+                  hover:opacity-90 transition-all text-white font-medium flex items-center gap-2 whitespace-nowrap"
+                >
+                  Review Suggestions
                   <ArrowRight className="w-5 h-5" />
                 </button>
               </div>
