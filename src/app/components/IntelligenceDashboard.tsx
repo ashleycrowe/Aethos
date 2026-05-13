@@ -202,7 +202,12 @@ export const IntelligenceDashboard = () => {
       case 'identity':
         return <IdentityEngine />;
       default:
-        return <OverviewDashboard onOpenSignalQueue={() => setActiveView('stream')} />;
+        return (
+          <OverviewDashboard
+            onOpenMetadata={() => setActiveView('metadata')}
+            onOpenSignalQueue={() => setActiveView('stream')}
+          />
+        );
     }
   };
 
@@ -223,7 +228,9 @@ export const IntelligenceDashboard = () => {
             Operational <span className="text-[#00F0FF]">Intelligence</span>
           </h1>
           <p className="text-xs text-[#94A3B8] italic">
-            Consolidated insights, metadata, and identity intelligence
+            {isDemoMode
+              ? 'Consolidated insights, metadata, and identity intelligence'
+              : 'Live discovery reports, metadata quality, and ownership risk'}
           </p>
         </div>
 
@@ -269,7 +276,13 @@ export const IntelligenceDashboard = () => {
   );
 };
 
-const OverviewDashboard = ({ onOpenSignalQueue }: { onOpenSignalQueue?: () => void }) => {
+const OverviewDashboard = ({
+  onOpenMetadata,
+  onOpenSignalQueue,
+}: {
+  onOpenMetadata?: () => void;
+  onOpenSignalQueue?: () => void;
+}) => {
   const { isDaylight } = useTheme();
   const { version, isDemoMode } = useVersion();
   const { getAccessToken } = useAuth();
@@ -432,9 +445,30 @@ const OverviewDashboard = ({ onOpenSignalQueue }: { onOpenSignalQueue?: () => vo
       lastSync: isDemoMode ? '2m ago' : reportSummary?.lastScan.completedAt ? 'Live discovery' : 'Not scanned',
       version: 'V1',
     },
-    { name: 'Slack', status: 'active', assets: '8.2K', lastSync: '5m ago', version: 'V2', enabled: hasSlack },
-    { name: 'Google Workspace', status: 'active', assets: '6.1K', lastSync: '8m ago', version: 'V2', enabled: hasGoogle },
-    { name: 'Box', status: 'active', assets: '4.3K', lastSync: '12m ago', version: 'V3', enabled: hasBox },
+    {
+      name: 'Slack',
+      status: isDemoMode ? 'active' : 'not connected',
+      assets: isDemoMode ? '8.2K' : 'Future connector',
+      lastSync: isDemoMode ? '5m ago' : 'Not enabled',
+      version: 'V2',
+      enabled: hasSlack,
+    },
+    {
+      name: 'Google Workspace',
+      status: isDemoMode ? 'active' : 'not connected',
+      assets: isDemoMode ? '6.1K' : 'Future connector',
+      lastSync: isDemoMode ? '8m ago' : 'Not enabled',
+      version: 'V2',
+      enabled: hasGoogle,
+    },
+    {
+      name: 'Box',
+      status: isDemoMode ? 'active' : 'not connected',
+      assets: isDemoMode ? '4.3K' : 'Future connector',
+      lastSync: isDemoMode ? '12m ago' : 'Not enabled',
+      version: 'V3',
+      enabled: hasBox,
+    },
   ];
 
   const providerStatus = allProviders.filter(p => !p.version || p.version === 'V1' || p.enabled);
@@ -1384,21 +1418,29 @@ const OverviewDashboard = ({ onOpenSignalQueue }: { onOpenSignalQueue?: () => vo
               </span>
             </h3>
             <div className="space-y-4">
-              {providerStatus.map((provider) => (
-                <div 
-                  key={provider.name}
-                  className={`p-4 rounded-xl ${
-                    isDaylight ? 'bg-slate-50/50' : 'bg-white/[0.02]'
-                  }`}
-                >
+              {providerStatus.map((provider) => {
+                const isActive = provider.status === 'active';
+                return (
+                  <div
+                    key={provider.name}
+                    className={`p-4 rounded-xl ${
+                      isDaylight ? 'bg-slate-50/50' : 'bg-white/[0.02]'
+                    }`}
+                  >
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
                     <span className={`text-xs font-bold ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
                       {provider.name}
                     </span>
                     <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                      <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">
-                        ACTIVE
+                      <div className={`w-2 h-2 rounded-full ${
+                        isActive
+                          ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]'
+                          : 'bg-slate-500'
+                      } ${isActive ? 'animate-pulse' : ''}`} />
+                      <span className={`text-[9px] font-black uppercase tracking-widest ${
+                        isActive ? 'text-emerald-500' : 'text-slate-500'
+                      }`}>
+                        {provider.status}
                       </span>
                     </div>
                   </div>
@@ -1416,8 +1458,9 @@ const OverviewDashboard = ({ onOpenSignalQueue }: { onOpenSignalQueue?: () => vo
                       </span>
                     </div>
                   </div>
-                </div>
-              ))}
+                  </div>
+                );
+              })}
             </div>
           </GlassCard>
         </div>
@@ -1430,7 +1473,11 @@ const OverviewDashboard = ({ onOpenSignalQueue }: { onOpenSignalQueue?: () => vo
           <DataSourceBadge mode={isDemoMode ? 'demo' : 'live'} />
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button className="min-h-[44px] p-5 md:p-6 rounded-2xl bg-[#00F0FF]/5 border border-[#00F0FF]/20 hover:bg-[#00F0FF]/10 transition-all text-left group">
+          <button
+            type="button"
+            onClick={onOpenMetadata}
+            className="min-h-[44px] p-5 md:p-6 rounded-2xl bg-[#00F0FF]/5 border border-[#00F0FF]/20 hover:bg-[#00F0FF]/10 transition-all text-left group"
+          >
             <Brain className="w-6 h-6 text-[#00F0FF] mb-4 group-hover:scale-110 transition-transform" />
             <p className={`text-sm font-bold mb-2 ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
               {isDemoMode ? 'Enrich Metadata' : 'Review Metadata'}
@@ -1440,7 +1487,11 @@ const OverviewDashboard = ({ onOpenSignalQueue }: { onOpenSignalQueue?: () => vo
             </p>
           </button>
 
-          <button className="min-h-[44px] p-5 md:p-6 rounded-2xl bg-[#A855F7]/5 border border-[#A855F7]/20 hover:bg-[#A855F7]/10 transition-all text-left group">
+          <button
+            type="button"
+            onClick={onOpenSignalQueue}
+            className="min-h-[44px] p-5 md:p-6 rounded-2xl bg-[#A855F7]/5 border border-[#A855F7]/20 hover:bg-[#A855F7]/10 transition-all text-left group"
+          >
             <Fingerprint className="w-6 h-6 text-[#A855F7] mb-4 group-hover:scale-110 transition-transform" />
             <p className={`text-sm font-bold mb-2 ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
               {isDemoMode ? 'Reconcile Identities' : 'Review Owners'}
@@ -1450,7 +1501,11 @@ const OverviewDashboard = ({ onOpenSignalQueue }: { onOpenSignalQueue?: () => vo
             </p>
           </button>
 
-          <button className="min-h-[44px] p-5 md:p-6 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 hover:bg-emerald-500/10 transition-all text-left group">
+          <button
+            type="button"
+            onClick={() => openAppTab('archival')}
+            className="min-h-[44px] p-5 md:p-6 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 hover:bg-emerald-500/10 transition-all text-left group"
+          >
             <TrendingUp className="w-6 h-6 text-emerald-500 mb-4 group-hover:scale-110 transition-transform" />
             <p className={`text-sm font-bold mb-2 ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
               {isDemoMode ? 'Review Waste' : 'Open Remediation'}

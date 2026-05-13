@@ -26,7 +26,7 @@ The V1 surface must be honest in Live Mode and impressive in Demo Mode. Demo can
 - [x] Hide demo-only Intelligence Stream recommendations in Live Mode.
 - [x] Hide prototype Identity tab in Live Mode.
 - [x] Hide the bottom version/demo floater on locked live production domains.
-- [ ] Audit every tab under Operational Intelligence for static numbers, fake people, fake projects, or demo-only labels.
+- [x] Audit every tab under Operational Intelligence for static numbers, fake people, fake projects, or demo-only labels.
 - [x] Add a persistent, subtle `Data source: Live tenant` / `Data source: Demo fixtures` label to each report card.
 - [x] Add a shared `LiveDataBoundary` helper/component for empty/error/fixture states.
 - [x] Add tests for `demo.aethoswork.com` and `app.aethoswork.com` runtime decisions.
