@@ -182,6 +182,7 @@ See `docs/OPERATIONAL_INTELLIGENCE_DEVELOPMENT_QUEUE.md` for the detailed implem
 - [x] Route content-aware enrichment output through pending metadata suggestions before writing final AI fields.
 - [x] Generate content-aware tag/category suggestions from indexed content chunks when available.
 - [x] Generate content-aware summary suggestions from indexed content chunks when available.
+- [x] Surface PII/sensitive content flags in live risk reporting.
 
 ---
 

@@ -15,6 +15,8 @@ export type ReportFileRow = {
   intelligence_score: number | null;
   ai_tags: string[] | null;
   ai_category: string | null;
+  has_pii?: boolean | null;
+  pii_risk_level?: string | null;
 };
 
 export type ReportSiteRow = {
@@ -148,6 +150,8 @@ export type ReportSummary = {
     externallySharedFiles: number;
     highRiskFiles: number;
     missingOwnerFiles: number;
+    sensitiveFiles: number;
+    highPiiRiskFiles: number;
   };
   exposureReview: {
     externalUsersTotal: number;
@@ -276,6 +280,14 @@ function isStale(file: ReportFileRow): boolean {
   if (Number.isNaN(modified)) return false;
 
   return Date.now() - modified > STALE_DAYS * 24 * 60 * 60 * 1000;
+}
+
+function isSensitiveFile(file: ReportFileRow): boolean {
+  return Boolean(file.has_pii || file.pii_risk_level);
+}
+
+function isHighPiiRisk(file: ReportFileRow): boolean {
+  return (file.pii_risk_level || '').toLowerCase() === 'high';
 }
 
 function titleCase(value: string): string {
@@ -674,6 +686,8 @@ export function buildReportSummary({
   const staleFiles = files.filter(isStale);
   const externallySharedFiles = files.filter((file) => file.has_external_share);
   const highRiskFiles = files.filter(isHighRisk);
+  const sensitiveFiles = files.filter(isSensitiveFile);
+  const highPiiRiskFiles = files.filter(isHighPiiRisk);
   const missingOwnerFiles = files.filter((file) => !hasOwner(file));
   const oneDriveFiles = files.filter(isOneDrive);
   const filesWithOwner = totalFiles - missingOwnerFiles.length;
@@ -884,6 +898,8 @@ export function buildReportSummary({
       externallySharedFiles: externallySharedFiles.length,
       highRiskFiles: highRiskFiles.length,
       missingOwnerFiles: missingOwnerFiles.length,
+      sensitiveFiles: sensitiveFiles.length,
+      highPiiRiskFiles: highPiiRiskFiles.length,
     },
     exposureReview: {
       externalUsersTotal: externallySharedFiles.reduce((sum, file) => sum + (file.external_user_count || 0), 0),

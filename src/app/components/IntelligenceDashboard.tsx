@@ -907,6 +907,13 @@ const OverviewDashboard = ({ onOpenSignalQueue }: { onOpenSignalQueue?: () => vo
                   issue: 'high_risk',
                 },
                 {
+                  label: 'Sensitive Flags',
+                  value: reportSummary.risk.sensitiveFiles,
+                  helper: `${reportSummary.risk.highPiiRiskFiles.toLocaleString()} high PII risk`,
+                  color: '#EC4899',
+                  issue: 'high_risk',
+                },
+                {
                   label: 'Stale Storage',
                   value: formatBytes(reportSummary.risk.staleBytes),
                   helper: `${reportSummary.risk.staleFiles.toLocaleString()} stale files`,

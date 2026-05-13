@@ -114,6 +114,7 @@ describe('buildReportSummary', () => {
     });
     expect(summary.risk.externallySharedFiles).toBe(20);
     expect(summary.risk.missingOwnerFiles).toBe(15);
+    expect(summary.risk.sensitiveFiles).toBe(0);
     expect(summary.exposureReview.externalUsersTotal).toBe(0);
     expect(summary.exposureReview.externalSharesOnStaleFiles).toBe(0);
     expect(summary.exposureReview.providerBreakdown[0]).toMatchObject({
@@ -144,6 +145,27 @@ describe('buildReportSummary', () => {
         }),
       ])
     );
+  });
+
+  it('surfaces PII and sensitive-content flags in risk rollups', () => {
+    const summary = buildReportSummary({
+      tenantId: 'tenant-1',
+      files: [
+        baseFile({ id: 'sensitive-1', has_pii: true, pii_risk_level: 'high' }),
+        baseFile({ id: 'sensitive-2', has_pii: true, pii_risk_level: 'medium' }),
+        baseFile({ id: 'clean-1', has_pii: false, pii_risk_level: null }),
+      ],
+      sites: [
+        { id: 'site-1', provider_type: 'sharepoint' },
+        { id: 'site-2', provider_type: 'teams' },
+        { id: 'site-3', provider_type: 'sharepoint' },
+      ],
+      scans: [],
+      generatedAt: '2026-05-12T00:00:00.000Z',
+    });
+
+    expect(summary.risk.sensitiveFiles).toBe(2);
+    expect(summary.risk.highPiiRiskFiles).toBe(1);
   });
 
   it('suggests workspaces from repeated metadata clusters', () => {

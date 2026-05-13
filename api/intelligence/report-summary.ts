@@ -43,6 +43,8 @@ async function fetchFiles(tenantId: string): Promise<ReportFileRow[]> {
           'intelligence_score',
           'ai_tags',
           'ai_category',
+          'has_pii',
+          'pii_risk_level',
         ].join(',')
       )
       .eq('tenant_id', tenantId)

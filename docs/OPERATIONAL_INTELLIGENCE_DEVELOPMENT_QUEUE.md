@@ -458,7 +458,7 @@ V1.5 tasks:
 - [x] Route content-aware enrichment output through pending metadata suggestions before writing final AI fields.
 - [x] Add content-aware tags/categories.
 - [x] Add content-aware summaries.
-- [ ] Add PII/sensitive content flags.
+- [x] Add PII/sensitive content flags.
 - [ ] Add topic clusters.
 - [x] Add confidence and rationale.
 

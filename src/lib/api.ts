@@ -122,6 +122,8 @@ export interface ReportSummaryResponse {
       externallySharedFiles: number;
       highRiskFiles: number;
       missingOwnerFiles: number;
+      sensitiveFiles: number;
+      highPiiRiskFiles: number;
     };
     exposureReview: {
       externalUsersTotal: number;
