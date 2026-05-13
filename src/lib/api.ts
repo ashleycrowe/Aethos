@@ -322,6 +322,32 @@ export interface SyncOwnerStatusResponse {
   }>;
 }
 
+export interface DiagnosticEvent {
+  id: string;
+  createdAt: string;
+  sessionId?: string | null;
+  severity: 'debug' | 'info' | 'warn' | 'error' | 'fatal';
+  source: string;
+  eventName: string;
+  message: string;
+  route: string;
+  userAgent?: string | null;
+  actionTaken?: string;
+  expectedResult?: string;
+  actualResult?: string;
+  metadata?: unknown;
+}
+
+export interface ListDiagnosticsRequest {
+  accessToken?: string | null;
+  limit?: number;
+}
+
+export interface ListDiagnosticsResponse {
+  success: boolean;
+  events: DiagnosticEvent[];
+}
+
 async function request<T>(path: string, options: RequestInit = {}, accessToken?: string | null): Promise<T> {
   if (isDemoModeEnabled()) {
     throw new Error(DEMO_MODE_MESSAGE);
@@ -531,6 +557,20 @@ export async function syncOwnerStatus({
 }: SyncOwnerStatusRequest): Promise<SyncOwnerStatusResponse> {
   return request<SyncOwnerStatusResponse>(
     '/intelligence/owner-status-sync',
+    {
+      method: 'POST',
+      body: JSON.stringify(body),
+    },
+    accessToken
+  );
+}
+
+export async function listDiagnostics({
+  accessToken,
+  ...body
+}: ListDiagnosticsRequest = {}): Promise<ListDiagnosticsResponse> {
+  return request<ListDiagnosticsResponse>(
+    '/diagnostics/list',
     {
       method: 'POST',
       body: JSON.stringify(body),

@@ -34,7 +34,14 @@ import {
   getLocalDiagnostics,
   type StoredDiagnostic,
 } from '@/app/utils/diagnostics';
-import { getReportSummary, runDiscoveryScan, type DiscoveryScanResponse, type ReportSummaryResponse } from '@/lib/api';
+import {
+  getReportSummary,
+  listDiagnostics,
+  runDiscoveryScan,
+  type DiagnosticEvent,
+  type DiscoveryScanResponse,
+  type ReportSummaryResponse,
+} from '@/lib/api';
 
 type AdminStatusCardProps = {
   icon: React.ElementType;
@@ -148,6 +155,9 @@ export const AdminCenter = () => {
   const [isLoadingLastScan, setIsLoadingLastScan] = React.useState(false);
   const [lastScanError, setLastScanError] = React.useState<string | null>(null);
   const [localDiagnostics, setLocalDiagnostics] = React.useState<StoredDiagnostic[]>([]);
+  const [liveDiagnostics, setLiveDiagnostics] = React.useState<DiagnosticEvent[]>([]);
+  const [isLoadingDiagnostics, setIsLoadingDiagnostics] = React.useState(false);
+  const [diagnosticsError, setDiagnosticsError] = React.useState<string | null>(null);
 
   const demoMode = isDemoModeEnabled();
   const demoOverrideAllowed = isDemoOverrideAllowed();
@@ -165,7 +175,8 @@ export const AdminCenter = () => {
     lastScanSummary?.status === 'partial' ||
     lastScanSummary?.status === 'failed' ||
     Boolean(lastScanSummary?.errorCount && lastScanSummary.errorCount > 0);
-  const diagnosticIssueCount = localDiagnostics.filter((event) =>
+  const visibleDiagnostics = demoMode ? localDiagnostics : liveDiagnostics;
+  const diagnosticIssueCount = visibleDiagnostics.filter((event) =>
     event.severity === 'error' || event.severity === 'fatal' || event.severity === 'warn'
   ).length;
   const capabilityCards = [
@@ -203,14 +214,38 @@ export const AdminCenter = () => {
     },
   ] satisfies Array<{ label: string; detail: string; status: CapabilityStatus }>;
 
-  const refreshDiagnostics = React.useCallback(() => {
-    setLocalDiagnostics(getLocalDiagnostics());
-  }, []);
+  const refreshDiagnostics = React.useCallback(async () => {
+    setDiagnosticsError(null);
+
+    if (demoMode) {
+      setLocalDiagnostics(getLocalDiagnostics());
+      setLiveDiagnostics([]);
+      return;
+    }
+
+    if (!isAuthenticated) {
+      setLiveDiagnostics([]);
+      return;
+    }
+
+    try {
+      setIsLoadingDiagnostics(true);
+      const response = await listDiagnostics({
+        accessToken: await getAccessToken(),
+        limit: 25,
+      });
+      setLiveDiagnostics(response.events);
+    } catch (error) {
+      setDiagnosticsError(error instanceof Error ? error.message : 'Unable to load diagnostics');
+      setLiveDiagnostics([]);
+    } finally {
+      setIsLoadingDiagnostics(false);
+    }
+  }, [demoMode, getAccessToken, isAuthenticated]);
 
   React.useEffect(() => {
-    if (!demoMode) return;
-    refreshDiagnostics();
-  }, [demoMode, refreshDiagnostics]);
+    void refreshDiagnostics();
+  }, [refreshDiagnostics]);
 
   const refreshLastScanSummary = React.useCallback(async () => {
     if (demoMode || !isAuthenticated) {
@@ -312,7 +347,7 @@ export const AdminCenter = () => {
       exportedAt: new Date().toISOString(),
       route: typeof window !== 'undefined' ? window.location.href : 'unknown',
       mode: demoMode ? 'demo' : 'live',
-      events: localDiagnostics,
+      events: visibleDiagnostics,
     };
 
     try {
@@ -323,7 +358,7 @@ export const AdminCenter = () => {
     }
   };
 
-  const copyDiagnosticEvent = async (event: StoredDiagnostic) => {
+  const copyDiagnosticEvent = async (event: StoredDiagnostic | DiagnosticEvent) => {
     const bundle = {
       exportedAt: new Date().toISOString(),
       route: typeof window !== 'undefined' ? window.location.href : 'unknown',
@@ -350,6 +385,13 @@ export const AdminCenter = () => {
   };
 
   const clearDiagnostics = () => {
+    if (!demoMode) {
+      toast.info('Live diagnostics are retained in Supabase', {
+        description: 'Refresh this panel to reload recent backend events.',
+      });
+      return;
+    }
+
     clearLocalDiagnostics();
     setLocalDiagnostics([]);
     toast.success('Diagnostics cleared');
@@ -507,8 +549,7 @@ export const AdminCenter = () => {
           </div>
         </section>
 
-        {demoMode && (
-          <section className="rounded-[28px] border border-amber-300/20 bg-amber-300/[0.045] p-5 shadow-2xl backdrop-blur-2xl sm:p-6">
+        <section className="rounded-[28px] border border-amber-300/20 bg-amber-300/[0.045] p-5 shadow-2xl backdrop-blur-2xl sm:p-6">
             <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div className="flex gap-4">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-amber-300/25 bg-amber-300/10 text-amber-200">
@@ -516,17 +557,25 @@ export const AdminCenter = () => {
                 </div>
                 <div>
                   <p className="mb-2 text-[10px] font-black uppercase tracking-[0.3em] text-amber-200">
-                    Demo Diagnostics
+                    {demoMode ? 'Demo Diagnostics' : 'Live Diagnostics'}
                   </p>
                   <h2 className="text-xl font-black text-white">
                     {diagnosticIssueCount > 0
-                      ? `${diagnosticIssueCount} browser events captured`
-                      : 'No browser events captured'}
+                      ? `${diagnosticIssueCount} recent events need review`
+                      : visibleDiagnostics.length > 0
+                        ? `${visibleDiagnostics.length} recent events captured`
+                        : 'No recent diagnostics captured'}
                   </h2>
                   <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
-                    This session view mirrors the client-side diagnostics sent to the backend. Use it during
-                    walkthroughs when a browser error needs to be shared for debugging.
+                    {demoMode
+                      ? 'This session view mirrors the client-side diagnostics sent to the backend. Use it during walkthroughs when a browser error needs to be shared for debugging.'
+                      : 'Recent backend diagnostics from this tenant help testers explain failed actions without digging through browser consoles.'}
                   </p>
+                  {diagnosticsError && (
+                    <p className="mt-3 text-xs leading-5 text-amber-200">
+                      Diagnostics unavailable: {diagnosticsError}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -534,35 +583,42 @@ export const AdminCenter = () => {
                 <button
                   type="button"
                   onClick={refreshDiagnostics}
+                  disabled={isLoadingDiagnostics}
                   className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 text-xs font-black uppercase tracking-[0.14em] text-slate-200 transition hover:bg-white/[0.08]"
                 >
                   <RefreshCw className="h-4 w-4" />
-                  Refresh
+                  {isLoadingDiagnostics ? 'Loading' : 'Refresh'}
                 </button>
                 <button
                   type="button"
                   onClick={copyDiagnostics}
-                  disabled={localDiagnostics.length === 0}
+                  disabled={visibleDiagnostics.length === 0}
                   className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#00F0FF]/25 bg-[#00F0FF]/10 px-4 text-xs font-black uppercase tracking-[0.14em] text-[#00F0FF] transition hover:bg-[#00F0FF]/20 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <Clipboard className="h-4 w-4" />
                   Copy All
                 </button>
-                <button
-                  type="button"
-                  onClick={clearDiagnostics}
-                  disabled={localDiagnostics.length === 0}
-                  className="col-span-2 flex min-h-11 items-center justify-center gap-2 rounded-xl border border-rose-300/25 bg-rose-400/10 px-4 text-xs font-black uppercase tracking-[0.14em] text-rose-200 transition hover:bg-rose-400/20 disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-1"
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Clear
-                </button>
+                {demoMode && (
+                  <button
+                    type="button"
+                    onClick={clearDiagnostics}
+                    disabled={localDiagnostics.length === 0}
+                    className="col-span-2 flex min-h-11 items-center justify-center gap-2 rounded-xl border border-rose-300/25 bg-rose-400/10 px-4 text-xs font-black uppercase tracking-[0.14em] text-rose-200 transition hover:bg-rose-400/20 disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-1"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Clear
+                  </button>
+                )}
               </div>
             </div>
 
-            {localDiagnostics.length > 0 ? (
+            {!demoMode && !isAuthenticated ? (
+              <div className="rounded-2xl border border-white/10 bg-black/20 p-5 text-sm leading-6 text-slate-400">
+                Sign in with Microsoft to load tenant diagnostics from Supabase.
+              </div>
+            ) : visibleDiagnostics.length > 0 ? (
               <div className="grid gap-3">
-                {localDiagnostics.slice(0, 10).map((event, index) => (
+                {visibleDiagnostics.slice(0, 10).map((event, index) => (
                   <div
                     key={event.id}
                     className="rounded-2xl border border-white/10 bg-black/25 p-4"
@@ -639,11 +695,14 @@ export const AdminCenter = () => {
               </div>
             ) : (
               <div className="rounded-2xl border border-white/10 bg-black/20 p-5 text-sm leading-6 text-slate-400">
-                No local diagnostics have been captured in this browser session.
+                {isLoadingDiagnostics
+                  ? 'Loading recent diagnostics...'
+                  : demoMode
+                    ? 'No local diagnostics have been captured in this browser session.'
+                    : 'No recent backend diagnostics have been captured for this tenant.'}
               </div>
             )}
           </section>
-        )}
 
         <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
           <section className="rounded-[28px] border border-white/10 bg-[#0B0F19]/70 p-5 shadow-2xl backdrop-blur-2xl sm:p-6">

@@ -94,7 +94,7 @@ Known follow-up from the latest audit:
 - [x] Keep Sign Out visible and confirm it clears local Aethos session state.
 - [x] Add a reset/debug section for local demo override and cached MSAL state guidance.
 - [x] Add V1 diagnostics capture for browser errors, console warnings/errors, and unhandled promise rejections.
-- [ ] Add Admin diagnostics viewer for recent `app_diagnostics` events.
+- [x] Add Admin diagnostics viewer for recent `app_diagnostics` events.
 
 ---
 

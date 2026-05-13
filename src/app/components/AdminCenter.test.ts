@@ -28,6 +28,15 @@ describe('AdminCenter smoke contract', () => {
     expect(source).toContain('local Aethos tenant/user IDs before Microsoft redirects to logout');
   });
 
+  it('loads live tenant diagnostics while preserving demo local diagnostics', () => {
+    expect(source).toContain("listDiagnostics({");
+    expect(source).toContain("limit: 25");
+    expect(source).toContain("demoMode ? 'Demo Diagnostics' : 'Live Diagnostics'");
+    expect(source).toContain('Sign in with Microsoft to load tenant diagnostics from Supabase.');
+    expect(source).toContain('No recent backend diagnostics have been captured for this tenant.');
+    expect(source).toContain('Live diagnostics are retained in Supabase');
+  });
+
   it('surfaces tenant capability status without claiming deep Graph probes', () => {
     expect(source).toContain('Tenant Capability Status');
     expect(source).toContain('Microsoft Sign-In');
