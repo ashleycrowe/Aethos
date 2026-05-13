@@ -69,6 +69,17 @@ const AdminRow = ({ label, value }: { label: string; value: React.ReactNode }) =
   </div>
 );
 
+type CapabilityStatus = 'connected' | 'ready' | 'needs_sign_in' | 'needs_scan' | 'needs_attention' | 'demo';
+
+const capabilityTone: Record<CapabilityStatus, string> = {
+  connected: 'border-emerald-300/25 bg-emerald-400/10 text-emerald-200',
+  ready: 'border-[#00F0FF]/25 bg-[#00F0FF]/10 text-[#00F0FF]',
+  needs_sign_in: 'border-slate-400/20 bg-white/[0.04] text-slate-300',
+  needs_scan: 'border-amber-300/25 bg-amber-300/10 text-amber-200',
+  needs_attention: 'border-rose-300/25 bg-rose-400/10 text-rose-200',
+  demo: 'border-amber-300/25 bg-amber-300/10 text-amber-200',
+};
+
 function openAppTab(tab: string) {
   if (typeof window === 'undefined') return;
   window.dispatchEvent(new CustomEvent('aethos:navigate', {
@@ -78,6 +89,10 @@ function openAppTab(tab: string) {
 
 function formatScanStatus(status?: string | null) {
   return status ? status.replace(/_/g, ' ').toUpperCase() : 'NONE';
+}
+
+function formatCapabilityStatus(status: CapabilityStatus) {
+  return status.replace(/_/g, ' ').toUpperCase();
 }
 
 const SetupStep = ({
@@ -146,9 +161,47 @@ export const AdminCenter = () => {
   const hasTenantContext = Boolean(tenantId || user?.tenantId);
   const hasPersistedScan = Boolean(lastScanSummary && lastScanSummary.status !== 'none');
   const hasDiscoveryResult = Boolean(scanResult || hasPersistedScan);
+  const lastScanNeedsAttention =
+    lastScanSummary?.status === 'partial' ||
+    lastScanSummary?.status === 'failed' ||
+    Boolean(lastScanSummary?.errorCount && lastScanSummary.errorCount > 0);
   const diagnosticIssueCount = localDiagnostics.filter((event) =>
     event.severity === 'error' || event.severity === 'fatal' || event.severity === 'warn'
   ).length;
+  const capabilityCards = [
+    {
+      label: 'Microsoft Sign-In',
+      detail: isAuthenticated
+        ? 'Signed in through Microsoft organizations.'
+        : demoMode
+          ? 'Bypassed while Demo Mode is active.'
+          : 'Sign in before live discovery.',
+      status: demoMode ? 'demo' : isAuthenticated ? 'connected' : 'needs_sign_in',
+    },
+    {
+      label: 'Tenant Provisioning',
+      detail: hasTenantContext
+        ? 'Aethos has a tenant context for protected APIs.'
+        : demoMode
+          ? 'Demo tenant fixtures are active.'
+          : 'Provisioning happens after Microsoft sign-in.',
+      status: demoMode ? 'demo' : hasTenantContext ? 'connected' : 'needs_sign_in',
+    },
+    {
+      label: 'OneDrive / Files',
+      detail: hasDiscoveryResult
+        ? 'Discovery has returned file inventory for this tenant.'
+        : 'Run Discovery to confirm file access.',
+      status: demoMode ? 'demo' : lastScanNeedsAttention ? 'needs_attention' : hasDiscoveryResult ? 'connected' : 'needs_scan',
+    },
+    {
+      label: 'SharePoint / Teams',
+      detail: hasDiscoveryResult
+        ? `${(lastScanSummary?.sitesDiscovered ?? scanResult?.results.totalSites ?? 0).toLocaleString()} sites or Teams reported.`
+        : 'Run Discovery to confirm site and Teams coverage.',
+      status: demoMode ? 'demo' : lastScanNeedsAttention ? 'needs_attention' : hasDiscoveryResult ? 'connected' : 'needs_scan',
+    },
+  ] satisfies Array<{ label: string; detail: string; status: CapabilityStatus }>;
 
   const refreshDiagnostics = React.useCallback(() => {
     setLocalDiagnostics(getLocalDiagnostics());
@@ -425,6 +478,12 @@ export const AdminCenter = () => {
             />
             <SetupStep
               number={3}
+              title="Review capability status"
+              description={lastScanNeedsAttention ? 'Discovery completed with errors. Review capability status before relying on full coverage.' : 'Confirm sign-in, tenant provisioning, and discovery coverage.'}
+              complete={Boolean(!demoMode && hasTenantContext && isAuthenticated && !lastScanNeedsAttention)}
+            />
+            <SetupStep
+              number={4}
               title="Run Microsoft Discovery"
               description={hasDiscoveryResult ? 'Discovery data is available for this tenant.' : 'Populate the files table from this Microsoft tenant before expecting Search or Remediation results.'}
               complete={hasDiscoveryResult}
@@ -440,7 +499,7 @@ export const AdminCenter = () => {
               }
             />
             <SetupStep
-              number={4}
+              number={5}
               title="Create first workspace"
               description="Open Workspaces from the sidebar and create a manual workspace. This should work even when no files are indexed."
               complete={false}
@@ -687,6 +746,11 @@ export const AdminCenter = () => {
                     <p className="mt-1 text-sm font-black text-white">
                       {isLoadingLastScan ? 'Loading scan summary' : formatScanStatus(lastScanSummary?.status)}
                     </p>
+                    {lastScanNeedsAttention && (
+                      <p className="mt-2 text-xs leading-5 text-amber-200">
+                        Partial scan state: review permissions or scan errors before treating reports as complete.
+                      </p>
+                    )}
                   </div>
                   <button
                     type="button"
@@ -758,6 +822,30 @@ export const AdminCenter = () => {
                 </div>
               </div>
             )}
+          </div>
+
+          <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5 backdrop-blur-xl lg:col-span-2">
+            <MonitorCog className="mb-4 h-6 w-6 text-[#00F0FF]" />
+            <h3 className="mb-2 text-base font-black text-white">Tenant Capability Status</h3>
+            <p className="mb-5 text-sm leading-6 text-slate-400">
+              These V1 checks reflect current session and discovery coverage. They do not claim deeper Graph permission validation until a dedicated capability-check endpoint is added.
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {capabilityCards.map((capability) => (
+                <div
+                  key={capability.label}
+                  className={`rounded-2xl border p-4 ${capabilityTone[capability.status]}`}
+                >
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em]">{capability.label}</p>
+                    <span className="rounded-full border border-current/20 bg-black/15 px-2 py-1 text-[9px] font-black uppercase tracking-widest">
+                      {formatCapabilityStatus(capability.status)}
+                    </span>
+                  </div>
+                  <p className="text-xs leading-5 text-slate-300">{capability.detail}</p>
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5 backdrop-blur-xl">

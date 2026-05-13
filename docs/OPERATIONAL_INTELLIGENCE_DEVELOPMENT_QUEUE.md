@@ -298,7 +298,7 @@ Tasks:
 - [x] Replace session-only scan result with persisted last-scan summary.
 - [x] Add scan history link in Admin.
 - [x] Add post-scan CTA to Search, Remediation, Workspace.
-- [ ] Add `partial scan` state with clear errors.
+- [x] Add `partial scan` state with clear errors.
 - [x] Add no-data `Path to Value` checklist:
   - Connect Microsoft account.
   - Confirm permissions/capabilities.
