@@ -182,7 +182,7 @@ export const LensView: React.FC<LensViewProps> = ({ isOpen, onClose, containerId
                                 isDaylight ? 'bg-white border-slate-200' : 'bg-[#161B28] border-white/10'
                               }`}
                             >
-                              <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest p-2 mb-1">Target Nexus</p>
+                              <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest p-2 mb-1">Target Workspace</p>
                               {workspaces.map(ws => (
                                 <button 
                                   key={ws.id}
@@ -199,7 +199,7 @@ export const LensView: React.FC<LensViewProps> = ({ isOpen, onClose, containerId
                                 </button>
                               ))}
                               {workspaces.length === 0 && (
-                                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest p-2 text-center">No active Nexuses</p>
+                                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest p-2 text-center">No active workspaces</p>
                               )}
                             </Motion.div>
                           )}

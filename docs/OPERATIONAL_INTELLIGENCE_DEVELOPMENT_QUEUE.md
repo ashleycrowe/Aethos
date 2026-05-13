@@ -297,7 +297,7 @@ Tasks:
 
 - [ ] Replace session-only scan result with persisted last-scan summary.
 - [ ] Add scan history link in Admin.
-- [ ] Add post-scan CTA to Search, Remediation, Workspace.
+- [x] Add post-scan CTA to Search, Remediation, Workspace.
 - [ ] Add `partial scan` state with clear errors.
 - [x] Add no-data `Path to Value` checklist:
   - Connect Microsoft account.
@@ -527,7 +527,7 @@ Sales angle:
 
 - [x] Remove or gate `ReportingCenterV1` mock report data from any live route.
 - [ ] Replace encoding artifacts and smart quote corruption in visible UI/docs.
-- [ ] Rename `Nexus` to `Workspaces` or `Nexus Workspaces` in V1 copy.
+- [x] Rename `Nexus` to `Workspaces` or `Nexus Workspaces` in V1 copy.
 - [ ] Standardize terms:
   - Live Mode
   - Demo Mode

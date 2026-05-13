@@ -290,7 +290,7 @@ export const WorkspaceEngine = () => {
       // Add workspace to context
       addWorkspace(newWorkspace);
 
-      toast.success(`✨ Workspace "${data.name}" created successfully!`, {
+      toast.success(`Workspace "${data.name}" created successfully!`, {
         description: data.contentMethod !== 'manual' 
           ? `Auto-sync enabled with ${data.syncRules?.length || 0} rule(s)`
           : 'Manual content management',
@@ -553,7 +553,7 @@ export const WorkspaceEngine = () => {
                          className={`min-h-[44px] px-6 sm:px-8 py-4 rounded-2xl border flex items-center justify-center gap-3 text-[11px] font-black uppercase tracking-[0.2em] transition-all ${isSyncing ? 'bg-white/5 border-white/5 text-slate-500' : 'bg-white/5 border-white/10 text-white hover:bg-white/10'}`}
                        >
                           <RefreshCcw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
-                          {isSyncing ? 'Validating Pointers...' : 'Nexus Sync Engine'}
+                          {isSyncing ? 'Validating Pointers...' : 'Workspace Sync Engine'}
                        </button>
                        <div className="flex-1 relative min-h-[44px]">
                           <Search className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />

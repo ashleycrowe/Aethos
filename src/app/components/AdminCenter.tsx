@@ -69,6 +69,13 @@ const AdminRow = ({ label, value }: { label: string; value: React.ReactNode }) =
   </div>
 );
 
+function openAppTab(tab: string) {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent('aethos:navigate', {
+    detail: { tab },
+  }));
+}
+
 const SetupStep = ({
   number,
   title,
@@ -402,7 +409,7 @@ export const AdminCenter = () => {
             <SetupStep
               number={4}
               title="Create first workspace"
-              description="Open Nexus from the sidebar and create a manual workspace. This should work even when no files are indexed."
+              description="Open Workspaces from the sidebar and create a manual workspace. This should work even when no files are indexed."
               complete={false}
             />
           </div>
@@ -638,10 +645,38 @@ export const AdminCenter = () => {
               {isScanning ? 'Scanning Microsoft 365' : 'Run Discovery Scan'}
             </button>
             {scanResult && (
-              <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4 text-xs leading-6 text-slate-300">
-                Found {scanResult.results.totalFiles.toLocaleString()} files across{' '}
-                {scanResult.results.totalSites.toLocaleString()} sites. New indexed files:{' '}
-                {scanResult.results.newFiles.toLocaleString()}.
+              <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4">
+                <p className="text-xs leading-6 text-slate-300">
+                  Found {scanResult.results.totalFiles.toLocaleString()} files across{' '}
+                  {scanResult.results.totalSites.toLocaleString()} sites. New indexed files:{' '}
+                  {scanResult.results.newFiles.toLocaleString()}.
+                </p>
+                <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                  <button
+                    type="button"
+                    onClick={() => openAppTab('oracle')}
+                    className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#00F0FF]/25 bg-[#00F0FF]/10 px-3 text-[10px] font-black uppercase tracking-[0.16em] text-[#00F0FF] transition hover:bg-[#00F0FF]/20"
+                  >
+                    <FileSearch className="h-4 w-4" />
+                    Search Files
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => openAppTab('nexus')}
+                    className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-emerald-300/25 bg-emerald-400/10 px-3 text-[10px] font-black uppercase tracking-[0.16em] text-emerald-200 transition hover:bg-emerald-400/20"
+                  >
+                    <Database className="h-4 w-4" />
+                    Create Workspace
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => openAppTab('archival')}
+                    className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-amber-300/25 bg-amber-300/10 px-3 text-[10px] font-black uppercase tracking-[0.16em] text-amber-200 transition hover:bg-amber-300/20"
+                  >
+                    <ShieldCheck className="h-4 w-4" />
+                    Review Risk
+                  </button>
+                </div>
               </div>
             )}
           </div>

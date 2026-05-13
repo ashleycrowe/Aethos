@@ -29,7 +29,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ type, title, description
     },
     'no-workspaces': {
       icon: <Inbox className="w-12 h-12" />,
-      title: title || 'No Nexus Workspaces',
+      title: title || 'No Workspaces',
       description: description || 'Start grouping SharePoint sites and Teams into virtual containers.',
       color: 'text-[#00F0FF]'
     },

@@ -69,7 +69,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: 'Core',
       items: [
         { id: 'oracle', icon: Cpu, label: 'Oracle Search', description: 'Cross-platform intelligent search', minVersion: 'V1' },
-        { id: 'nexus', icon: LayoutGrid, label: 'Nexus', description: 'Virtual workspace bridge', minVersion: 'V1' },
+        { id: 'nexus', icon: LayoutGrid, label: 'Workspaces', description: 'Live workspace creation and review', minVersion: 'V1' },
         { id: 'insights', icon: Sparkles, label: 'Intelligence', description: 'Consolidated insights & metadata', minVersion: 'V1' },
       ]
     },

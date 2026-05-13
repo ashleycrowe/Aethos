@@ -44,7 +44,7 @@ This file is the short-cycle engineering queue. Keep `IMPLEMENTATION_TASKS.md` a
 - [ ] Wire `IntelligenceDashboard` to real discovery/search metrics in Live Mode.
 - [x] Wire `WorkspaceEngine` to real workspace creation/list/detail APIs.
 - [x] Prevent `WorkspaceEngine` from falling back to demo workspaces in Live Mode.
-- [x] Make Workspace creation obvious in V1 Nexus, even when no indexed files exist.
+- [x] Make Workspace creation obvious in V1 Workspaces, even when no indexed files exist.
 - [x] Refactor existing UI components (`IntelligenceDashboard`, `WorkspaceEngine`, `DesignCenter`) to meet Mobile-First standards.
 - [x] Add workspace list/detail endpoints if the frontend needs them.
 - [x] Gate non-V1 prototype modules behind feature flags or hide them from the default nav.
@@ -137,12 +137,12 @@ See `docs/OPERATIONAL_INTELLIGENCE_DEVELOPMENT_QUEUE.md` for the detailed implem
 
 ## Active Workstream - Workspace V1
 
-- [ ] Rename or clarify `Nexus` as the Workspace area in V1 navigation/copy.
-- [ ] Add a primary `Create Workspace` button to the Workspace/Nexus header.
+- [x] Rename or clarify `Nexus` as the Workspace area in V1 navigation/copy.
+- [x] Add a primary `Create Workspace` button to the Workspace header.
 - [x] Show real empty state when the live tenant has zero workspaces.
 - [x] Allow manual workspace creation without requiring discovered files.
 - [x] Make API failure state distinct from Demo Mode fallback.
-- [ ] Add a post-discovery CTA: `Create a workspace from these results`.
+- [x] Add a post-discovery CTA: `Create a workspace from these results`.
 
 ---
 
@@ -209,6 +209,23 @@ See `docs/OPERATIONAL_INTELLIGENCE_DEVELOPMENT_QUEUE.md` for the detailed implem
 - [ ] AppSource preparation docs, privacy policy, support docs, and demo video checklist.
 - [ ] Advanced bundle tuning after first lazy-loading pass.
 - [ ] Add formal feature promotion flags for `pre-release -> demo -> live` rollout.
+
+---
+
+## Pre-Release - Mobile Responsiveness Hardening
+
+**Principle:** Aethos must be usable at 375px width without accidental horizontal overflow, unreadable controls, or hover-only workflows.
+
+- [ ] Audit core V1 screens at 375px, 768px, and 1024px.
+- [ ] Prioritize IntelligenceDashboard, OracleSearch, WorkspaceEngine, RemediationCenter, and AdminCenter.
+- [ ] Ensure primary touch targets are at least 44px x 44px.
+- [ ] Remove accidental horizontal overflow; allow only intentional tab/filter carousels.
+- [ ] Convert dense tables/lists to mobile card layouts where needed.
+- [ ] Make modals full-screen or bottom-sheet style on mobile.
+- [ ] Add `scrollbar-hide` and safe-area utilities if needed.
+- [ ] Reduce expensive blur/backdrop effects on mobile.
+- [ ] Verify dashboard grids use progressive breakpoints: 1 col mobile, 2 col small tablet, 3-4 col desktop.
+- [ ] Run manual smoke checks for mobile nav, forms, filters, charts, and report cards.
 
 ---
 

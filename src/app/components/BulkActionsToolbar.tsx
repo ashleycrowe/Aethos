@@ -50,7 +50,7 @@ export const BulkActionsToolbar: React.FC<BulkActionsToolbarProps> = ({
                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00F0FF]/10 border border-[#00F0FF]/20 text-[#00F0FF] hover:bg-[#00F0FF]/20 transition-all text-xs font-bold uppercase tracking-widest"
               >
                 <Pin className="w-4 h-4" />
-                Pin to Nexus
+                Pin to Workspace
               </button>
               <button 
                 onClick={onNotify}

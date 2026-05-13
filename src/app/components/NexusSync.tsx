@@ -10,8 +10,8 @@ export const NexusSync: React.FC<NexusSyncProps> = ({ status }) => {
   if (status === 'idle') return null;
 
   const config = {
-    saving: { icon: <Loader2 className="w-3 h-3 animate-spin" />, text: 'Syncing Nexus...', color: 'text-slate-400' },
-    saved: { icon: <Cloud className="w-3 h-3 text-[#00F0FF]" />, text: 'Nexus Pointers Secured', color: 'text-[#00F0FF]' },
+    saving: { icon: <Loader2 className="w-3 h-3 animate-spin" />, text: 'Syncing Workspace...', color: 'text-slate-400' },
+    saved: { icon: <Cloud className="w-3 h-3 text-[#00F0FF]" />, text: 'Workspace Pointers Secured', color: 'text-[#00F0FF]' },
     error: { icon: <CloudOff className="w-3 h-3" />, text: 'Sync Error', color: 'text-[#FF5733]' }
   };
 

@@ -202,7 +202,7 @@ export const ShadowDiscoveryAdapter = () => {
                   <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-white">Dead Capital Insight</h4>
                 </div>
                 <p className="text-[11px] text-slate-400 leading-relaxed italic">
-                  "Tier 2 adapters are optimized for **leakage detection**. 24 clusters in Google Workspace have been identified as having 'Public on the Web' visibility without being anchored to a Workspace Engine Nexus."
+                  "Tier 2 adapters are optimized for **leakage detection**. 24 clusters in Google Workspace have been identified as having 'Public on the Web' visibility without being anchored to a Workspace."
                 </p>
                 <div className="pt-2">
                   <button 
