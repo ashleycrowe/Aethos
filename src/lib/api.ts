@@ -570,10 +570,10 @@ export async function listDiagnostics({
   ...body
 }: ListDiagnosticsRequest = {}): Promise<ListDiagnosticsResponse> {
   return request<ListDiagnosticsResponse>(
-    '/diagnostics/list',
+    '/diagnostics/client-log',
     {
       method: 'POST',
-      body: JSON.stringify(body),
+      body: JSON.stringify({ ...body, action: 'list' }),
     },
     accessToken
   );

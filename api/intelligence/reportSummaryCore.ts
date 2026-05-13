@@ -380,7 +380,7 @@ function buildRiskDrivers(scores: {
   staleScore: number;
   oneDriveScore: number;
 }): RiskDriver[] {
-  return [
+  const drivers: RiskDriver[] = [
     {
       label: 'Unsecured External Shares',
       category: 'external',
@@ -411,7 +411,9 @@ function buildRiskDrivers(scores: {
       value: scores.oneDriveScore * 0.05,
       filterTarget: '/remediation?issue=onedrive_silo',
     },
-  ].sort((a, b) => b.value - a.value);
+  ];
+
+  return drivers.sort((a, b) => b.value - a.value);
 }
 
 function primaryRiskFactor(drivers: RiskDriver[]): string {

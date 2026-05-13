@@ -51,7 +51,7 @@ async function fetchFiles(tenantId: string): Promise<ReportFileRow[]> {
       .range(from, to);
 
     if (error) throw error;
-    rows.push(...((data || []) as ReportFileRow[]));
+    rows.push(...((data || []) as unknown as ReportFileRow[]));
 
     if (!data || data.length < pageSize) break;
   }
