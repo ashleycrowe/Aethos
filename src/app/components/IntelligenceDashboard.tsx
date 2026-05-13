@@ -26,7 +26,7 @@ import { MetadataIntelligenceDashboard } from '@/app/components/MetadataIntellig
 import { IdentityEngine } from '@/app/components/IdentityEngine';
 import { DiscoveryScanSimulation } from '@/app/components/DiscoveryScanSimulation';
 import { toast } from 'sonner';
-import { getReportSummary, type ReportSummaryResponse } from '@/lib/api';
+import { getReportSummary, syncOwnerStatus, type ReportSummaryResponse } from '@/lib/api';
 import { useAuth } from '@/app/context/AuthContext';
 
 type IntelligenceView = 'dashboard' | 'stream' | 'metadata' | 'identity';
@@ -278,6 +278,7 @@ const OverviewDashboard = ({ onOpenSignalQueue }: { onOpenSignalQueue?: () => vo
   const [reportSummary, setReportSummary] = useState<ReportSummaryResponse['summary'] | null>(null);
   const [isLoadingSummary, setIsLoadingSummary] = useState(false);
   const [summaryError, setSummaryError] = useState<string | null>(null);
+  const [isSyncingOwners, setIsSyncingOwners] = useState(false);
 
   useEffect(() => {
     if (isDemoMode) {
@@ -322,6 +323,29 @@ const OverviewDashboard = ({ onOpenSignalQueue }: { onOpenSignalQueue?: () => vo
       : 'available'
     : 'loading';
   const ownerStatusCoverage = reportSummary?.ownership.ownerStatusCoverage;
+
+  const refreshReportSummary = async () => {
+    const response = await getReportSummary({ accessToken: await getAccessToken() });
+    setReportSummary(response.summary);
+  };
+
+  const handleOwnerStatusSync = async () => {
+    try {
+      setIsSyncingOwners(true);
+      const accessToken = await getAccessToken();
+      const response = await syncOwnerStatus({ accessToken, limit: 25 });
+      await refreshReportSummary();
+      if (response.permissionRequired > 0) {
+        toast.warning('Owner status sync needs additional Microsoft Graph permissions');
+      } else {
+        toast.success(`Owner status synced for ${response.checked} owner${response.checked === 1 ? '' : 's'}`);
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unable to sync owner status');
+    } finally {
+      setIsSyncingOwners(false);
+    }
+  };
 
   const metrics = [
     {
@@ -643,7 +667,18 @@ const OverviewDashboard = ({ onOpenSignalQueue }: { onOpenSignalQueue?: () => vo
                   {ownerStatusCoverage?.lastCheckedAt ? ` | Last checked ${formatDate(ownerStatusCoverage.lastCheckedAt)}` : ''}
                 </p>
               </div>
-              <DataSourceBadge mode="live" />
+              <div className="flex flex-col items-start gap-3 sm:items-end">
+                <DataSourceBadge mode="live" />
+                <button
+                  onClick={() => void handleOwnerStatusSync()}
+                  disabled={isSyncingOwners}
+                  className={`min-h-[40px] rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-[9px] font-black uppercase tracking-widest text-slate-300 transition hover:border-[#00F0FF]/40 hover:text-white ${
+                    isSyncingOwners ? 'cursor-wait opacity-60' : ''
+                  }`}
+                >
+                  {isSyncingOwners ? 'Syncing Owners' : 'Sync Owner Status'}
+                </button>
+              </div>
             </div>
 
             {reportSummary.ownership.topRiskOwners.length > 0 ? (

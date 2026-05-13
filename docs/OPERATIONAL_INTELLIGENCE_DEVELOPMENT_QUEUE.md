@@ -413,6 +413,7 @@ V1.5 implementation tasks:
 - [x] Add Entra user lookup/cache spike: active, disabled, guest, not found, or permission-required.
 - [x] Add `owner_status` fields or owner status cache table.
 - [x] Surface owner-status enrichment in Ownership & Offboarding Risk.
+- [x] Add owner-status sync action with permission-required feedback.
 - [ ] Add departed/inactive owner report.
 - [ ] Add handoff workflow: selected files -> suggested workspace -> assign steward.
 
