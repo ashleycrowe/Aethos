@@ -452,6 +452,8 @@ V1.5 tasks:
 - [x] Preserve an audit trail of metadata suggestion decisions.
 - [x] Feed accepted tag/category decisions into workspace opportunities.
 - [x] Define approved metadata visibility levels: Aethos-side, source-system writeback, native AI connector.
+- [x] Add bulk accept/edit/reject/block lifecycle controls for visible metadata suggestions.
+- [ ] Add edited-value capture before treating bulk edit as source-system-ready metadata.
 - [ ] Add content-aware tags/categories.
 - [ ] Add content-aware summaries.
 - [ ] Add PII/sensitive content flags.

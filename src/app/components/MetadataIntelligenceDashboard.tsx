@@ -66,6 +66,8 @@ interface ConservativeMetadataSuggestion {
 
 type MetadataDecisionStatus = 'accepted' | 'edited' | 'rejected' | 'blocked';
 
+const ACCEPTED_DECISION_STATUSES = new Set<MetadataDecisionStatus>(['accepted', 'edited']);
+
 interface MetadataDecisionSummary {
   totalDecisions: number;
   accepted: number;
@@ -350,6 +352,32 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
 
   const openMetadataSuggestions = () => setSelectedView('opportunities');
 
+  const applyLocalSuggestionDecision = (
+    suggestion: ConservativeMetadataSuggestion,
+    decisionStatus: MetadataDecisionStatus,
+    previousStatus?: MetadataDecisionStatus
+  ) => {
+    setSuggestionDecisions((current) => ({ ...current, [suggestion.id]: decisionStatus }));
+    setMetadataDecisionSummary((current) => {
+      const next = { ...current };
+      if (!previousStatus) {
+        next.totalDecisions += 1;
+      } else {
+        next[previousStatus] = Math.max(0, next[previousStatus] - 1);
+        if (ACCEPTED_DECISION_STATUSES.has(previousStatus)) {
+          next.acceptedAffectedFiles = Math.max(0, next.acceptedAffectedFiles - suggestion.count);
+        }
+      }
+
+      next[decisionStatus] += 1;
+      if (ACCEPTED_DECISION_STATUSES.has(decisionStatus)) {
+        next.acceptedAffectedFiles += suggestion.count;
+      }
+      next.latestDecisionAt = new Date().toISOString();
+      return next;
+    });
+  };
+
   const buildSuggestionReviewPacket = (suggestion: ConservativeMetadataSuggestion) => [
     `Aethos metadata review packet: ${suggestion.label}`,
     `Files affected: ${suggestion.count.toLocaleString()}`,
@@ -389,16 +417,20 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
 
   const recordSuggestionDecision = async (
     suggestion: ConservativeMetadataSuggestion,
-    decisionStatus: MetadataDecisionStatus
+    decisionStatus: MetadataDecisionStatus,
+    options: { quiet?: boolean; manageSavingState?: boolean } = {}
   ) => {
+    const manageSavingState = options.manageSavingState ?? !options.quiet;
+    const previousStatus = suggestionDecisions[suggestion.id];
+
     if (isDemoMode) {
-      setSuggestionDecisions((current) => ({ ...current, [suggestion.id]: decisionStatus }));
-      toast.success(`Demo decision marked ${decisionStatus}`);
+      applyLocalSuggestionDecision(suggestion, decisionStatus, previousStatus);
+      if (!options.quiet) toast.success(`Demo decision marked ${decisionStatus}`);
       return;
     }
 
     try {
-      setSavingSuggestionId(suggestion.id);
+      if (manageSavingState) setSavingSuggestionId(suggestion.id);
       const accessToken = await getAccessToken();
       await recordMetadataSuggestionDecision({
         accessToken,
@@ -419,19 +451,31 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
           source: 'MetadataIntelligenceDashboard',
         },
       });
-      setSuggestionDecisions((current) => ({ ...current, [suggestion.id]: decisionStatus }));
-      setMetadataDecisionSummary((current) => ({
-        ...current,
-        totalDecisions: current.totalDecisions + 1,
-        [decisionStatus]: current[decisionStatus] + 1,
-        acceptedAffectedFiles: ['accepted', 'edited'].includes(decisionStatus)
-          ? current.acceptedAffectedFiles + suggestion.count
-          : current.acceptedAffectedFiles,
-        latestDecisionAt: new Date().toISOString(),
-      }));
-      toast.success(`Metadata suggestion ${decisionStatus}`);
+      applyLocalSuggestionDecision(suggestion, decisionStatus, previousStatus);
+      if (!options.quiet) toast.success(`Metadata suggestion ${decisionStatus}`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Unable to record metadata decision');
+      throw error;
+    } finally {
+      if (manageSavingState) setSavingSuggestionId(null);
+    }
+  };
+
+  const recordBulkSuggestionDecision = async (decisionStatus: MetadataDecisionStatus) => {
+    const pendingSuggestions = metadataSuggestions.filter((suggestion) => suggestionDecisions[suggestion.id] !== decisionStatus);
+    if (pendingSuggestions.length === 0) {
+      toast.message('No suggestions need that decision');
+      return;
+    }
+
+    try {
+      setSavingSuggestionId('bulk');
+      for (const suggestion of pendingSuggestions) {
+        await recordSuggestionDecision(suggestion, decisionStatus, { quiet: true });
+      }
+      toast.success(`${pendingSuggestions.length} suggestion${pendingSuggestions.length === 1 ? '' : 's'} marked ${decisionStatus}`);
+    } catch {
+      // Individual errors are already surfaced by recordSuggestionDecision.
     } finally {
       setSavingSuggestionId(null);
     }
@@ -1058,6 +1102,43 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
 
               {metadataSuggestions.length > 0 ? (
                 <div className="space-y-4">
+                  <div className="flex flex-col gap-4 rounded-xl border border-white/10 bg-white/[0.03] p-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div>
+                      <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">Bulk Review</p>
+                      <p className="mt-2 text-sm leading-6 text-slate-400">
+                        Apply one lifecycle decision to all visible metadata suggestions.
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:min-w-[520px]">
+                      {([
+                        ['accepted', 'Accept All'],
+                        ['edited', 'Mark Edited'],
+                        ['rejected', 'Reject All'],
+                        ['blocked', 'Block All'],
+                      ] as [MetadataDecisionStatus, string][]).map(([status, label]) => {
+                        const pendingCount = metadataSuggestions.filter(
+                          (suggestion) => suggestionDecisions[suggestion.id] !== status
+                        ).length;
+                        const isSaving = savingSuggestionId === 'bulk';
+                        return (
+                          <button
+                            key={status}
+                            type="button"
+                            disabled={isSaving || pendingCount === 0}
+                            onClick={() => void recordBulkSuggestionDecision(status)}
+                            className={`min-h-[40px] rounded-lg border px-3 py-2 text-[9px] font-black uppercase tracking-widest transition ${
+                              pendingCount === 0
+                                ? 'cursor-not-allowed border-white/5 bg-white/[0.02] text-slate-600'
+                                : 'border-white/10 bg-white/[0.04] text-slate-400 hover:border-[#00F0FF]/30 hover:text-[#00F0FF]'
+                            } ${isSaving ? 'cursor-wait opacity-60' : ''}`}
+                          >
+                            {isSaving ? 'Saving' : label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
                     {[
                       ['Decisions', metadataDecisionSummary.totalDecisions],
