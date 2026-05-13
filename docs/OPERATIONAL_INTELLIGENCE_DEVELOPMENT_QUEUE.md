@@ -525,7 +525,7 @@ Sales angle:
 
 ## Cleanup Tasks
 
-- [ ] Remove or gate `ReportingCenterV1` mock report data from any live route.
+- [x] Remove or gate `ReportingCenterV1` mock report data from any live route.
 - [ ] Replace encoding artifacts and smart quote corruption in visible UI/docs.
 - [ ] Rename `Nexus` to `Workspaces` or `Nexus Workspaces` in V1 copy.
 - [ ] Standardize terms:

@@ -58,7 +58,8 @@ const VoyagerWorkbench = lazy(() =>
 );
 const WorkspaceEngine = lazy(() => import('@/app/components/WorkspaceEngine').then((module) => ({ default: module.WorkspaceEngine })));
 
-const V1_CORE_TABS = new Set(['oracle', 'insights', 'nexus', 'archival', 'admin']);
+const LIVE_CORE_TABS = new Set(['oracle', 'insights', 'nexus', 'archival', 'admin']);
+const DEMO_ONLY_TABS = new Set(['reports']);
 
 const COMING_SOON_LABELS: Record<string, string> = {
   admin: 'Admin Center',
@@ -203,14 +204,13 @@ const Layout: React.FC = () => {
   const [activeTab, setActiveTab] = useState('insights');
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { isDaylight } = useTheme();
-  const { version } = useVersion();
+  const { version, isDemoMode } = useVersion();
 
   // VERSION-AWARE TAB VALIDATION: Redirect to valid V1 tab if user is on V2+ tab
   useEffect(() => {
     const versionOrder = ['V1', 'V1.5', 'V2', 'V3', 'V4'];
     const currentVersionIndex = versionOrder.indexOf(version);
     
-    const v1Tabs = ['oracle', 'nexus', 'insights', 'archival', 'reports', 'admin'];
     const v2Tabs = ['voyager', 'pulse', 'people'];
     
     // If on V1 and active tab requires V2+, redirect to insights
@@ -238,7 +238,12 @@ const Layout: React.FC = () => {
   }, []);
 
   const renderContent = () => {
-    if (!V1_CORE_TABS.has(activeTab)) {
+    const allowedTabs = new Set([
+      ...Array.from(LIVE_CORE_TABS),
+      ...(isDemoMode ? Array.from(DEMO_ONLY_TABS) : []),
+    ]);
+
+    if (!allowedTabs.has(activeTab)) {
       return <ComingSoonView tab={activeTab} />;
     }
 
