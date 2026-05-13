@@ -140,11 +140,11 @@ Current boundary check for tag suggestions, AI titles, categories, and intellige
 - Metadata suggestions now have a review lifecycle with persisted accept, edit, reject, and block decisions. Edited decisions capture `edited_value` before being marked edited.
 - Accepted or edited decisions are safe to use inside Aethos-side search, workspace, reporting, and readiness workflows. They are not Microsoft 365 writeback.
 - `BulkTagEditor`, `TagManagementDemo`, and `TagManagementFlowDemo` remain prototype/demo surfaces rather than the live Metadata Quality path.
-- `api/intelligence/enrich.ts` is still V1.5-oriented and writes `ai_suggested_title`, `ai_tags`, `ai_category`, `ai_summary`, and `intelligence_score` directly to `files`. Before content-aware classification becomes a default live claim, enrichment output should be routed through pending suggestions and the same review/audit lifecycle.
+- `api/intelligence/enrich.ts` is V1.5-oriented and stages AI enrichment output in `metadata_suggestions` for review before final `ai_*` fields are written. The endpoint still uses metadata-only context unless a future content-body extraction path is added.
 
 Audit result:
 
-> V1 can claim metadata-quality diagnostics and review-first Aethos-side metadata decisions. V1.5 can claim reviewed Aethos-side metadata suggestions. Content-aware AI classification is not yet claim-safe until enrichment uses the suggestion lifecycle by default.
+> V1 can claim metadata-quality diagnostics and review-first Aethos-side metadata decisions. V1.5 can claim reviewed Aethos-side metadata suggestions. Content-aware AI classification is not yet claim-safe until enrichment reads file bodies and routes those outputs through the same suggestion lifecycle.
 
 ---
 

@@ -34,8 +34,20 @@ export default async function handler(
 
     if (metadataDecisionsError) throw metadataDecisionsError;
 
+    const { data: pendingMetadataSuggestions, error: pendingMetadataSuggestionsError } = await supabase
+      .from('metadata_suggestions')
+      .select('id,suggestion_type,confidence,source_signals')
+      .eq('tenant_id', tenantId)
+      .eq('status', 'pending');
+
+    if (pendingMetadataSuggestionsError) throw pendingMetadataSuggestionsError;
+
     const tenantFiles = files || [];
     const suggestionDecisions = metadataDecisions || [];
+    const pendingSuggestions = pendingMetadataSuggestions || [];
+    const pendingContentEnrichmentCount = pendingSuggestions
+      .filter((suggestion) => suggestion.suggestion_type === 'content_enrichment')
+      .length;
     const totalFiles = tenantFiles.length;
     const hasOwner = (file: any) => Boolean(file.owner_email?.trim() || file.owner_name?.trim());
     const isMeaningfulName = (name?: string | null) => {
@@ -231,6 +243,19 @@ export default async function handler(
             nextAction: 'Create review workspace',
             actionTarget: 'workspace',
             remediationIssue: 'stale',
+          }
+        : null,
+      pendingContentEnrichmentCount > 0
+        ? {
+            id: 'review-content-enrichment-suggestions',
+            type: 'tag',
+            label: 'Review AI enrichment suggestions',
+            count: pendingContentEnrichmentCount,
+            sourceSignals: ['filename', 'path', 'extension', 'owner', 'modified date', 'provider'],
+            confidence: 'medium',
+            rationale: 'AI enrichment results are staged as pending review suggestions before any final AI metadata fields are written.',
+            nextAction: 'Review staged suggestions',
+            actionTarget: 'metadata_review',
           }
         : null,
     ].filter(Boolean);

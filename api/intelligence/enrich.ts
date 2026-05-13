@@ -1,10 +1,11 @@
 /**
  * AI Metadata Enrichment API Endpoint
  * 
- * PURPOSE: Use OpenAI to enrich file metadata with tags, categories, and better titles
+ * PURPOSE: Use OpenAI to generate reviewable metadata suggestions
  * VERSION: V1.5+ (AI+ subscription tier)
  * 
- * This is the "Content Oracle" - the AI that makes sense of poor enterprise metadata
+ * V1.5 BOUNDARY: Suggestions are staged for review and do not write final
+ * ai_* fields or Microsoft 365 metadata by default.
  */
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
@@ -14,6 +15,40 @@ import { requireApiContext, supabase } from '../_lib/apiAuth.js';
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
+
+type EnrichmentResult = {
+  title?: unknown;
+  tags?: unknown;
+  category?: unknown;
+  summary?: unknown;
+  score?: unknown;
+  confidence?: unknown;
+  rationale?: unknown;
+};
+
+function cleanString(value: unknown): string | null {
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
+}
+
+function cleanTags(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((tag): tag is string => typeof tag === 'string' && tag.trim().length > 0)
+    .map((tag) => tag.toLowerCase().trim().replace(/\s+/g, '-'))
+    .slice(0, 8);
+}
+
+function cleanScore(value: unknown): number {
+  const score = Number(value);
+  if (!Number.isFinite(score)) return 50;
+  return Math.min(100, Math.max(0, Math.round(score)));
+}
+
+function confidenceFromScore(score: number): 'high' | 'medium' | 'low' {
+  if (score >= 80) return 'high';
+  if (score >= 55) return 'medium';
+  return 'low';
+}
 
 export default async function handler(
   req: VercelRequest,
@@ -32,10 +67,10 @@ export default async function handler(
   }
 
   try {
-    let filesToEnrich;
+    let filesToEnrich: any[];
 
     if (fileIds && fileIds.length > 0) {
-      // Enrich specific files
+      // Generate suggestions for specific files
       const { data, error } = await supabase
         .from('files')
         .select('*')
@@ -43,9 +78,9 @@ export default async function handler(
         .eq('tenant_id', tenantId);
 
       if (error) throw error;
-      filesToEnrich = data;
+      filesToEnrich = data || [];
     } else {
-      // Enrich files that haven't been enriched yet (batch processing)
+      // Generate suggestions for files that do not already have final AI metadata.
       const { data, error } = await supabase
         .from('files')
         .select('*')
@@ -54,24 +89,49 @@ export default async function handler(
         .limit(batchSize);
 
       if (error) throw error;
-      filesToEnrich = data;
+      filesToEnrich = data || [];
     }
 
     if (!filesToEnrich || filesToEnrich.length === 0) {
       return res.status(200).json({
         success: true,
-        message: 'No files to enrich',
+        message: 'No files need metadata suggestions',
+        suggestionsCreated: 0,
         enrichedCount: 0,
       });
     }
 
-    let enrichedCount = 0;
+    const { data: existingPendingSuggestions, error: pendingError } = await supabase
+      .from('metadata_suggestions')
+      .select('file_id')
+      .eq('tenant_id', tenantId)
+      .eq('suggestion_type', 'content_enrichment')
+      .eq('source', 'openai_enrich')
+      .eq('status', 'pending')
+      .in('file_id', filesToEnrich.map((file) => file.id));
+
+    if (pendingError) throw pendingError;
+
+    const pendingFileIds = new Set((existingPendingSuggestions || []).map((suggestion) => suggestion.file_id));
+    filesToEnrich = filesToEnrich.filter((file) => !pendingFileIds.has(file.id));
+
+    if (filesToEnrich.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: 'Pending metadata suggestions already exist for the selected files',
+        suggestionsCreated: 0,
+        enrichedCount: 0,
+        skippedPending: pendingFileIds.size,
+      });
+    }
+
+    let suggestionsCreated = 0;
     const errors: any[] = [];
 
     for (const file of filesToEnrich) {
       try {
-        // Build context for AI
-        const context = {
+        // Build metadata-only context for AI. File bodies are not read here.
+        const fileContext = {
           filename: file.name,
           path: file.path,
           size: file.size_bytes,
@@ -82,31 +142,33 @@ export default async function handler(
         };
 
         // Call OpenAI to enrich metadata
-        const prompt = `Analyze this file and provide enriched metadata:
+        const prompt = `Analyze this file's metadata and provide reviewable metadata suggestions.
 
-File: ${context.filename}
-Path: ${context.path || 'Unknown'}
-Type: ${context.extension || 'Unknown'}
-Size: ${formatBytes(context.size)}
-Owner: ${context.owner || 'Unknown'}
-Last Modified: ${new Date(context.modified).toLocaleDateString()}
-Provider: ${context.provider}
+File: ${fileContext.filename}
+Path: ${fileContext.path || 'Unknown'}
+Type: ${fileContext.extension || 'Unknown'}
+Size: ${formatBytes(fileContext.size)}
+Owner: ${fileContext.owner || 'Unknown'}
+Last Modified: ${fileContext.modified ? new Date(fileContext.modified).toLocaleDateString() : 'Unknown'}
+Provider: ${fileContext.provider}
 
 Provide:
 1. A clean, human-readable title (without file extension)
 2. 3-5 relevant descriptive tags (lowercase, single words)
 3. A category from: Finance, Marketing, HR, Engineering, Legal, Operations, Sales, Product, Design, Other
-4. A brief 1-sentence summary
+4. A brief 1-sentence metadata-based description, not a content summary
 5. An intelligence score (0-100) based on how well-organized and named the file is
+6. A confidence value: high, medium, or low
+7. A concise rationale
 
-Return JSON only with keys: title, tags, category, summary, score`;
+Return JSON only with keys: title, tags, category, summary, score, confidence, rationale`;
 
         const response = await openai.chat.completions.create({
           model: 'gpt-4o-mini',
           messages: [
             {
               role: 'system',
-              content: 'You are an AI assistant that enriches enterprise file metadata to improve organizational clarity.',
+              content: 'You generate conservative enterprise metadata suggestions for human review. Do not claim to have read file bodies.',
             },
             {
               role: 'user',
@@ -118,26 +180,49 @@ Return JSON only with keys: title, tags, category, summary, score`;
           max_tokens: 300,
         });
 
-        const result = JSON.parse(response.choices[0].message.content || '{}');
+        const result = JSON.parse(response.choices[0].message.content || '{}') as EnrichmentResult;
+        const score = cleanScore(result.score);
+        const confidence = cleanString(result.confidence);
+        const normalizedConfidence = confidence === 'high' || confidence === 'medium' || confidence === 'low'
+          ? confidence
+          : confidenceFromScore(score);
 
-        // Update file in database
-        const { error: updateError } = await supabase
-          .from('files')
-          .update({
-            ai_suggested_title: result.title,
-            ai_tags: result.tags || [],
-            ai_category: result.category,
-            ai_summary: result.summary,
-            intelligence_score: result.score || 50,
-            ai_enriched_at: new Date().toISOString(),
+        const suggestedValue = {
+          title: cleanString(result.title),
+          tags: cleanTags(result.tags),
+          category: cleanString(result.category),
+          summary: cleanString(result.summary),
+          score,
+        };
+
+        const { error: insertError } = await supabase
+          .from('metadata_suggestions')
+          .insert({
+            tenant_id: tenantId,
+            file_id: file.id,
+            suggestion_type: 'content_enrichment',
+            status: 'pending',
+            confidence: normalizedConfidence,
+            source: 'openai_enrich',
+            source_signals: ['filename', 'path', 'extension', 'owner', 'modified date', 'provider'],
+            rationale: cleanString(result.rationale) || 'Generated from metadata-only context for human review before applying final AI fields.',
+            suggested_value: suggestedValue,
+            generated_by: context.userId || null,
+            metadata: {
+              review_first: true,
+              source_system_writeback: false,
+              writes_final_ai_fields: false,
+              prompt_context: 'metadata_only',
+            },
           })
-          .eq('id', file.id);
+          .select('id')
+          .single();
 
-        if (updateError) {
-          console.error(`Error updating file ${file.id}:`, updateError);
-          errors.push({ fileId: file.id, error: updateError.message });
+        if (insertError) {
+          console.error(`Error staging metadata suggestion for ${file.id}:`, insertError);
+          errors.push({ fileId: file.id, error: insertError.message });
         } else {
-          enrichedCount++;
+          suggestionsCreated++;
         }
 
         // Small delay to avoid rate limiting
@@ -150,8 +235,10 @@ Return JSON only with keys: title, tags, category, summary, score`;
 
     res.status(200).json({
       success: true,
-      enrichedCount,
+      suggestionsCreated,
+      enrichedCount: 0,
       totalProcessed: filesToEnrich.length,
+      reviewRequired: true,
       errors: errors.length > 0 ? errors : undefined,
     });
   } catch (error: any) {
