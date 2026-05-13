@@ -559,7 +559,7 @@ Sales angle:
   - Live Mode stream shows empty signal queue when no report data exists.
   - Demo Mode shows fixture-rich stream and Identity tab.
 
-- [ ] `RemediationCenterV1.test.tsx`
+- [x] `RemediationCenterV1.test.ts`
   - Live Mode loads candidates from API.
   - Live Mode dry-run is default.
   - Demo Mode uses fixtures.
