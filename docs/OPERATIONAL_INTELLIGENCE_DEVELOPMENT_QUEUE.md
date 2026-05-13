@@ -29,7 +29,7 @@ The V1 surface must be honest in Live Mode and impressive in Demo Mode. Demo can
 - [ ] Audit every tab under Operational Intelligence for static numbers, fake people, fake projects, or demo-only labels.
 - [x] Add a persistent, subtle `Data source: Live tenant` / `Data source: Demo fixtures` label to each report card.
 - [ ] Add a shared `LiveDataBoundary` helper/component for empty/error/fixture states.
-- [ ] Add tests for `demo.aethoswork.com` and `app.aethoswork.com` runtime decisions.
+- [x] Add tests for `demo.aethoswork.com` and `app.aethoswork.com` runtime decisions.
 
 Acceptance:
 
@@ -544,7 +544,7 @@ Sales angle:
 
 ## Automated Test Queue
 
-- [ ] `demoMode.test.ts`
+- [x] `demoMode.test.ts`
   - `app.aethoswork.com` is locked live.
   - `demo.aethoswork.com` is locked demo.
   - localhost override is allowed.

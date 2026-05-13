@@ -49,17 +49,19 @@ export const getEnvDemoModeDefault = () => {
 };
 
 export const isDemoOverrideAllowed = () => {
+  if (getRuntimeSurface() !== 'local') return false;
+
   const explicit = String(import.meta.env.VITE_ALLOW_DEMO_OVERRIDE ?? '').toLowerCase();
   if (explicit === 'true') return true;
   if (explicit === 'false') return false;
 
-  return getRuntimeSurface() === 'local';
+  return true;
 };
 
 export const isDemoModeEnabled = () => {
   const surface = getRuntimeSurface();
   if (surface === 'live') return false;
-  if (surface === 'demo') return true;
+  if (surface === 'demo' || surface === 'pre-release') return true;
 
   if (typeof window !== 'undefined' && isDemoOverrideAllowed()) {
     const sessionOverride = window.localStorage.getItem(DEMO_MODE_STORAGE_KEY);

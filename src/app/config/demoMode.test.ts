@@ -1,6 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { DEMO_MODE_STORAGE_KEY, getRuntimeSurface, isDemoModeEnabled } from './demoMode';
+import {
+  DEMO_MODE_STORAGE_KEY,
+  getRuntimeModeLabel,
+  getRuntimeSurface,
+  isDemoModeEnabled,
+  isDemoOverrideAllowed,
+} from './demoMode';
 
 const versionToggleSource = readFileSync(
   new URL('../components/VersionToggle.tsx', import.meta.url),
@@ -41,10 +47,32 @@ describe('demo mode config', () => {
     stubWindow('true', 'app.aethoswork.com');
     expect(getRuntimeSurface()).toBe('live');
     expect(isDemoModeEnabled()).toBe(false);
+    expect(isDemoOverrideAllowed()).toBe(false);
+    expect(getRuntimeModeLabel()).toBe('Live: real tenant data');
 
     stubWindow('false', 'demo.aethoswork.com');
     expect(getRuntimeSurface()).toBe('demo');
     expect(isDemoModeEnabled()).toBe(true);
+    expect(isDemoOverrideAllowed()).toBe(false);
+    expect(getRuntimeModeLabel()).toBe('Demo: fixture data');
+  });
+
+  it('treats pre-release demo domains as demo by default without local override controls', () => {
+    stubWindow('false', 'pre-demo.aethoswork.com');
+    expect(getRuntimeSurface()).toBe('pre-release');
+    expect(isDemoModeEnabled()).toBe(true);
+    expect(isDemoOverrideAllowed()).toBe(false);
+  });
+
+  it('allows local browser sessions to switch between demo and live behavior', () => {
+    stubWindow('true', 'localhost');
+    expect(getRuntimeSurface()).toBe('local');
+    expect(isDemoModeEnabled()).toBe(true);
+    expect(isDemoOverrideAllowed()).toBe(true);
+
+    stubWindow('false', 'localhost');
+    expect(isDemoModeEnabled()).toBe(false);
+    expect(isDemoOverrideAllowed()).toBe(true);
   });
 
   it('keeps the global version toggle visible in live and demo sessions', () => {
