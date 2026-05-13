@@ -18,6 +18,16 @@ interface WorkspaceCreationWizardProps {
     selectedAssets?: string[];
   }) => void;
   availableAssets?: Asset[];
+  onPreviewMatches?: (criteria: {
+    ruleType: RuleType;
+    tagsIncludeAny: string[];
+    tagsExclude: string[];
+    locationPath: string;
+  }) => Promise<{
+    matchCount: number;
+    totalSizeBytes: number;
+    sampleAssets: Asset[];
+  }>;
 }
 
 type ContentMethod = 'smart' | 'manual' | 'hybrid';
@@ -28,6 +38,7 @@ export function WorkspaceCreationWizard({
   onClose,
   onComplete,
   availableAssets = [],
+  onPreviewMatches,
 }: WorkspaceCreationWizardProps) {
   const [step, setStep] = useState(1);
   const [name, setName] = useState('');
@@ -43,6 +54,9 @@ export function WorkspaceCreationWizard({
   
   // Review step
   const [matchingAssets, setMatchingAssets] = useState<Asset[]>([]);
+  const [previewMatchCount, setPreviewMatchCount] = useState(0);
+  const [previewTotalSizeBytes, setPreviewTotalSizeBytes] = useState(0);
+  const [previewError, setPreviewError] = useState<string | null>(null);
   const [selectedAssetIds, setSelectedAssetIds] = useState<Set<string>>(new Set());
   const [autoAddFuture, setAutoAddFuture] = useState(true);
   const [isPreviewingMatches, setIsPreviewingMatches] = useState(false);
@@ -68,28 +82,51 @@ export function WorkspaceCreationWizard({
     listSetter((prev) => prev.filter((t) => t !== tag));
   };
 
-  const handlePreviewMatches = () => {
+  const findLocalMatches = () => {
+    return availableAssets.filter((asset) => {
+      if (ruleType === 'tag') {
+        const allAssetTags = [...asset.userTags, ...asset.enrichedTags];
+        const matchesIncludeAny = tagsIncludeAny.some((tag) => allAssetTags.includes(tag));
+        const matchesExclude = tagsExclude.length === 0 || !tagsExclude.some((tag) => allAssetTags.includes(tag));
+        return matchesIncludeAny && matchesExclude;
+      } else if (ruleType === 'location') {
+        return asset.locationPath.toLowerCase().includes(locationPath.toLowerCase());
+      }
+      return false;
+    });
+  };
+
+  const handlePreviewMatches = async () => {
     setIsPreviewingMatches(true);
-    
-    // Simulate matching logic
-    setTimeout(() => {
-      const matches = availableAssets.filter((asset) => {
-        if (ruleType === 'tag') {
-          const allAssetTags = [...asset.userTags, ...asset.enrichedTags];
-          const matchesIncludeAny = tagsIncludeAny.some((tag) => allAssetTags.includes(tag));
-          const matchesExclude = tagsExclude.length === 0 || !tagsExclude.some((tag) => allAssetTags.includes(tag));
-          return matchesIncludeAny && matchesExclude;
-        } else if (ruleType === 'location') {
-          return asset.locationPath.toLowerCase().includes(locationPath.toLowerCase());
-        }
-        return false;
-      });
-      
+    setPreviewError(null);
+
+    try {
+      if (onPreviewMatches) {
+        const preview = await onPreviewMatches({
+          ruleType,
+          tagsIncludeAny,
+          tagsExclude,
+          locationPath,
+        });
+        setMatchingAssets(preview.sampleAssets);
+        setPreviewMatchCount(preview.matchCount);
+        setPreviewTotalSizeBytes(preview.totalSizeBytes);
+        setSelectedAssetIds(new Set(preview.sampleAssets.map((a) => a.id)));
+        setStep(4);
+        return;
+      }
+
+      const matches = findLocalMatches();
       setMatchingAssets(matches);
+      setPreviewMatchCount(matches.length);
+      setPreviewTotalSizeBytes(matches.reduce((sum, asset) => sum + asset.sizeBytes, 0));
       setSelectedAssetIds(new Set(matches.map((a) => a.id)));
-      setStep(4); // Go to review step
+      setStep(4);
+    } catch (error) {
+      setPreviewError(error instanceof Error ? error.message : 'Unable to preview workspace matches');
+    } finally {
       setIsPreviewingMatches(false);
-    }, 500);
+    }
   };
 
   const toggleAssetSelection = (id: string) => {
@@ -195,6 +232,11 @@ export function WorkspaceCreationWizard({
                 <ChevronRight className="w-5 h-5" />
               </button>
             </div>
+            {previewError && (
+              <div className="rounded-lg border border-[#FF5733]/30 bg-[#FF5733]/10 p-4 text-sm text-[#FFB199]">
+                Preview unavailable: {previewError}. You can still go back and create a manual workspace.
+              </div>
+            )}
           </div>
         )}
 
@@ -493,7 +535,7 @@ export function WorkspaceCreationWizard({
               {/* Stats */}
               <div className="grid grid-cols-3 gap-4 mb-6">
                 <div className="bg-[#1E293B]/30 border border-[#334155] rounded-lg p-4">
-                  <div className="text-2xl font-bold text-[#00F0FF]">{matchingAssets.length}</div>
+                  <div className="text-2xl font-bold text-[#00F0FF]">{previewMatchCount}</div>
                   <div className="text-xs text-[#64748B] uppercase tracking-wider">Files Found</div>
                 </div>
                 <div className="bg-[#1E293B]/30 border border-[#334155] rounded-lg p-4">
@@ -502,9 +544,9 @@ export function WorkspaceCreationWizard({
                 </div>
                 <div className="bg-[#1E293B]/30 border border-[#334155] rounded-lg p-4">
                   <div className="text-2xl font-bold text-[#00F0FF]">
-                    {(matchingAssets.reduce((sum, a) => sum + a.sizeBytes, 0) / 1024 / 1024).toFixed(1)} MB
+                    {(previewTotalSizeBytes / 1024 / 1024).toFixed(1)} MB
                   </div>
-                  <div className="text-xs text-[#64748B] uppercase tracking-wider">Total Size</div>
+                  <div className="text-xs text-[#64748B] uppercase tracking-wider">Preview Size</div>
                 </div>
               </div>
 
@@ -529,7 +571,7 @@ export function WorkspaceCreationWizard({
 
               {/* File List */}
               <div className="max-h-96 overflow-y-auto space-y-2 mb-6">
-                {matchingAssets.map((asset) => {
+                {matchingAssets.length > 0 ? matchingAssets.map((asset) => {
                   const isSelected = selectedAssetIds.has(asset.id);
                   const hasIssue = asset.isDuplicate || asset.isStale;
 
@@ -584,7 +626,12 @@ export function WorkspaceCreationWizard({
                       </div>
                     </div>
                   );
-                })}
+                }) : (
+                  <div className="rounded-lg border border-[#334155] bg-[#1E293B]/30 p-5 text-sm leading-6 text-[#94A3B8]">
+                    No sample files matched these rules yet. You can create the workspace empty and adjust tags later,
+                    or go back and create a manual workspace.
+                  </div>
+                )}
               </div>
 
               {/* Auto-add future files */}

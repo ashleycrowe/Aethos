@@ -483,8 +483,8 @@ Tasks:
 - [x] Suggest workspaces from path/category/tag/owner clusters.
 - [x] Suggest offboarding/handoff workspaces from owner risk.
 - [x] Add `Create workspace from this report` CTA.
-- [ ] Allow manual workspace creation even with zero matching files.
-- [ ] Add preview count and sample files before workspace creation.
+- [x] Allow manual workspace creation even with zero matching files.
+- [x] Add preview count and sample files before workspace creation.
 
 Sales angle:
 

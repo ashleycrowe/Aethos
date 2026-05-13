@@ -40,11 +40,11 @@ import {
   AlertCircle,
   Settings as SettingsIcon
 } from 'lucide-react';
-import { createWorkspace, getWorkspaceDetail, listWorkspaces } from '@/lib/api';
+import { createWorkspace, getWorkspaceDetail, listWorkspaces, searchFiles } from '@/lib/api';
 import { isDemoModeEnabled } from '@/app/config/demoMode';
 import { useAethos } from '@/app/context/AethosContext';
 import { useAuth } from '@/app/context/AuthContext';
-import { PinnedArtifact, SyncRule, Workspace } from '@/app/types/aethos.types';
+import { Asset, PinnedArtifact, SyncRule, Workspace } from '@/app/types/aethos.types';
 import { WorkspaceCreationWizard } from './WorkspaceCreationWizard';
 import { WorkspaceSyncManager } from './WorkspaceSyncManager';
 import { ArtifactWizard } from './ArtifactWizard';
@@ -107,6 +107,62 @@ function toWorkspace(row: any): Workspace {
     updatedAt: row.updatedAt || row.updated_at || new Date().toISOString(),
     intelligenceScore: Math.round(row.stats?.avgIntelligenceScore || 0),
     syncRules: [],
+  };
+}
+
+type WorkspacePreviewFile = {
+  id: string;
+  tenant_id?: string;
+  provider?: string | null;
+  provider_type?: string | null;
+  drive_item_id?: string | null;
+  web_url?: string | null;
+  name?: string | null;
+  mime_type?: string | null;
+  size_bytes?: number | null;
+  owner_email?: string | null;
+  owner_name?: string | null;
+  modified_at?: string | null;
+  created_at?: string | null;
+  path?: string | null;
+  has_external_share?: boolean | null;
+  external_user_count?: number | null;
+  ai_tags?: string[] | null;
+  ai_category?: string | null;
+  ai_suggested_title?: string | null;
+  intelligence_score?: number | null;
+  is_orphaned?: boolean | null;
+  is_stale?: boolean | null;
+};
+
+function toPreviewAsset(file: WorkspacePreviewFile): Asset {
+  return {
+    id: file.id,
+    tenantId: file.tenant_id || '',
+    sourceProvider: 'microsoft',
+    sourceId: file.drive_item_id || file.id,
+    sourceUrl: file.web_url || '#',
+    name: file.ai_suggested_title || file.name || 'Untitled file',
+    type: 'file',
+    mimeType: file.mime_type || undefined,
+    sizeBytes: file.size_bytes || 0,
+    authorEmail: file.owner_email || undefined,
+    authorName: file.owner_name || undefined,
+    createdDate: file.created_at || file.modified_at || new Date().toISOString(),
+    modifiedDate: file.modified_at || file.created_at || new Date().toISOString(),
+    locationPath: file.path || 'Microsoft 365',
+    isSharedExternally: Boolean(file.has_external_share),
+    shareCount: file.external_user_count || 0,
+    permissionType: file.has_external_share ? 'public' : 'team',
+    userTags: [],
+    enrichedTags: file.ai_tags || [],
+    enrichedTitle: file.ai_suggested_title || undefined,
+    intelligenceScore: file.intelligence_score || 0,
+    isOrphaned: Boolean(file.is_orphaned),
+    isDuplicate: false,
+    isStale: Boolean(file.is_stale),
+    lastSyncedAt: file.modified_at || new Date().toISOString(),
+    syncStatus: 'active',
   };
 }
 
@@ -315,6 +371,46 @@ export const WorkspaceEngine = () => {
     }
   };
 
+  const handlePreviewWorkspaceMatches = async (criteria: {
+    ruleType: 'tag' | 'location' | 'author';
+    tagsIncludeAny: string[];
+    tagsExclude: string[];
+    locationPath: string;
+  }) => {
+    if (isDemoMode) {
+      return {
+        matchCount: 0,
+        totalSizeBytes: 0,
+        sampleAssets: [],
+      };
+    }
+
+    const response = await searchFiles<WorkspacePreviewFile>({
+      tenantId: activeTenantId,
+      query: criteria.ruleType === 'location' ? criteria.locationPath : '',
+      filters: criteria.ruleType === 'tag' ? { tags: criteria.tagsIncludeAny } : {},
+      sortBy: 'modified',
+      sortOrder: 'desc',
+      page: 1,
+      pageSize: 10,
+      accessToken: await getAccessToken(),
+    });
+
+    const sampleAssets = response.results
+      .map(toPreviewAsset)
+      .filter((asset) => {
+        if (criteria.ruleType !== 'tag' || criteria.tagsExclude.length === 0) return true;
+        const assetTags = [...asset.userTags, ...asset.enrichedTags];
+        return !criteria.tagsExclude.some((tag) => assetTags.includes(tag));
+      });
+
+    return {
+      matchCount: response.pagination?.totalResults ?? sampleAssets.length,
+      totalSizeBytes: sampleAssets.reduce((sum, asset) => sum + asset.sizeBytes, 0),
+      sampleAssets,
+    };
+  };
+
   const handleOpenWizard = () => {
     // Check trial mode restrictions
     if (user.tier === 'TRIAL' && effectiveWorkspaces.length >= 1) {
@@ -347,7 +443,12 @@ export const WorkspaceEngine = () => {
         >
           Create Workspace
         </button>
-        <WorkspaceCreationWizard isOpen={isWizardOpen} onClose={() => setIsWizardOpen(false)} onComplete={handleCreateWorkspace} />
+        <WorkspaceCreationWizard
+          isOpen={isWizardOpen}
+          onClose={() => setIsWizardOpen(false)}
+          onComplete={handleCreateWorkspace}
+          onPreviewMatches={!isDemoMode ? handlePreviewWorkspaceMatches : undefined}
+        />
       </div>
     );
   }
@@ -852,7 +953,12 @@ export const WorkspaceEngine = () => {
         </div>
       )}
 
-      <WorkspaceCreationWizard isOpen={isWizardOpen} onClose={() => setIsWizardOpen(false)} onComplete={handleCreateWorkspace} />
+      <WorkspaceCreationWizard
+        isOpen={isWizardOpen}
+        onClose={() => setIsWizardOpen(false)}
+        onComplete={handleCreateWorkspace}
+        onPreviewMatches={!isDemoMode ? handlePreviewWorkspaceMatches : undefined}
+      />
       {selectedWorkspace && (
         <>
           <ResourceSynthesizer 
