@@ -16,6 +16,9 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+const OPENAI_ENRICHMENT_SOURCES = ['openai_enrich', 'openai_metadata_enrich', 'openai_content_enrich'];
+const CONTENT_EXCERPT_LIMIT = 12_000;
+
 type EnrichmentResult = {
   title?: unknown;
   tags?: unknown;
@@ -48,6 +51,30 @@ function confidenceFromScore(score: number): 'high' | 'medium' | 'low' {
   if (score >= 80) return 'high';
   if (score >= 55) return 'medium';
   return 'low';
+}
+
+async function getContentExcerpt(tenantId: string, fileId: string): Promise<string | null> {
+  const { data: chunks, error } = await supabase
+    .from('content_embeddings')
+    .select('chunk_text,chunk_index')
+    .eq('tenant_id', tenantId)
+    .eq('file_id', fileId)
+    .order('chunk_index', { ascending: true })
+    .limit(8);
+
+  if (error) {
+    console.warn(`Unable to load content chunks for ${fileId}:`, error.message);
+    return null;
+  }
+
+  const excerpt = (chunks || [])
+    .map((chunk) => chunk.chunk_text)
+    .filter((text): text is string => typeof text === 'string' && text.trim().length > 0)
+    .join('\n\n')
+    .trim()
+    .slice(0, CONTENT_EXCERPT_LIMIT);
+
+  return excerpt || null;
 }
 
 export default async function handler(
@@ -106,7 +133,7 @@ export default async function handler(
       .select('file_id')
       .eq('tenant_id', tenantId)
       .eq('suggestion_type', 'content_enrichment')
-      .eq('source', 'openai_enrich')
+      .in('source', OPENAI_ENRICHMENT_SOURCES)
       .eq('status', 'pending')
       .in('file_id', filesToEnrich.map((file) => file.id));
 
@@ -140,9 +167,15 @@ export default async function handler(
           modified: file.modified_at,
           provider: file.provider_type,
         };
+        const contentExcerpt = await getContentExcerpt(tenantId, file.id);
+        const hasContentExcerpt = Boolean(contentExcerpt);
+        const suggestionSource = hasContentExcerpt ? 'openai_content_enrich' : 'openai_metadata_enrich';
+        const sourceSignals = hasContentExcerpt
+          ? ['content chunks', 'filename', 'path', 'extension', 'owner', 'modified date', 'provider']
+          : ['filename', 'path', 'extension', 'owner', 'modified date', 'provider'];
 
         // Call OpenAI to enrich metadata
-        const prompt = `Analyze this file's metadata and provide reviewable metadata suggestions.
+        const prompt = `Analyze this file and provide reviewable metadata suggestions.
 
 File: ${fileContext.filename}
 Path: ${fileContext.path || 'Unknown'}
@@ -151,12 +184,18 @@ Size: ${formatBytes(fileContext.size)}
 Owner: ${fileContext.owner || 'Unknown'}
 Last Modified: ${fileContext.modified ? new Date(fileContext.modified).toLocaleDateString() : 'Unknown'}
 Provider: ${fileContext.provider}
+${hasContentExcerpt ? `
+Document text excerpt:
+${contentExcerpt}
+` : `
+Document text excerpt: Not available. Use metadata only and say so in the rationale.
+`}
 
 Provide:
 1. A clean, human-readable title (without file extension)
 2. 3-5 relevant descriptive tags (lowercase, single words)
 3. A category from: Finance, Marketing, HR, Engineering, Legal, Operations, Sales, Product, Design, Other
-4. A brief 1-sentence metadata-based description, not a content summary
+4. A brief 1-sentence summary. If document text is unavailable, make it a metadata-based description and do not imply body content was read.
 5. An intelligence score (0-100) based on how well-organized and named the file is
 6. A confidence value: high, medium, or low
 7. A concise rationale
@@ -168,7 +207,7 @@ Return JSON only with keys: title, tags, category, summary, score, confidence, r
           messages: [
             {
               role: 'system',
-              content: 'You generate conservative enterprise metadata suggestions for human review. Do not claim to have read file bodies.',
+              content: 'You generate conservative enterprise metadata suggestions for human review. Be explicit when only metadata was available.',
             },
             {
               role: 'user',
@@ -203,16 +242,19 @@ Return JSON only with keys: title, tags, category, summary, score, confidence, r
             suggestion_type: 'content_enrichment',
             status: 'pending',
             confidence: normalizedConfidence,
-            source: 'openai_enrich',
-            source_signals: ['filename', 'path', 'extension', 'owner', 'modified date', 'provider'],
-            rationale: cleanString(result.rationale) || 'Generated from metadata-only context for human review before applying final AI fields.',
+            source: suggestionSource,
+            source_signals: sourceSignals,
+            rationale: cleanString(result.rationale) || (hasContentExcerpt
+              ? 'Generated from indexed content chunks for human review before applying final AI fields.'
+              : 'Generated from metadata-only context for human review before applying final AI fields.'),
             suggested_value: suggestedValue,
             generated_by: context.userId || null,
             metadata: {
               review_first: true,
               source_system_writeback: false,
               writes_final_ai_fields: false,
-              prompt_context: 'metadata_only',
+              content_aware: hasContentExcerpt,
+              prompt_context: hasContentExcerpt ? 'content_chunks' : 'metadata_only',
             },
           })
           .select('id')

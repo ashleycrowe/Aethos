@@ -180,6 +180,8 @@ See `docs/OPERATIONAL_INTELLIGENCE_DEVELOPMENT_QUEUE.md` for the detailed implem
 - [x] Add Copilot/native-AI readiness language that distinguishes Aethos-side suggestions from source-system improvements.
 - [x] Define which approved metadata improvements can eventually write back to Microsoft 365 or publish through Copilot connectors.
 - [x] Route content-aware enrichment output through pending metadata suggestions before writing final AI fields.
+- [x] Generate content-aware tag/category suggestions from indexed content chunks when available.
+- [x] Generate content-aware summary suggestions from indexed content chunks when available.
 
 ---
 
