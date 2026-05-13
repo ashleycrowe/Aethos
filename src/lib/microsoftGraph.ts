@@ -80,6 +80,20 @@ export interface SharingPermission {
   }>;
 }
 
+export interface GraphUserStatusLookup {
+  email: string;
+  status: 'active' | 'disabled' | 'guest' | 'unknown' | 'not_found' | 'permission_required' | 'error';
+  lookupStatus: 'completed' | 'not_found' | 'permission_required' | 'error';
+  microsoftUserId?: string;
+  displayName?: string;
+  userPrincipalName?: string;
+  mail?: string;
+  accountEnabled?: boolean;
+  userType?: string;
+  errorMessage?: string;
+  rawResponse?: Record<string, unknown>;
+}
+
 /**
  * Create Microsoft Graph client with access token
  */
@@ -89,6 +103,78 @@ export function createGraphClient(accessToken: string): Client {
       done(null, accessToken);
     },
   });
+}
+
+/**
+ * V1.5 Owner Status: Look up an owner in Entra ID.
+ *
+ * Requires tenant permissions beyond the basic signed-in user profile in many tenants.
+ * The caller should treat permission_required as a readiness state, not as failure.
+ */
+export async function lookupOwnerStatus(
+  accessToken: string,
+  ownerEmail: string
+): Promise<GraphUserStatusLookup> {
+  const client = createGraphClient(accessToken);
+  const encodedOwner = encodeURIComponent(ownerEmail);
+
+  try {
+    const user = await client
+      .api(`/users/${encodedOwner}`)
+      .select('id,displayName,mail,userPrincipalName,accountEnabled,userType')
+      .get();
+
+    const userType = typeof user.userType === 'string' ? user.userType : undefined;
+    const accountEnabled = typeof user.accountEnabled === 'boolean' ? user.accountEnabled : undefined;
+    const status = userType?.toLowerCase() === 'guest'
+      ? 'guest'
+      : accountEnabled === false
+      ? 'disabled'
+      : accountEnabled === true
+      ? 'active'
+      : 'unknown';
+
+    return {
+      email: ownerEmail,
+      status,
+      lookupStatus: 'completed',
+      microsoftUserId: user.id,
+      displayName: user.displayName,
+      userPrincipalName: user.userPrincipalName,
+      mail: user.mail,
+      accountEnabled,
+      userType,
+      rawResponse: user,
+    };
+  } catch (error: any) {
+    const statusCode = error?.statusCode || error?.code;
+    const message = error?.message || 'Unable to look up owner status';
+
+    if (statusCode === 403 || statusCode === 'Forbidden' || /privileges|permission|authorization/i.test(message)) {
+      return {
+        email: ownerEmail,
+        status: 'permission_required',
+        lookupStatus: 'permission_required',
+        errorMessage: message,
+      };
+    }
+
+    if (statusCode === 404 || statusCode === 'Request_ResourceNotFound') {
+      return {
+        email: ownerEmail,
+        status: 'not_found',
+        lookupStatus: 'not_found',
+        errorMessage: message,
+      };
+    }
+
+    return {
+      email: ownerEmail,
+      status: 'error',
+      lookupStatus: 'error',
+      errorMessage: message,
+    };
+  }
 }
 
 /**

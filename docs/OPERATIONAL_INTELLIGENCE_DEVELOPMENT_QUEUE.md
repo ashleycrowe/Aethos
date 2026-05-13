@@ -410,8 +410,8 @@ Implementation tasks:
 
 V1.5 implementation tasks:
 
-- [ ] Add Entra user lookup spike: active, disabled, deleted, guest, last sign-in if permission permits.
-- [ ] Add `owner_status` fields or owner status cache table.
+- [x] Add Entra user lookup/cache spike: active, disabled, guest, not found, or permission-required.
+- [x] Add `owner_status` fields or owner status cache table.
 - [ ] Add departed/inactive owner report.
 - [ ] Add handoff workflow: selected files -> suggested workspace -> assign steward.
 

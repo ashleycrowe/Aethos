@@ -262,6 +262,27 @@ export interface RecordMetadataSuggestionDecisionResponse {
   };
 }
 
+export interface SyncOwnerStatusRequest {
+  accessToken?: string | null;
+  limit?: number;
+}
+
+export interface SyncOwnerStatusResponse {
+  success: boolean;
+  checked: number;
+  permissionRequired: number;
+  notFound: number;
+  results: Array<{
+    id?: string;
+    ownerEmail: string;
+    status: 'active' | 'disabled' | 'deleted' | 'guest' | 'unknown' | 'not_found' | 'permission_required' | 'error';
+    lookupStatus: 'completed' | 'not_found' | 'permission_required' | 'error';
+    fileCount?: number;
+    lastCheckedAt?: string;
+    error?: string;
+  }>;
+}
+
 async function request<T>(path: string, options: RequestInit = {}, accessToken?: string | null): Promise<T> {
   if (isDemoModeEnabled()) {
     throw new Error(DEMO_MODE_MESSAGE);
@@ -457,6 +478,20 @@ export async function recordMetadataSuggestionDecision({
 }: RecordMetadataSuggestionDecisionRequest): Promise<RecordMetadataSuggestionDecisionResponse> {
   return request<RecordMetadataSuggestionDecisionResponse>(
     '/intelligence/metadata-suggestion-decision',
+    {
+      method: 'POST',
+      body: JSON.stringify(body),
+    },
+    accessToken
+  );
+}
+
+export async function syncOwnerStatus({
+  accessToken,
+  ...body
+}: SyncOwnerStatusRequest): Promise<SyncOwnerStatusResponse> {
+  return request<SyncOwnerStatusResponse>(
+    '/intelligence/owner-status-sync',
     {
       method: 'POST',
       body: JSON.stringify(body),
