@@ -41,7 +41,7 @@ This file is the short-cycle engineering queue. Keep `IMPLEMENTATION_TASKS.md` a
 - [x] Add a shared API auth/tenant validation helper for Vercel functions.
 - [x] Apply auth/tenant validation to V1 endpoints: discovery, search, workspaces, remediation, intelligence.
 - [x] Add remediation dry-run mode and make dry-run the default UI path for first tester sessions.
-- [ ] Wire `IntelligenceDashboard` to real discovery/search metrics in Live Mode.
+- [x] Wire `IntelligenceDashboard` to real discovery/search metrics in Live Mode.
 - [x] Wire `WorkspaceEngine` to real workspace creation/list/detail APIs.
 - [x] Prevent `WorkspaceEngine` from falling back to demo workspaces in Live Mode.
 - [x] Make Workspace creation obvious in V1 Workspaces, even when no indexed files exist.
@@ -52,8 +52,8 @@ This file is the short-cycle engineering queue. Keep `IMPLEMENTATION_TASKS.md` a
 - [ ] Enforce a strict Live Mode vs Demo Mode data boundary across V1 modules.
 - [x] Replace Live Mode mock/simulation surfaces in Intelligence with real scan status, empty states, or setup CTAs.
 - [x] Replace Live Mode mock remediation queue with real candidates from indexed `files` metadata.
-- [ ] Add Phase 1 first-run setup guidance after Microsoft sign-in.
-- [ ] Finish Phase 1 Admin Center with scan status, tenant capability status, sign-out, and mode controls.
+- [x] Add Phase 1 first-run setup guidance after Microsoft sign-in.
+- [x] Finish Phase 1 Admin Center with scan status, tenant capability status, sign-out, and mode controls.
 - [x] Add Vitest configuration and smoke tests for the V1 happy path.
 
 ---
@@ -107,7 +107,7 @@ See `docs/OPERATIONAL_INTELLIGENCE_DEVELOPMENT_QUEUE.md` for the detailed implem
 - [x] Add `Tenant Health Score`, inverse `tenantExposureIndex`, top score drivers, and trend deltas to the report summary.
 - [x] Add data maturity floors: `not_enough_data` until a completed scan has at least 50 indexed files and 3 indexed sites.
 - [x] Add no-data `Path to Value` checklist for connected tenants with little or no content.
-- [ ] Add focused report cards: Discovery Summary, Exposure Review, Stale Content Review, Metadata Quality, Ownership & Offboarding Risk, Workspace Opportunities, Remediation Dry Run.
+- [x] Add focused report cards: Discovery Summary, Exposure Review, Stale Content Review, Metadata Quality, Ownership & Offboarding Risk, Workspace Opportunities, Remediation Dry Run.
   - [x] Exposure Review live card and remediation handoff.
   - [x] Stale Content Review live card and remediation handoff.
   - [x] Ownership & Offboarding Risk live card.

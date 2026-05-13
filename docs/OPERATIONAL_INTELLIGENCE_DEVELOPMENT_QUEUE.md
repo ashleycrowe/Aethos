@@ -46,8 +46,8 @@ Replace the current broad tab concept with a V1 report-card layout:
 - [x] Rename `Overview` to `Discovery Summary`.
 - [x] Keep `Metadata` as `Metadata Quality`.
 - [x] Replace `Stream` in Live Mode with `Signal Queue`.
-- [ ] Add `Ownership` / `Offboarding Risk` as a V1 identity-adjacent report card.
-- [ ] Keep full `Identity Engine` demo-only until V1.5/V2.
+- [x] Add `Ownership` / `Offboarding Risk` as a V1 identity-adjacent report card.
+- [x] Keep full `Identity Engine` demo-only until V1.5/V2.
 - [x] Add a top `Tenant Health Score` for executive/founder buyers.
 - [x] Add a top `Last scan` strip: status, completed time, files, sites/Teams, errors.
 - [x] Add CTA routing:
