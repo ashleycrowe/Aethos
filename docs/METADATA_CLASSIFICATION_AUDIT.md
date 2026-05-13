@@ -221,6 +221,55 @@ V1.5 should still preserve human review:
 
 ---
 
+## Approved Metadata Visibility Boundary
+
+Approved metadata should move through three distinct visibility levels. This keeps the value story strong without implying that Microsoft 365 or Copilot can see Aethos-only metadata before an explicit publish/writeback step exists.
+
+### Level 1: Aethos-Side Approved Metadata
+
+Current V1.5 foundation.
+
+- Reviewers can accept, edit, reject, or block metadata suggestions.
+- Decisions are stored in `metadata_suggestion_decisions`.
+- Accepted or edited decisions can improve Aethos-side workspace opportunities, search context, reporting, and AI-readiness progress.
+- No Microsoft 365 file metadata is changed.
+- Native Microsoft 365 Copilot does not automatically see these decisions.
+
+Valid claim:
+
+> Aethos tracks reviewed metadata improvements and uses them inside Aethos to improve workspace and intelligence workflows.
+
+### Level 2: Source-System Writeback
+
+Future explicit capability.
+
+- A reviewer chooses which approved metadata should write back to Microsoft 365.
+- Aethos shows an impact preview before making changes.
+- Writeback requires tenant permissions and should remain review-first.
+- Every writeback action must create an audit record.
+
+Valid claim only after implementation:
+
+> Aethos can publish approved metadata improvements back to Microsoft 365 after admin review.
+
+### Level 3: Native AI / Copilot Connector Visibility
+
+Future connector or agent path.
+
+- Aethos exposes curated intelligence through Microsoft Graph connectors, Copilot connectors, or an Aethos agent/API.
+- Connector content must distinguish original Microsoft 365 metadata from Aethos-curated intelligence.
+- Customers need clear controls for which approved intelligence is published.
+
+Valid claim only after implementation:
+
+> Aethos can expose curated, approved intelligence to native AI surfaces through supported connector or agent integrations.
+
+### Current Product Boundary
+
+As of the V1.5 foundation work, Aethos can honestly claim Level 1. Level 2 and Level 3 remain roadmap items.
+
+---
+
 ## Data Model Gaps To Consider
 
 Current `files` fields are useful, but they mix suggestions and accepted metadata. Consider adding a separate table later:

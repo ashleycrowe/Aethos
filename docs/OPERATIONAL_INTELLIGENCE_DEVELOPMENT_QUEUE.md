@@ -451,6 +451,7 @@ V1.5 tasks:
 - [x] Add review lifecycle states: accepted, edited, rejected, blocked.
 - [x] Preserve an audit trail of metadata suggestion decisions.
 - [x] Feed accepted tag/category decisions into workspace opportunities.
+- [x] Define approved metadata visibility levels: Aethos-side, source-system writeback, native AI connector.
 - [ ] Add content-aware tags/categories.
 - [ ] Add content-aware summaries.
 - [ ] Add PII/sensitive content flags.
