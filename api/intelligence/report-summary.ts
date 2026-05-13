@@ -13,6 +13,7 @@ import {
   type ReportRemediationActionRow,
   type ReportScanRow,
   type ReportSiteRow,
+  type ReportOwnerStatusRow,
 } from './reportSummaryCore.js';
 
 async function fetchFiles(tenantId: string): Promise<ReportFileRow[]> {
@@ -66,6 +67,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       { data: sites, error: sitesError },
       { data: scans, error: scansError },
       { data: remediationActions, error: remediationError, count: remediationDryRunCount },
+      { data: ownerStatuses, error: ownerStatusError },
       files,
     ] = await Promise.all([
       supabase
@@ -85,12 +87,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .contains('metadata', { dry_run: true })
         .order('executed_at', { ascending: false })
         .limit(5),
+      supabase
+        .from('owner_status_cache')
+        .select('owner_email,owner_name,status,lookup_status,account_enabled,user_type,last_checked_at')
+        .eq('tenant_id', tenantId),
       fetchFiles(tenantId),
     ]);
 
     if (sitesError) throw sitesError;
     if (scansError) throw scansError;
     if (remediationError) throw remediationError;
+    if (ownerStatusError) throw ownerStatusError;
 
     const summary = buildReportSummary({
       tenantId,
@@ -99,6 +106,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       scans: (scans || []) as ReportScanRow[],
       remediationActions: (remediationActions || []) as ReportRemediationActionRow[],
       remediationDryRunTotal: remediationDryRunCount ?? undefined,
+      ownerStatuses: (ownerStatuses || []) as ReportOwnerStatusRow[],
     });
 
     res.status(200).json({

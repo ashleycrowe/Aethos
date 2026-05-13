@@ -107,6 +107,11 @@ describe('buildReportSummary', () => {
       coveragePercent: 75,
       status: 'partial',
     });
+    expect(summary.ownership.ownerStatusCoverage).toMatchObject({
+      ownersWithStatus: 0,
+      permissionRequired: 0,
+      disabledOwners: 0,
+    });
     expect(summary.risk.externallySharedFiles).toBe(20);
     expect(summary.risk.missingOwnerFiles).toBe(15);
     expect(summary.exposureReview.externalUsersTotal).toBe(0);
@@ -179,6 +184,73 @@ describe('buildReportSummary', () => {
           label: 'Financial Planning Workspace',
           fileCount: 4,
           suggestedTags: ['category', 'financial-planning'],
+        }),
+      ])
+    );
+  });
+
+  it('includes owner status enrichment when cached', () => {
+    const files = [
+      baseFile({
+        id: 'active-owner-file',
+        owner_email: 'active@example.com',
+        owner_name: 'Active Owner',
+        has_external_share: true,
+      }),
+      baseFile({
+        id: 'disabled-owner-file',
+        owner_email: 'disabled@example.com',
+        owner_name: 'Disabled Owner',
+        risk_score: 90,
+      }),
+    ];
+
+    const summary = buildReportSummary({
+      tenantId: 'tenant-1',
+      files,
+      sites: [
+        { id: 'site-1', provider_type: 'sharepoint' },
+        { id: 'site-2', provider_type: 'teams' },
+        { id: 'site-3', provider_type: 'sharepoint' },
+      ],
+      scans: [],
+      ownerStatuses: [
+        {
+          owner_email: 'active@example.com',
+          owner_name: 'Active Owner',
+          status: 'active',
+          lookup_status: 'completed',
+          account_enabled: true,
+          user_type: 'Member',
+          last_checked_at: '2026-05-12T00:00:00.000Z',
+        },
+        {
+          owner_email: 'disabled@example.com',
+          owner_name: 'Disabled Owner',
+          status: 'disabled',
+          lookup_status: 'completed',
+          account_enabled: false,
+          user_type: 'Member',
+          last_checked_at: '2026-05-11T00:00:00.000Z',
+        },
+      ],
+      generatedAt: '2026-05-12T00:00:00.000Z',
+    });
+
+    expect(summary.ownership.ownerStatusCoverage).toMatchObject({
+      ownersWithStatus: 2,
+      disabledOwners: 1,
+      guestOwners: 0,
+      notFoundOwners: 0,
+      staleStatusCount: 0,
+      lastCheckedAt: '2026-05-12T00:00:00.000Z',
+    });
+    expect(summary.ownership.topRiskOwners).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          ownerEmail: 'disabled@example.com',
+          ownerStatus: 'disabled',
+          ownerLookupStatus: 'completed',
         }),
       ])
     );

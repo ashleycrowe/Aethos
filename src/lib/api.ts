@@ -194,6 +194,9 @@ export interface ReportSummaryResponse {
       topRiskOwners: Array<{
         ownerEmail: string | null;
         ownerName: string | null;
+        ownerStatus: string | null;
+        ownerLookupStatus: string | null;
+        ownerStatusCheckedAt: string | null;
         fileCount: number;
         highRiskCount: number;
         externalShareCount: number;
@@ -203,6 +206,15 @@ export interface ReportSummaryResponse {
         ownerLiabilityScore: number;
         primaryRiskFactor: string;
       }>;
+      ownerStatusCoverage: {
+        ownersWithStatus: number;
+        permissionRequired: number;
+        disabledOwners: number;
+        guestOwners: number;
+        notFoundOwners: number;
+        staleStatusCount: number;
+        lastCheckedAt: string | null;
+      };
     };
     workspaceOpportunities: Array<{
       label: string;

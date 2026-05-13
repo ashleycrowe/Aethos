@@ -45,6 +45,16 @@ export type ReportRemediationActionRow = {
   metadata: Record<string, unknown> | null;
 };
 
+export type ReportOwnerStatusRow = {
+  owner_email: string | null;
+  owner_name: string | null;
+  status: 'active' | 'disabled' | 'deleted' | 'guest' | 'unknown' | 'not_found' | 'permission_required' | 'error' | string;
+  lookup_status: 'pending' | 'completed' | 'not_found' | 'permission_required' | 'error' | string;
+  account_enabled: boolean | null;
+  user_type: string | null;
+  last_checked_at: string | null;
+};
+
 export type RiskDriver = {
   label: string;
   category: 'external' | 'ownership' | 'high_risk' | 'stale' | 'storage';
@@ -150,6 +160,9 @@ export type ReportSummary = {
     topRiskOwners: Array<{
       ownerEmail: string | null;
       ownerName: string | null;
+      ownerStatus: string | null;
+      ownerLookupStatus: string | null;
+      ownerStatusCheckedAt: string | null;
       fileCount: number;
       highRiskCount: number;
       externalShareCount: number;
@@ -159,6 +172,15 @@ export type ReportSummary = {
       ownerLiabilityScore: number;
       primaryRiskFactor: string;
     }>;
+    ownerStatusCoverage: {
+      ownersWithStatus: number;
+      permissionRequired: number;
+      disabledOwners: number;
+      guestOwners: number;
+      notFoundOwners: number;
+      staleStatusCount: number;
+      lastCheckedAt: string | null;
+    };
   };
   workspaceOpportunities: Array<{
     label: string;
@@ -176,6 +198,7 @@ type BuildReportSummaryInput = {
   scans: ReportScanRow[];
   remediationActions?: ReportRemediationActionRow[];
   remediationDryRunTotal?: number;
+  ownerStatuses?: ReportOwnerStatusRow[];
   generatedAt?: string;
 };
 
@@ -364,6 +387,28 @@ function buildOwnerGroups(files: ReportFileRow[]) {
   return Array.from(groups.values());
 }
 
+function buildOwnerStatusMap(ownerStatuses: ReportOwnerStatusRow[]) {
+  const statusMap = new Map<string, ReportOwnerStatusRow>();
+
+  ownerStatuses.forEach((status) => {
+    const email = status.owner_email?.trim().toLowerCase();
+    if (!email) return;
+    statusMap.set(email, status);
+  });
+
+  return statusMap;
+}
+
+function isStaleOwnerStatus(status: ReportOwnerStatusRow, generatedAt: string): boolean {
+  if (!status.last_checked_at) return true;
+
+  const checkedAt = new Date(status.last_checked_at).getTime();
+  const generated = new Date(generatedAt).getTime();
+  if (Number.isNaN(checkedAt) || Number.isNaN(generated)) return true;
+
+  return generated - checkedAt > 7 * 24 * 60 * 60 * 1000;
+}
+
 function buildWorkspaceOpportunities(files: ReportFileRow[]): ReportSummary['workspaceOpportunities'] {
   const externalFiles = files.filter((file) => file.has_external_share);
   const staleFiles = files.filter(isStale);
@@ -512,6 +557,7 @@ export function buildReportSummary({
   scans,
   remediationActions = [],
   remediationDryRunTotal,
+  ownerStatuses = [],
   generatedAt = new Date().toISOString(),
 }: BuildReportSummaryInput): ReportSummary {
   const latestScan = scans[0];
@@ -561,6 +607,7 @@ export function buildReportSummary({
   const healthScore = tenantExposureIndex === null ? null : clampScore(100 - tenantExposureIndex);
 
   const ownerGroups = buildOwnerGroups(files);
+  const ownerStatusMap = buildOwnerStatusMap(ownerStatuses);
   const topRiskOwners = ownerGroups
     .map((group) => {
       const ownerFiles = group.files;
@@ -589,6 +636,9 @@ export function buildReportSummary({
       return {
         ownerEmail: group.ownerEmail,
         ownerName: group.ownerName,
+        ownerStatus: group.ownerEmail ? ownerStatusMap.get(group.ownerEmail)?.status || null : null,
+        ownerLookupStatus: group.ownerEmail ? ownerStatusMap.get(group.ownerEmail)?.lookup_status || null : null,
+        ownerStatusCheckedAt: group.ownerEmail ? ownerStatusMap.get(group.ownerEmail)?.last_checked_at || null : null,
         fileCount: ownerFileCount,
         highRiskCount,
         externalShareCount,
@@ -603,6 +653,19 @@ export function buildReportSummary({
     .slice(0, 10);
 
   const uniqueOwners = new Set(files.map((file) => file.owner_email?.trim().toLowerCase()).filter(Boolean)).size;
+  const ownerStatusRows = Array.from(ownerStatusMap.values());
+  const ownerStatusCoverage = {
+    ownersWithStatus: ownerStatusRows.filter((status) => status.lookup_status === 'completed').length,
+    permissionRequired: ownerStatusRows.filter((status) => status.lookup_status === 'permission_required').length,
+    disabledOwners: ownerStatusRows.filter((status) => status.status === 'disabled').length,
+    guestOwners: ownerStatusRows.filter((status) => status.status === 'guest').length,
+    notFoundOwners: ownerStatusRows.filter((status) => status.status === 'not_found').length,
+    staleStatusCount: ownerStatusRows.filter((status) => isStaleOwnerStatus(status, generatedAt)).length,
+    lastCheckedAt: ownerStatusRows
+      .map((status) => status.last_checked_at)
+      .filter((value): value is string => Boolean(value))
+      .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0] || null,
+  };
   const topExposureFiles = externallySharedFiles
     .slice()
     .sort((a, b) => (b.external_user_count || 0) - (a.external_user_count || 0) || (b.risk_score || 0) - (a.risk_score || 0))
@@ -699,6 +762,7 @@ export function buildReportSummary({
         status: ownerCoverageStatus,
       },
       topRiskOwners,
+      ownerStatusCoverage,
     },
     workspaceOpportunities: buildWorkspaceOpportunities(files),
     riskDrivers: drivers,

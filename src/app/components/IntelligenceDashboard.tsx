@@ -66,6 +66,26 @@ function formatScanStatus(value: string) {
   return value.replace(/_/g, ' ').toUpperCase();
 }
 
+function formatOwnerStatus(value?: string | null) {
+  if (!value) return 'Not Synced';
+  return value.replace(/_/g, ' ').toUpperCase();
+}
+
+function getOwnerStatusColor(value?: string | null) {
+  switch (value) {
+    case 'active':
+      return '#10B981';
+    case 'disabled':
+    case 'not_found':
+      return '#FF5733';
+    case 'guest':
+    case 'permission_required':
+      return '#F59E0B';
+    default:
+      return '#94A3B8';
+  }
+}
+
 function openRemediation(issue?: string) {
   if (typeof window === 'undefined') return;
   window.dispatchEvent(new CustomEvent('aethos:navigate', {
@@ -301,6 +321,7 @@ const OverviewDashboard = ({ onOpenSignalQueue }: { onOpenSignalQueue?: () => vo
       ? 'missing_owner_metadata'
       : 'available'
     : 'loading';
+  const ownerStatusCoverage = reportSummary?.ownership.ownerStatusCoverage;
 
   const metrics = [
     {
@@ -615,6 +636,12 @@ const OverviewDashboard = ({ onOpenSignalQueue }: { onOpenSignalQueue?: () => vo
                 <p className="mt-2 text-xs leading-5 text-slate-500">
                   Owner metadata coverage: {reportSummary.ownership.ownerMetadataCoverage.coveragePercent}% ({reportSummary.ownership.ownerMetadataCoverage.status})
                 </p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">
+                  Owner status enrichment: {ownerStatusCoverage?.ownersWithStatus ?? 0} synced
+                  {ownerStatusCoverage?.permissionRequired ? `, ${ownerStatusCoverage.permissionRequired} need permission` : ''}
+                  {ownerStatusCoverage?.disabledOwners ? `, ${ownerStatusCoverage.disabledOwners} disabled` : ''}
+                  {ownerStatusCoverage?.lastCheckedAt ? ` | Last checked ${formatDate(ownerStatusCoverage.lastCheckedAt)}` : ''}
+                </p>
               </div>
               <DataSourceBadge mode="live" />
             </div>
@@ -639,6 +666,15 @@ const OverviewDashboard = ({ onOpenSignalQueue }: { onOpenSignalQueue?: () => vo
                             </span>
                             <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">
                               {owner.primaryRiskFactor}
+                            </span>
+                            <span
+                              className="rounded-lg px-2 py-1 text-[9px] font-black uppercase tracking-widest"
+                              style={{
+                                backgroundColor: `${getOwnerStatusColor(owner.ownerStatus)}18`,
+                                color: getOwnerStatusColor(owner.ownerStatus),
+                              }}
+                            >
+                              {formatOwnerStatus(owner.ownerStatus || owner.ownerLookupStatus)}
                             </span>
                           </div>
                           <p className={`mt-3 truncate text-sm font-black ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
