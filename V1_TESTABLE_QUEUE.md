@@ -88,8 +88,8 @@ Known follow-up from the latest audit:
 - [ ] Step 1: show signed-in account and tenant.
 - [ ] Step 2: run Microsoft capability checks for OneDrive, SharePoint, Teams/groups.
 - [ ] Step 3: run Microsoft Discovery scan.
-- [ ] Step 4: show scan results and route to Oracle Search or Create Workspace.
-- [ ] Add Admin scan history: last scan status, file count, site count, errors.
+- [x] Step 4: show scan results and route to Oracle Search or Create Workspace.
+- [x] Add Admin scan history: last scan status, file count, site count, errors.
 - [ ] Add Admin capability status: connected, missing permission, needs admin consent, unavailable.
 - [ ] Keep Sign Out visible and confirm it clears local Aethos session state.
 - [ ] Add a reset/debug section for local demo override and cached MSAL state guidance.

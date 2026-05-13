@@ -34,7 +34,7 @@ import {
   getLocalDiagnostics,
   type StoredDiagnostic,
 } from '@/app/utils/diagnostics';
-import { runDiscoveryScan, type DiscoveryScanResponse } from '@/lib/api';
+import { getReportSummary, runDiscoveryScan, type DiscoveryScanResponse, type ReportSummaryResponse } from '@/lib/api';
 
 type AdminStatusCardProps = {
   icon: React.ElementType;
@@ -74,6 +74,10 @@ function openAppTab(tab: string) {
   window.dispatchEvent(new CustomEvent('aethos:navigate', {
     detail: { tab },
   }));
+}
+
+function formatScanStatus(status?: string | null) {
+  return status ? status.replace(/_/g, ' ').toUpperCase() : 'NONE';
 }
 
 const SetupStep = ({
@@ -125,6 +129,9 @@ export const AdminCenter = () => {
   } = useAuth();
   const [isScanning, setIsScanning] = React.useState(false);
   const [scanResult, setScanResult] = React.useState<DiscoveryScanResponse | null>(null);
+  const [lastScanSummary, setLastScanSummary] = React.useState<ReportSummaryResponse['summary']['lastScan'] | null>(null);
+  const [isLoadingLastScan, setIsLoadingLastScan] = React.useState(false);
+  const [lastScanError, setLastScanError] = React.useState<string | null>(null);
   const [localDiagnostics, setLocalDiagnostics] = React.useState<StoredDiagnostic[]>([]);
 
   const demoMode = isDemoModeEnabled();
@@ -137,7 +144,8 @@ export const AdminCenter = () => {
   const microsoftAuthority = 'login.microsoftonline.com/organizations';
   const redirectUri = typeof window !== 'undefined' ? window.location.origin : 'Current origin';
   const hasTenantContext = Boolean(tenantId || user?.tenantId);
-  const hasDiscoveryResult = Boolean(scanResult);
+  const hasPersistedScan = Boolean(lastScanSummary && lastScanSummary.status !== 'none');
+  const hasDiscoveryResult = Boolean(scanResult || hasPersistedScan);
   const diagnosticIssueCount = localDiagnostics.filter((event) =>
     event.severity === 'error' || event.severity === 'fatal' || event.severity === 'warn'
   ).length;
@@ -150,6 +158,30 @@ export const AdminCenter = () => {
     if (!demoMode) return;
     refreshDiagnostics();
   }, [demoMode, refreshDiagnostics]);
+
+  const refreshLastScanSummary = React.useCallback(async () => {
+    if (demoMode || !isAuthenticated) {
+      setLastScanSummary(null);
+      setLastScanError(null);
+      return;
+    }
+
+    try {
+      setIsLoadingLastScan(true);
+      setLastScanError(null);
+      const response = await getReportSummary({ accessToken: await getAccessToken() });
+      setLastScanSummary(response.summary.lastScan);
+    } catch (error) {
+      setLastScanError(error instanceof Error ? error.message : 'Unable to load persisted scan summary');
+      setLastScanSummary(null);
+    } finally {
+      setIsLoadingLastScan(false);
+    }
+  }, [demoMode, getAccessToken, isAuthenticated]);
+
+  React.useEffect(() => {
+    void refreshLastScanSummary();
+  }, [refreshLastScanSummary]);
 
   const applyDemoMode = (enabled: boolean) => {
     if (!demoOverrideAllowed) {
@@ -210,6 +242,7 @@ export const AdminCenter = () => {
 
       const result = await runDiscoveryScan({ accessToken: token, scanType: 'full' });
       setScanResult(result);
+      await refreshLastScanSummary();
       toast.success('Discovery scan complete', {
         description: `${result.results.totalFiles.toLocaleString()} files found across ${result.results.totalSites.toLocaleString()} sites.`,
       });
@@ -393,7 +426,7 @@ export const AdminCenter = () => {
             <SetupStep
               number={3}
               title="Run Microsoft Discovery"
-              description={hasDiscoveryResult ? 'Discovery completed in this session.' : 'Populate the files table from this Microsoft tenant before expecting Search or Remediation results.'}
+              description={hasDiscoveryResult ? 'Discovery data is available for this tenant.' : 'Populate the files table from this Microsoft tenant before expecting Search or Remediation results.'}
               complete={hasDiscoveryResult}
               action={
                 <button
@@ -644,6 +677,52 @@ export const AdminCenter = () => {
               <FileSearch className="h-4 w-4" />
               {isScanning ? 'Scanning Microsoft 365' : 'Run Discovery Scan'}
             </button>
+            {!demoMode && (
+              <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4">
+                <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">
+                      Persisted Last Scan
+                    </p>
+                    <p className="mt-1 text-sm font-black text-white">
+                      {isLoadingLastScan ? 'Loading scan summary' : formatScanStatus(lastScanSummary?.status)}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => openAppTab('insights')}
+                    className="flex min-h-10 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 text-[10px] font-black uppercase tracking-[0.14em] text-slate-300 transition hover:bg-white/[0.08]"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" />
+                    Scan History
+                  </button>
+                </div>
+                {lastScanError ? (
+                  <p className="text-xs leading-6 text-amber-200">
+                    Last scan summary unavailable: {lastScanError}
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
+                    <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                      <p className="mb-1 text-[9px] font-black uppercase tracking-widest text-slate-500">Files</p>
+                      <p className="font-black text-slate-200">{(lastScanSummary?.filesDiscovered ?? 0).toLocaleString()}</p>
+                    </div>
+                    <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                      <p className="mb-1 text-[9px] font-black uppercase tracking-widest text-slate-500">Sites</p>
+                      <p className="font-black text-slate-200">{(lastScanSummary?.sitesDiscovered ?? 0).toLocaleString()}</p>
+                    </div>
+                    <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                      <p className="mb-1 text-[9px] font-black uppercase tracking-widest text-slate-500">New</p>
+                      <p className="font-black text-slate-200">{(lastScanSummary?.newFiles ?? 0).toLocaleString()}</p>
+                    </div>
+                    <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                      <p className="mb-1 text-[9px] font-black uppercase tracking-widest text-slate-500">Errors</p>
+                      <p className="font-black text-slate-200">{(lastScanSummary?.errorCount ?? 0).toLocaleString()}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
             {scanResult && (
               <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4">
                 <p className="text-xs leading-6 text-slate-300">
