@@ -80,6 +80,19 @@ export type ReportBucket = {
   totalBytes: number;
 };
 
+export type OwnerStatusReviewItem = {
+  ownerEmail: string;
+  ownerName: string | null;
+  status: string;
+  lookupStatus: string;
+  fileCount: number;
+  highRiskCount: number;
+  externalShareCount: number;
+  staleCount: number;
+  ownerLiabilityScore: number;
+  lastCheckedAt: string | null;
+};
+
 export type ReportSummary = {
   tenantId: string;
   generatedAt: string;
@@ -180,6 +193,13 @@ export type ReportSummary = {
       notFoundOwners: number;
       staleStatusCount: number;
       lastCheckedAt: string | null;
+    };
+    ownerStatusReview: {
+      reviewRequiredOwners: number;
+      permissionRequiredOwners: number;
+      guestOwners: number;
+      staleStatusOwners: number;
+      topOwners: OwnerStatusReviewItem[];
     };
   };
   workspaceOpportunities: Array<{
@@ -407,6 +427,10 @@ function isStaleOwnerStatus(status: ReportOwnerStatusRow, generatedAt: string): 
   if (Number.isNaN(checkedAt) || Number.isNaN(generated)) return true;
 
   return generated - checkedAt > 7 * 24 * 60 * 60 * 1000;
+}
+
+function shouldReviewOwnerStatus(status?: ReportOwnerStatusRow): boolean {
+  return status?.status === 'disabled' || status?.status === 'not_found';
 }
 
 function buildWorkspaceOpportunities(files: ReportFileRow[]): ReportSummary['workspaceOpportunities'] {
@@ -666,6 +690,57 @@ export function buildReportSummary({
       .filter((value): value is string => Boolean(value))
       .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0] || null,
   };
+  const ownerStatusReviewOwners = ownerGroups
+    .filter((group) => Boolean(group.ownerEmail))
+    .map((group) => {
+      const status = group.ownerEmail ? ownerStatusMap.get(group.ownerEmail) : undefined;
+      const ownerFiles = group.files;
+      const ownerFileCount = ownerFiles.length;
+      const externalShareCount = ownerFiles.filter((file) => file.has_external_share).length;
+      const missingOwnerCount = ownerFiles.filter((file) => !hasOwner(file)).length;
+      const highRiskCount = ownerFiles.filter(isHighRisk).length;
+      const staleCount = ownerFiles.filter(isStale).length;
+      const oneDriveFileCount = ownerFiles.filter(isOneDrive).length;
+      const ownerScores = {
+        externalScore: ratioScore(externalShareCount, ownerFileCount, 35),
+        ownershipScore: ratioScore(missingOwnerCount, ownerFileCount, 25),
+        highRiskScore: ratioScore(highRiskCount, ownerFileCount, 30),
+        staleScore: ratioScore(staleCount, ownerFileCount),
+        oneDriveScore: ratioScore(oneDriveFileCount, ownerFileCount),
+      };
+
+      return {
+        ownerEmail: group.ownerEmail!,
+        ownerName: group.ownerName,
+        status: status?.status || 'unknown',
+        lookupStatus: status?.lookup_status || 'pending',
+        fileCount: ownerFileCount,
+        highRiskCount,
+        externalShareCount,
+        staleCount,
+        ownerLiabilityScore: clampScore(
+          ownerScores.externalScore * 0.4 +
+            ownerScores.ownershipScore * 0.25 +
+            ownerScores.highRiskScore * 0.2 +
+            ownerScores.staleScore * 0.1 +
+            ownerScores.oneDriveScore * 0.05
+        ),
+        lastCheckedAt: status?.last_checked_at || null,
+      };
+    });
+  const ownerStatusReview = {
+    reviewRequiredOwners: ownerStatusReviewOwners.filter((owner) => ['disabled', 'not_found'].includes(owner.status)).length,
+    permissionRequiredOwners: ownerStatusReviewOwners.filter((owner) => owner.lookupStatus === 'permission_required').length,
+    guestOwners: ownerStatusReviewOwners.filter((owner) => owner.status === 'guest').length,
+    staleStatusOwners: ownerStatusReviewOwners.filter((owner) => {
+      const status = ownerStatusMap.get(owner.ownerEmail);
+      return status ? isStaleOwnerStatus(status, generatedAt) : false;
+    }).length,
+    topOwners: ownerStatusReviewOwners
+      .filter((owner) => shouldReviewOwnerStatus(ownerStatusMap.get(owner.ownerEmail)))
+      .sort((a, b) => b.ownerLiabilityScore - a.ownerLiabilityScore || b.fileCount - a.fileCount)
+      .slice(0, 5),
+  };
   const topExposureFiles = externallySharedFiles
     .slice()
     .sort((a, b) => (b.external_user_count || 0) - (a.external_user_count || 0) || (b.risk_score || 0) - (a.risk_score || 0))
@@ -763,6 +838,7 @@ export function buildReportSummary({
       },
       topRiskOwners,
       ownerStatusCoverage,
+      ownerStatusReview,
     },
     workspaceOpportunities: buildWorkspaceOpportunities(files),
     riskDrivers: drivers,

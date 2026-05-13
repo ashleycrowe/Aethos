@@ -785,6 +785,88 @@ const OverviewDashboard = ({ onOpenSignalQueue }: { onOpenSignalQueue?: () => vo
             )}
           </GlassCard>
 
+          {reportSummary.ownership.ownerStatusReview.reviewRequiredOwners > 0 && (
+            <GlassCard className="xl:col-span-3 p-5 md:p-8 border-[#F59E0B]/20">
+              <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.35em] text-slate-500">
+                    V1.5 Owner Status Review
+                  </p>
+                  <h3 className={`mt-2 text-xl font-black uppercase tracking-tight ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
+                    Inactive Owner Candidates
+                  </h3>
+                  <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
+                    These owner groups have cached Entra status evidence such as disabled or not-found accounts. Aethos recommends review and handoff before cleanup.
+                  </p>
+                </div>
+                <div className="flex flex-col items-start gap-2 md:items-end">
+                  <DataSourceBadge mode="live" />
+                  <span className="rounded-full border border-[#F59E0B]/25 bg-[#F59E0B]/10 px-3 py-1 text-[9px] font-black uppercase tracking-widest text-[#F59E0B]">
+                    {reportSummary.ownership.ownerStatusReview.reviewRequiredOwners} owner{reportSummary.ownership.ownerStatusReview.reviewRequiredOwners === 1 ? '' : 's'} need review
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                {reportSummary.ownership.ownerStatusReview.topOwners.map((owner) => (
+                  <div
+                    key={owner.ownerEmail}
+                    className={`rounded-xl border p-5 ${isDaylight ? 'border-slate-200 bg-slate-50' : 'border-white/10 bg-white/[0.03]'}`}
+                  >
+                    <div className="mb-4 flex flex-wrap items-center gap-2">
+                      <span
+                        className="rounded-lg px-2 py-1 text-[9px] font-black uppercase tracking-widest"
+                        style={{
+                          backgroundColor: `${getOwnerStatusColor(owner.status)}18`,
+                          color: getOwnerStatusColor(owner.status),
+                        }}
+                      >
+                        {formatOwnerStatus(owner.status)}
+                      </span>
+                      <span className="rounded-lg border border-white/10 bg-white/[0.04] px-2 py-1 text-[9px] font-black uppercase tracking-widest text-slate-500">
+                        OLS {owner.ownerLiabilityScore}/100
+                      </span>
+                    </div>
+                    <p className={`truncate text-sm font-black ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
+                      {owner.ownerName || owner.ownerEmail}
+                    </p>
+                    <p className="mt-1 truncate text-xs text-slate-500">{owner.ownerEmail}</p>
+                    <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                      {[
+                        ['Files', owner.fileCount],
+                        ['External', owner.externalShareCount],
+                        ['High Risk', owner.highRiskCount],
+                        ['Stale', owner.staleCount],
+                      ].map(([label, value]) => (
+                        <div key={label} className="rounded-lg bg-white/[0.04] p-3">
+                          <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">{label}</p>
+                          <p className={`mt-1 text-lg font-black ${isDaylight ? 'text-slate-900' : 'text-white'}`}>{value}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-5 flex flex-wrap items-center gap-3">
+                      <button
+                        onClick={() => openAppTab('nexus')}
+                        className="min-h-[40px] rounded-xl bg-white px-4 py-2 text-[9px] font-black uppercase tracking-widest text-[#0B0F19] transition hover:bg-[#00F0FF]"
+                      >
+                        Handoff Workspace
+                      </button>
+                      <button
+                        onClick={() => openRemediation(owner.externalShareCount > 0 ? 'external_share' : owner.staleCount > 0 ? 'stale' : 'high_risk')}
+                        className="min-h-[40px] rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-[9px] font-black uppercase tracking-widest text-slate-300 transition hover:border-[#00F0FF]/40 hover:text-white"
+                      >
+                        Review Files
+                      </button>
+                      <span className="text-[10px] leading-5 text-slate-500">
+                        Review-first. No Microsoft 365 changes are made from this report.
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </GlassCard>
+          )}
+
           <GlassCard className="p-5 md:p-8">
             <div className="mb-6 flex items-start justify-between gap-4">
               <div>

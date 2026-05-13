@@ -245,6 +245,16 @@ describe('buildReportSummary', () => {
       staleStatusCount: 0,
       lastCheckedAt: '2026-05-12T00:00:00.000Z',
     });
+    expect(summary.ownership.ownerStatusReview).toMatchObject({
+      reviewRequiredOwners: 1,
+      permissionRequiredOwners: 0,
+      guestOwners: 0,
+    });
+    expect(summary.ownership.ownerStatusReview.topOwners[0]).toMatchObject({
+      ownerEmail: 'disabled@example.com',
+      status: 'disabled',
+      highRiskCount: 1,
+    });
     expect(summary.ownership.topRiskOwners).toEqual(
       expect.arrayContaining([
         expect.objectContaining({

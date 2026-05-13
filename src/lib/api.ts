@@ -215,6 +215,24 @@ export interface ReportSummaryResponse {
         staleStatusCount: number;
         lastCheckedAt: string | null;
       };
+      ownerStatusReview: {
+        reviewRequiredOwners: number;
+        permissionRequiredOwners: number;
+        guestOwners: number;
+        staleStatusOwners: number;
+        topOwners: Array<{
+          ownerEmail: string;
+          ownerName: string | null;
+          status: string;
+          lookupStatus: string;
+          fileCount: number;
+          highRiskCount: number;
+          externalShareCount: number;
+          staleCount: number;
+          ownerLiabilityScore: number;
+          lastCheckedAt: string | null;
+        }>;
+      };
     };
     workspaceOpportunities: Array<{
       label: string;
