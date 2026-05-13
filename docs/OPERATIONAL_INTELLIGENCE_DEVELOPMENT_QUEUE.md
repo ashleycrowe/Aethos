@@ -454,6 +454,8 @@ V1.5 tasks:
 - [x] Define approved metadata visibility levels: Aethos-side, source-system writeback, native AI connector.
 - [x] Add bulk accept/edit/reject/block lifecycle controls for visible metadata suggestions.
 - [x] Add edited-value capture before treating bulk edit as source-system-ready metadata.
+- [x] Audit live vs demo behavior for tag suggestions, AI titles, categories, and intelligence scores.
+- [ ] Route content-aware enrichment output through pending metadata suggestions before writing final AI fields.
 - [ ] Add content-aware tags/categories.
 - [ ] Add content-aware summaries.
 - [ ] Add PII/sensitive content flags.

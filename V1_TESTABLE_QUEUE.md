@@ -166,7 +166,7 @@ See `docs/OPERATIONAL_INTELLIGENCE_DEVELOPMENT_QUEUE.md` for the detailed implem
 
 - [x] Capture current metadata classification audit notes.
 - [x] Review `docs/METADATA_CLASSIFICATION_AUDIT.md` at the start of the next working session.
-- [ ] Audit live vs demo behavior for tag suggestions, AI titles, categories, and intelligence scores.
+- [x] Audit live vs demo behavior for tag suggestions, AI titles, categories, and intelligence scores.
 - [x] Add source metadata score, Aethos enrichment score, and AI-readiness blockers to live Metadata Quality.
 - [x] Add conservative metadata suggestions panel with review-first lifecycle language.
 - [x] Tie metadata suggestions to review packets, remediation filters, and workspace review routing.
@@ -179,6 +179,7 @@ See `docs/OPERATIONAL_INTELLIGENCE_DEVELOPMENT_QUEUE.md` for the detailed implem
 - [x] Preserve an audit trail of metadata suggestion decisions.
 - [x] Add Copilot/native-AI readiness language that distinguishes Aethos-side suggestions from source-system improvements.
 - [x] Define which approved metadata improvements can eventually write back to Microsoft 365 or publish through Copilot connectors.
+- [ ] Route content-aware enrichment output through pending metadata suggestions before writing final AI fields.
 
 ---
 

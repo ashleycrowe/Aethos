@@ -131,6 +131,21 @@ The demo components tell the right story:
 
 The best workflows are not yet fully live-backed. In Live Mode, we need to be careful not to imply that Aethos has already classified, suggested, accepted, rejected, or auto-tuned metadata unless those actions are persisted through the backend.
 
+### Live Vs Demo Audit - 2026-05-12
+
+Current boundary check for tag suggestions, AI titles, categories, and intelligence scores:
+
+- `MetadataIntelligenceDashboard` uses demo fixtures only when Demo Mode is active. In Live Mode it calls `/api/intelligence/metrics`, shows a live data-source label, and no longer falls back to sample metrics on API failure.
+- `/api/intelligence/metrics` derives live source metadata score, Aethos enrichment score, categories, AI-readiness blockers, and conservative metadata suggestions from tenant `files` rows plus `metadata_suggestion_decisions`.
+- Metadata suggestions now have a review lifecycle with persisted accept, edit, reject, and block decisions. Edited decisions capture `edited_value` before being marked edited.
+- Accepted or edited decisions are safe to use inside Aethos-side search, workspace, reporting, and readiness workflows. They are not Microsoft 365 writeback.
+- `BulkTagEditor`, `TagManagementDemo`, and `TagManagementFlowDemo` remain prototype/demo surfaces rather than the live Metadata Quality path.
+- `api/intelligence/enrich.ts` is still V1.5-oriented and writes `ai_suggested_title`, `ai_tags`, `ai_category`, `ai_summary`, and `intelligence_score` directly to `files`. Before content-aware classification becomes a default live claim, enrichment output should be routed through pending suggestions and the same review/audit lifecycle.
+
+Audit result:
+
+> V1 can claim metadata-quality diagnostics and review-first Aethos-side metadata decisions. V1.5 can claim reviewed Aethos-side metadata suggestions. Content-aware AI classification is not yet claim-safe until enrichment uses the suggestion lifecycle by default.
+
 ---
 
 ## Recommended Product Model
