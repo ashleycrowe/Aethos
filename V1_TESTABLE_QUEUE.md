@@ -174,7 +174,7 @@ See `docs/OPERATIONAL_INTELLIGENCE_DEVELOPMENT_QUEUE.md` for the detailed implem
 - [x] Design a live-backed Metadata Suggestions panel after Discovery.
 - [x] Add confidence and rationale to metadata suggestions.
 - [x] Add bulk accept/edit/reject/block lifecycle controls for visible suggestions.
-- [ ] Add edited-value capture for suggestions marked `edited`.
+- [x] Add edited-value capture for suggestions marked `edited`.
 - [x] Tie accepted metadata directly into workspace suggestions and tag-based auto-sync.
 - [x] Preserve an audit trail of metadata suggestion decisions.
 - [x] Add Copilot/native-AI readiness language that distinguishes Aethos-side suggestions from source-system improvements.

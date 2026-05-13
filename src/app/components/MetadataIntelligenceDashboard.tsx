@@ -113,6 +113,7 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
     latestDecisionAt: null,
   });
   const [suggestionDecisions, setSuggestionDecisions] = useState<Record<string, MetadataDecisionStatus>>({});
+  const [editedSuggestionValues, setEditedSuggestionValues] = useState<Record<string, string>>({});
   const [savingSuggestionId, setSavingSuggestionId] = useState<string | null>(null);
 
   // State for real data from API
@@ -378,6 +379,9 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
     });
   };
 
+  const getEditedSuggestionValue = (suggestion: ConservativeMetadataSuggestion) =>
+    (editedSuggestionValues[suggestion.id] || '').trim();
+
   const buildSuggestionReviewPacket = (suggestion: ConservativeMetadataSuggestion) => [
     `Aethos metadata review packet: ${suggestion.label}`,
     `Files affected: ${suggestion.count.toLocaleString()}`,
@@ -418,10 +422,18 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
   const recordSuggestionDecision = async (
     suggestion: ConservativeMetadataSuggestion,
     decisionStatus: MetadataDecisionStatus,
-    options: { quiet?: boolean; manageSavingState?: boolean } = {}
+    options: { quiet?: boolean; manageSavingState?: boolean; editedValue?: Record<string, unknown> } = {}
   ) => {
     const manageSavingState = options.manageSavingState ?? !options.quiet;
     const previousStatus = suggestionDecisions[suggestion.id];
+    const editedLabel = decisionStatus === 'edited'
+      ? String(options.editedValue?.label || getEditedSuggestionValue(suggestion)).trim()
+      : '';
+
+    if (decisionStatus === 'edited' && !editedLabel) {
+      toast.error('Add an edited value before marking edited');
+      return;
+    }
 
     if (isDemoMode) {
       applyLocalSuggestionDecision(suggestion, decisionStatus, previousStatus);
@@ -445,9 +457,16 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
           label: suggestion.label,
           nextAction: suggestion.nextAction,
         },
+        editedValue: decisionStatus === 'edited'
+          ? {
+              label: editedLabel,
+              originalLabel: suggestion.label,
+            }
+          : undefined,
         metadata: {
           actionTarget: suggestion.actionTarget || 'metadata_review',
           remediationIssue: suggestion.remediationIssue,
+          editedValueSource: decisionStatus === 'edited' ? 'review_input' : undefined,
           source: 'MetadataIntelligenceDashboard',
         },
       });
@@ -462,16 +481,30 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
   };
 
   const recordBulkSuggestionDecision = async (decisionStatus: MetadataDecisionStatus) => {
-    const pendingSuggestions = metadataSuggestions.filter((suggestion) => suggestionDecisions[suggestion.id] !== decisionStatus);
+    const pendingSuggestions = metadataSuggestions.filter((suggestion) => (
+      suggestionDecisions[suggestion.id] !== decisionStatus
+      && (decisionStatus !== 'edited' || getEditedSuggestionValue(suggestion))
+    ));
     if (pendingSuggestions.length === 0) {
-      toast.message('No suggestions need that decision');
+      toast.message(decisionStatus === 'edited'
+        ? 'Add edited values before bulk marking edited'
+        : 'No suggestions need that decision');
       return;
     }
 
     try {
       setSavingSuggestionId('bulk');
       for (const suggestion of pendingSuggestions) {
-        await recordSuggestionDecision(suggestion, decisionStatus, { quiet: true });
+        const editedLabel = getEditedSuggestionValue(suggestion);
+        await recordSuggestionDecision(suggestion, decisionStatus, {
+          quiet: true,
+          editedValue: decisionStatus === 'edited'
+            ? {
+                label: editedLabel,
+                originalLabel: suggestion.label,
+              }
+            : undefined,
+        });
       }
       toast.success(`${pendingSuggestions.length} suggestion${pendingSuggestions.length === 1 ? '' : 's'} marked ${decisionStatus}`);
     } catch {
@@ -1203,20 +1236,39 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
                             : 'Pending lifecycle: accept, edit, reject, or block.'}
                         </span>
                       </div>
+                      <div className="mt-4">
+                        <label className="text-[9px] font-black uppercase tracking-widest text-slate-500" htmlFor={`edited-value-${suggestion.id}`}>
+                          Edited Value
+                        </label>
+                        <input
+                          id={`edited-value-${suggestion.id}`}
+                          type="text"
+                          value={editedSuggestionValues[suggestion.id] || ''}
+                          onChange={(event) => setEditedSuggestionValues((current) => ({
+                            ...current,
+                            [suggestion.id]: event.target.value,
+                          }))}
+                          placeholder={suggestion.label}
+                          className="mt-2 min-h-[40px] w-full rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-[#00F0FF]/40"
+                        />
+                      </div>
                       <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
                         {(['accepted', 'edited', 'rejected', 'blocked'] as MetadataDecisionStatus[]).map((status) => {
                           const selected = suggestionDecisions[suggestion.id] === status;
                           const isSaving = savingSuggestionId === suggestion.id;
+                          const needsEditedValue = status === 'edited' && !getEditedSuggestionValue(suggestion);
                           return (
                             <button
                               key={status}
                               type="button"
-                              disabled={isSaving}
+                              disabled={isSaving || needsEditedValue}
                               onClick={() => void recordSuggestionDecision(suggestion, status)}
                               className={`min-h-[34px] rounded-lg border px-3 py-2 text-[9px] font-black uppercase tracking-widest transition ${
                                 selected
                                   ? 'border-[#00F0FF]/40 bg-[#00F0FF]/15 text-[#00F0FF]'
-                                  : 'border-white/10 bg-white/[0.03] text-slate-500 hover:border-white/20 hover:text-white'
+                                  : needsEditedValue
+                                    ? 'cursor-not-allowed border-white/5 bg-white/[0.02] text-slate-700'
+                                    : 'border-white/10 bg-white/[0.03] text-slate-500 hover:border-white/20 hover:text-white'
                               } ${isSaving ? 'cursor-wait opacity-60' : ''}`}
                             >
                               {isSaving ? 'Saving' : status}
