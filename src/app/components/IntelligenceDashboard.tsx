@@ -1157,6 +1157,49 @@ const OverviewDashboard = ({ onOpenSignalQueue }: { onOpenSignalQueue?: () => vo
               No workspace opportunities yet. Run Discovery or review files in Search to create a manual workspace.
             </div>
           )}
+
+          {reportSummary.topicClusters.length > 0 && (
+            <div className="mt-6 border-t border-white/10 pt-6">
+              <div className="mb-4 flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">
+                    Topic Clusters
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                    Repeated Aethos-side tags and categories ready for workspace review.
+                  </p>
+                </div>
+                <Sparkles className="h-4 w-4 text-[#00F0FF]" />
+              </div>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                {reportSummary.topicClusters.slice(0, 6).map((cluster) => (
+                  <button
+                    key={`${cluster.source}-${cluster.label}`}
+                    type="button"
+                    onClick={() => openAppTab('nexus')}
+                    className={`rounded-xl border p-4 text-left transition hover:border-[#00F0FF]/40 ${
+                      isDaylight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/[0.03]'
+                    }`}
+                  >
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <span className="rounded-full border border-[#00F0FF]/20 bg-[#00F0FF]/10 px-3 py-1 text-[9px] font-black uppercase tracking-widest text-[#00F0FF]">
+                        {cluster.source}
+                      </span>
+                      <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">
+                        {cluster.confidence}
+                      </span>
+                    </div>
+                    <p className={`text-sm font-black ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
+                      {cluster.label}
+                    </p>
+                    <p className="mt-2 text-xs text-slate-500">
+                      {cluster.fileCount.toLocaleString()} related files
+                    </p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </GlassCard>
       )}
 

@@ -93,6 +93,14 @@ export type ReportBucket = {
   totalBytes: number;
 };
 
+export type TopicCluster = {
+  label: string;
+  source: 'tag' | 'category';
+  fileCount: number;
+  confidence: 'high' | 'medium' | 'low';
+  suggestedTags: string[];
+};
+
 export type OwnerStatusReviewItem = {
   ownerEmail: string;
   ownerName: string | null;
@@ -223,6 +231,7 @@ export type ReportSummary = {
     fileCount: number;
     suggestedTags: string[];
   }>;
+  topicClusters: TopicCluster[];
   riskDrivers: RiskDriver[];
 };
 
@@ -636,6 +645,43 @@ function buildMetadataWorkspaceClusters(files: ReportFileRow[]): ReportSummary['
     }));
 }
 
+function buildTopicClusters(files: ReportFileRow[]): TopicCluster[] {
+  const clusters = new Map<string, { label: string; source: 'tag' | 'category'; files: ReportFileRow[] }>();
+
+  const addCluster = (source: 'tag' | 'category', value: string | null | undefined, file: ReportFileRow) => {
+    const cleanValue = value?.trim();
+    if (!cleanValue) return;
+    const slug = slugify(cleanValue);
+    if (!slug) return;
+
+    const key = `${source}:${slug}`;
+    const cluster = clusters.get(key) || {
+      label: titleCase(cleanValue),
+      source,
+      files: [],
+    };
+    cluster.files.push(file);
+    clusters.set(key, cluster);
+  };
+
+  files.forEach((file) => {
+    addCluster('category', file.ai_category, file);
+    (file.ai_tags || []).forEach((tag) => addCluster('tag', tag, file));
+  });
+
+  return Array.from(clusters.values())
+    .filter((cluster) => cluster.files.length >= MIN_WORKSPACE_CLUSTER_SIZE)
+    .sort((a, b) => b.files.length - a.files.length || a.label.localeCompare(b.label))
+    .slice(0, 6)
+    .map((cluster) => ({
+      label: cluster.label,
+      source: cluster.source,
+      fileCount: cluster.files.length,
+      confidence: cluster.files.length >= 10 ? 'high' : cluster.files.length >= 5 ? 'medium' : 'low',
+      suggestedTags: ['topic-cluster', cluster.source, slugify(cluster.label)],
+    }));
+}
+
 function toFileSample(file: ReportFileRow): ReportFileSample {
   return {
     id: file.id,
@@ -938,6 +984,7 @@ export function buildReportSummary({
       ownerStatusReview,
     },
     workspaceOpportunities: buildWorkspaceOpportunities(files, ownerStatuses, metadataDecisions),
+    topicClusters: buildTopicClusters(files),
     riskDrivers: drivers,
   };
 }

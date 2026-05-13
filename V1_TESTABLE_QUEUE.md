@@ -183,6 +183,7 @@ See `docs/OPERATIONAL_INTELLIGENCE_DEVELOPMENT_QUEUE.md` for the detailed implem
 - [x] Generate content-aware tag/category suggestions from indexed content chunks when available.
 - [x] Generate content-aware summary suggestions from indexed content chunks when available.
 - [x] Surface PII/sensitive content flags in live risk reporting.
+- [x] Surface topic clusters from repeated Aethos-side tags and categories.
 
 ---
 

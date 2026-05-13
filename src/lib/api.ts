@@ -242,6 +242,13 @@ export interface ReportSummaryResponse {
       fileCount: number;
       suggestedTags: string[];
     }>;
+    topicClusters: Array<{
+      label: string;
+      source: 'tag' | 'category';
+      fileCount: number;
+      confidence: 'high' | 'medium' | 'low';
+      suggestedTags: string[];
+    }>;
     riskDrivers: Array<{
       label: string;
       category: 'external' | 'ownership' | 'high_risk' | 'stale' | 'storage';

@@ -459,7 +459,7 @@ V1.5 tasks:
 - [x] Add content-aware tags/categories.
 - [x] Add content-aware summaries.
 - [x] Add PII/sensitive content flags.
-- [ ] Add topic clusters.
+- [x] Add topic clusters.
 - [x] Add confidence and rationale.
 
 Sales angle:

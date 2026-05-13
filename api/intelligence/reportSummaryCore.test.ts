@@ -209,6 +209,20 @@ describe('buildReportSummary', () => {
         }),
       ])
     );
+    expect(summary.topicClusters).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          label: 'Budget',
+          source: 'tag',
+          fileCount: 5,
+        }),
+        expect.objectContaining({
+          label: 'Financial Planning',
+          source: 'category',
+          fileCount: 4,
+        }),
+      ])
+    );
   });
 
   it('suggests workspaces from accepted metadata decisions', () => {
