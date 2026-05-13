@@ -22,6 +22,45 @@ const baseFile = (overrides: Partial<ReportFileRow>): ReportFileRow => ({
 });
 
 describe('buildReportSummary', () => {
+  it('returns a clean empty summary before discovery has indexed tenant data', () => {
+    const summary = buildReportSummary({
+      tenantId: 'tenant-empty',
+      files: [],
+      sites: [],
+      scans: [],
+      generatedAt: '2026-05-12T00:00:00.000Z',
+    });
+
+    expect(summary.lastScan).toMatchObject({
+      id: null,
+      status: 'none',
+      completedAt: null,
+      filesDiscovered: 0,
+      sitesDiscovered: 0,
+      newFiles: 0,
+      errorCount: 0,
+    });
+    expect(summary.discovery).toMatchObject({
+      totalFiles: 0,
+      totalSites: 0,
+      sharePointFiles: 0,
+      oneDriveFiles: 0,
+      teamsFiles: 0,
+      totalStorageBytes: 0,
+    });
+    expect(summary.healthScore).toMatchObject({
+      score: null,
+      label: 'not_enough_data',
+      dataMaturity: 'none',
+      drivers: [],
+    });
+    expect(summary.globalRisk).toMatchObject({
+      tenantExposureIndex: null,
+      riskRating: 'Not Enough Data',
+      primaryRiskFactor: null,
+    });
+  });
+
   it('suppresses tenant health score for low-maturity tenants', () => {
     const summary = buildReportSummary({
       tenantId: 'tenant-1',
@@ -350,5 +389,56 @@ describe('buildReportSummary', () => {
         }),
       ])
     );
+  });
+
+  it('keeps large tenant response lists bounded', () => {
+    const files = Array.from({ length: 5200 }, (_, index) =>
+      baseFile({
+        id: `large-${index}`,
+        provider_type: index % 3 === 0 ? 'onedrive' : index % 3 === 1 ? 'sharepoint' : 'teams',
+        owner_email: `owner-${index % 60}@example.com`,
+        owner_name: `Owner ${index % 60}`,
+        has_external_share: index % 5 === 0,
+        external_user_count: index % 5 === 0 ? 2 : 0,
+        is_stale: index % 7 === 0,
+        risk_score: index % 11 === 0 ? 90 : 20,
+        ai_tags: index % 4 === 0 ? ['budget'] : ['policy'],
+        ai_category: index % 6 === 0 ? 'financial-planning' : 'operations',
+      })
+    );
+
+    const sites = Array.from({ length: 120 }, (_, index) => ({
+      id: `site-${index}`,
+      provider_type: index % 2 === 0 ? 'sharepoint' : 'teams',
+    }));
+
+    const summary = buildReportSummary({
+      tenantId: 'tenant-large',
+      files,
+      sites,
+      scans: [
+        {
+          id: 'scan-large',
+          status: 'completed',
+          completed_at: '2026-05-12T00:00:00.000Z',
+          started_at: '2026-05-12T00:00:00.000Z',
+          files_discovered: files.length,
+          sites_discovered: sites.length,
+          new_files: files.length,
+          errors: [],
+        },
+      ],
+      generatedAt: '2026-05-12T00:00:00.000Z',
+    });
+
+    expect(summary.healthScore.dataMaturity).toBe('large');
+    expect(summary.lastScan.status).toBe('completed');
+    expect(summary.discovery.totalFiles).toBe(5200);
+    expect(summary.discovery.totalSites).toBe(120);
+    expect(summary.ownership.topRiskOwners.length).toBeLessThanOrEqual(10);
+    expect(summary.ownership.ownerStatusReview.topOwners.length).toBeLessThanOrEqual(5);
+    expect(summary.exposureReview.topFiles.length).toBeLessThanOrEqual(5);
+    expect(summary.staleContentReview.topFiles.length).toBeLessThanOrEqual(5);
+    expect(summary.topicClusters.length).toBeLessThanOrEqual(6);
   });
 });

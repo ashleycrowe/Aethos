@@ -130,7 +130,7 @@ See `docs/OPERATIONAL_INTELLIGENCE_DEVELOPMENT_QUEUE.md` for the detailed implem
 - [x] Add owner-status sync action with permission-required feedback.
 - [x] Add V1.5 inactive owner review report from cached Entra status.
 - [x] Suggest handoff workspaces from inactive owner status review.
-- [ ] Add smoke tests for demo route, live empty tenant, live first discovery, ownership/offboarding risk, and V1.5 content intelligence.
+- [x] Add smoke tests for demo route, live empty tenant, live first discovery, ownership/offboarding risk, and V1.5 content intelligence.
 - [ ] Keep mock `ReportingCenterV1` hidden from Live Mode until it is live-backed.
 
 ---

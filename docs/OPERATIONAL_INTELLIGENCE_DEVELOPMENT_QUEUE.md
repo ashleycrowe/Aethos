@@ -549,12 +549,12 @@ Sales angle:
   - `demo.aethoswork.com` is locked demo.
   - localhost override is allowed.
 
-- [ ] `report-summary.test.ts`
+- [x] `report-summary.test.ts`
   - empty tenant returns zero counts and `lastScan.status = none`.
   - medium tenant returns stale/external/owner counts.
   - large tenant returns top owner groups and does not exceed response shape.
 
-- [ ] `IntelligenceDashboard.test.tsx`
+- [x] `IntelligenceDashboard.test.ts`
   - Live Mode hides demo Identity tab.
   - Live Mode stream shows empty signal queue when no report data exists.
   - Demo Mode shows fixture-rich stream and Identity tab.
