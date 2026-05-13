@@ -877,6 +877,38 @@ export const AdminCenter = () => {
           </div>
 
           <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5 backdrop-blur-xl">
+            <Trash2 className="mb-4 h-6 w-6 text-rose-200" />
+            <h3 className="mb-2 text-base font-black text-white">Reset / Debug</h3>
+            <p className="mb-5 text-sm leading-6 text-slate-400">
+              Use this when a tester sees the wrong mode, stale Microsoft account, or old browser diagnostic context.
+            </p>
+            <div className="space-y-3">
+              <button
+                type="button"
+                onClick={resetDemoOverride}
+                disabled={!demoOverrideAllowed}
+                className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 text-xs font-black uppercase tracking-[0.16em] text-slate-300 transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Clear Demo Override
+              </button>
+              <button
+                type="button"
+                onClick={clearDiagnostics}
+                disabled={localDiagnostics.length === 0}
+                className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-rose-300/25 bg-rose-400/10 px-4 text-xs font-black uppercase tracking-[0.16em] text-rose-200 transition hover:bg-rose-400/20 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Trash2 className="h-4 w-4" />
+                Clear Diagnostics
+              </button>
+              <div className="rounded-2xl border border-white/10 bg-black/20 p-4 text-xs leading-6 text-slate-400">
+                If Microsoft keeps selecting the wrong account, use Sign Out, then sign in again. Sign Out clears
+                local Aethos tenant/user IDs before Microsoft redirects to logout.
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5 backdrop-blur-xl">
             <ShieldCheck className="mb-4 h-6 w-6 text-emerald-300" />
             <h3 className="mb-2 text-base font-black text-white">Security Baseline</h3>
             <div className="space-y-3 text-sm text-slate-300">

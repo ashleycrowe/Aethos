@@ -84,15 +84,15 @@ Known follow-up from the latest audit:
 
 ## Active Workstream - Phase 1 Setup And Admin
 
-- [ ] Add a first-run setup panel/wizard after successful Microsoft sign-in.
-- [ ] Step 1: show signed-in account and tenant.
+- [x] Add a first-run setup panel/wizard after successful Microsoft sign-in.
+- [x] Step 1: show signed-in account and tenant.
 - [x] Step 2: run Microsoft capability checks for OneDrive, SharePoint, Teams/groups.
 - [x] Step 3: run Microsoft Discovery scan.
 - [x] Step 4: show scan results and route to Oracle Search or Create Workspace.
 - [x] Add Admin scan history: last scan status, file count, site count, errors.
 - [x] Add Admin capability status: connected, missing permission, needs admin consent, unavailable.
-- [ ] Keep Sign Out visible and confirm it clears local Aethos session state.
-- [ ] Add a reset/debug section for local demo override and cached MSAL state guidance.
+- [x] Keep Sign Out visible and confirm it clears local Aethos session state.
+- [x] Add a reset/debug section for local demo override and cached MSAL state guidance.
 - [x] Add V1 diagnostics capture for browser errors, console warnings/errors, and unhandled promise rejections.
 - [ ] Add Admin diagnostics viewer for recent `app_diagnostics` events.
 
