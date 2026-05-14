@@ -41,4 +41,12 @@ describe('WorkspaceEngine smoke contract', () => {
     expect(engineSource).toContain('Workspace Loop');
     expect(engineSource).toContain('trusted working context that an admin can hand off');
   });
+
+  it('keeps workspace controls mobile-first', () => {
+    expect(engineSource).toContain('overflow-x-hidden');
+    expect(engineSource).toContain('sm:w-auto sm:px-10');
+    expect(engineSource).toContain('break-words text-lg font-black uppercase');
+    expect(engineSource).toContain('min-h-[44px] w-full rounded-xl');
+    expect(engineSource).toContain('sm:tracking-[0.4em]');
+  });
 });

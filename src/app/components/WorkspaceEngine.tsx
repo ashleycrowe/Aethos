@@ -566,7 +566,7 @@ export const WorkspaceEngine = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="space-y-8 md:space-y-10 animate-in fade-in duration-700 pb-16 md:pb-20"
+      className="min-w-0 space-y-8 overflow-x-hidden pb-16 animate-in fade-in duration-700 md:space-y-10 md:pb-20"
     >
       {/* Loading State */}
       {isLoading && (
@@ -594,7 +594,7 @@ export const WorkspaceEngine = () => {
         </button>
         <button
           onClick={handleOpenWizard}
-          className="flex-shrink-0 min-h-[44px] rounded-xl border border-[#00F0FF]/25 bg-[#00F0FF]/10 px-4 text-[10px] font-black uppercase tracking-[0.2em] text-[#00F0FF] transition-all hover:bg-[#00F0FF]/20"
+          className="flex-shrink-0 min-h-[44px] rounded-xl border border-[#00F0FF]/25 bg-[#00F0FF]/10 px-4 text-[10px] font-black uppercase tracking-[0.14em] text-[#00F0FF] transition-all hover:bg-[#00F0FF]/20 sm:tracking-[0.2em]"
         >
           Create Workspace
         </button>
@@ -641,7 +641,7 @@ export const WorkspaceEngine = () => {
                       )}
                     </div>
                     <div className="flex flex-wrap items-center gap-3 mt-2">
-                       <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                       <span className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500 sm:tracking-widest">
                          {isDemoMode ? 'Demo Lattice' : 'Live Tenant Workspace'}
                        </span>
                         <div className="w-1.5 h-1.5 rounded-full bg-[#00F0FF] animate-pulse shadow-[0_0_10px_#00F0FF]" />
@@ -659,7 +659,7 @@ export const WorkspaceEngine = () => {
                   <button 
                     key={t.id}
                     onClick={() => setActiveTab(t.id as any)}
-                    className={`min-h-[44px] px-4 sm:px-6 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2.5 ${
+                    className={`min-h-[44px] px-4 sm:px-6 py-3 rounded-xl text-[9px] font-black uppercase tracking-[0.12em] transition-all flex items-center justify-center gap-2.5 sm:tracking-widest ${
                       activeTab === t.id 
                         ? (isDaylight ? 'bg-slate-900 text-white' : 'bg-[#00F0FF] text-black shadow-lg shadow-[#00F0FF]/10') 
                         : 'text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/5'
@@ -689,7 +689,7 @@ export const WorkspaceEngine = () => {
                          {isDemoMode ? 'Lattice Density' : 'Trusted Files'}
                        </span>
                        <div className="text-4xl font-black text-[#00F0FF]">{selectedWorkspace.pinnedItems.length}</div>
-                       <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mt-2 italic">
+                       <p className="mt-2 text-[8px] font-black uppercase tracking-[0.12em] text-slate-500 italic sm:tracking-widest">
                          {isDemoMode ? 'Active Pointers' : 'Playlist anchors'}
                        </p>
                     </div>
@@ -698,7 +698,7 @@ export const WorkspaceEngine = () => {
                          {isDemoMode ? 'Integrity Score' : 'Trust Score'}
                        </span>
                        <div className="text-4xl font-black text-white">{selectedWorkspace.intelligenceScore}%</div>
-                       <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mt-2 italic">
+                       <p className="mt-2 text-[8px] font-black uppercase tracking-[0.12em] text-slate-500 italic sm:tracking-widest">
                          {isDemoMode ? 'Operational Fidelity' : 'Owner and freshness signal'}
                        </p>
                     </div>
@@ -709,7 +709,7 @@ export const WorkspaceEngine = () => {
                        <div className="text-4xl font-black text-emerald-500">
                          {isDemoMode ? '92/100' : liveWorkspaceCoverage}
                        </div>
-                       <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mt-2 italic">
+                       <p className="mt-2 text-[8px] font-black uppercase tracking-[0.12em] text-slate-500 italic sm:tracking-widest">
                          {isDemoMode ? 'Real-time Pulse' : 'Indexed anchors'}
                        </p>
                     </div>
@@ -718,11 +718,11 @@ export const WorkspaceEngine = () => {
                   {/* Pulse Activity Stream */}
                   <div className="space-y-8">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-2 sm:px-4">
-                      <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-600">Operational Pulse</h3>
+                      <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 sm:tracking-[0.4em]">Operational Pulse</h3>
                       <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2">
                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10B981]" />
-                           <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Active Sync</span>
+                           <span className="text-[9px] font-black uppercase tracking-[0.12em] text-slate-500 sm:tracking-widest">Active Sync</span>
                         </div>
                       </div>
                     </div>
@@ -741,7 +741,7 @@ export const WorkspaceEngine = () => {
                       ) : (
                         <div className="py-20 text-center space-y-4">
                            <Activity className="w-10 h-10 text-slate-800 mx-auto" />
-                           <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.4em]">No architectural signals detected</p>
+                           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 sm:tracking-[0.4em]">No architectural signals detected</p>
                         </div>
                       )}
                     </div>
@@ -761,14 +761,14 @@ export const WorkspaceEngine = () => {
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
                        <button 
                          onClick={() => setIsSynthesizerOpen(true)}
-                         className="min-h-[44px] px-6 sm:px-10 py-4 rounded-2xl bg-[#00F0FF] text-black text-[11px] font-black uppercase tracking-[0.2em] shadow-xl shadow-[#00F0FF]/20 flex items-center justify-center gap-3 hover:scale-105 transition-all"
+                         className="flex min-h-[44px] w-full items-center justify-center gap-3 rounded-2xl bg-[#00F0FF] px-6 py-4 text-[11px] font-black uppercase tracking-[0.14em] text-black shadow-xl shadow-[#00F0FF]/20 transition-all hover:scale-105 sm:w-auto sm:px-10 sm:tracking-[0.2em]"
                        >
                           <PlusCircle className="w-5 h-5" /> Synthesize Resource
                        </button>
                        <button 
                          onClick={handleSync}
                          disabled={isSyncing}
-                         className={`min-h-[44px] px-6 sm:px-8 py-4 rounded-2xl border flex items-center justify-center gap-3 text-[11px] font-black uppercase tracking-[0.2em] transition-all ${isSyncing ? 'bg-white/5 border-white/5 text-slate-500' : 'bg-white/5 border-white/10 text-white hover:bg-white/10'}`}
+                         className={`flex min-h-[44px] w-full items-center justify-center gap-3 rounded-2xl border px-6 py-4 text-[11px] font-black uppercase tracking-[0.14em] transition-all sm:w-auto sm:px-8 sm:tracking-[0.2em] ${isSyncing ? 'bg-white/5 border-white/5 text-slate-500' : 'bg-white/5 border-white/10 text-white hover:bg-white/10'}`}
                        >
                           <RefreshCcw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
                           {isSyncing ? 'Validating Pointers...' : 'Workspace Sync Engine'}
@@ -778,7 +778,7 @@ export const WorkspaceEngine = () => {
                           <input 
                             type="text" 
                             placeholder="SEARCH THE LATTICE..." 
-                            className="w-full h-full min-h-[52px] sm:min-h-[64px] pl-14 sm:pl-16 pr-4 rounded-2xl bg-white/5 border border-white/5 outline-none font-black text-[11px] uppercase tracking-widest text-white focus:border-[#00F0FF]/30 transition-all"
+                            className="h-full min-h-[52px] w-full rounded-2xl border border-white/5 bg-white/5 pl-14 pr-4 text-[11px] font-black uppercase tracking-[0.12em] text-white outline-none transition-all focus:border-[#00F0FF]/30 sm:min-h-[64px] sm:pl-16 sm:tracking-widest"
                           />
                        </div>
                     </div>
@@ -796,14 +796,14 @@ export const WorkspaceEngine = () => {
                             </div>
                             <div>
                                <h4 className="text-sm font-black text-white uppercase tracking-tight">Pointer Drift Detected</h4>
-                               <p className="text-[10px] text-[#FF5733] font-black uppercase tracking-widest mt-1 italic">
+                               <p className="mt-1 text-[10px] font-black uppercase tracking-[0.12em] text-[#FF5733] italic sm:tracking-widest">
                                  {selectedWorkspace.pinnedItems.filter(i => i.syncStatus === 'broken').length} Molecules have moved or lost source connectivity.
                                </p>
                             </div>
                          </div>
                          <button 
                            onClick={handleSync}
-                           className="min-h-[44px] w-full md:w-auto px-6 py-3 rounded-xl bg-[#FF5733] text-white text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all"
+                           className="min-h-[44px] w-full rounded-xl bg-[#FF5733] px-6 py-3 text-[10px] font-black uppercase tracking-[0.12em] text-white transition-all hover:scale-105 sm:tracking-widest md:w-auto"
                          >
                             Heal Resource Lattice
                          </button>
@@ -813,10 +813,10 @@ export const WorkspaceEngine = () => {
                     {/* Key Resources Section */}
                    <div className="space-y-8">
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pl-0 sm:pl-4">
-                         <h3 className="text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 flex items-center gap-3">
+                         <h3 className="flex items-center gap-3 text-[11px] font-black uppercase tracking-[0.18em] text-slate-400 sm:tracking-[0.4em]">
                             <Pin className="w-4 h-4 text-[#00F0FF]" /> Key Operational Anchors
                          </h3>
-                         <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 italic">Pinned for instant forensic access</span>
+                         <span className="text-[9px] font-black uppercase tracking-[0.12em] text-slate-500 italic sm:tracking-widest">Pinned for instant forensic access</span>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                          {criticalItems.map(item => (
@@ -830,7 +830,7 @@ export const WorkspaceEngine = () => {
                                  </div>
                                  <div className="flex gap-2">
                                     {item.syncStatus === 'broken' && (
-                                      <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#FF5733]/10 border border-[#FF5733]/20 text-[8px] font-black text-[#FF5733] uppercase tracking-widest">
+                                      <div className="flex items-center gap-2 rounded-xl border border-[#FF5733]/20 bg-[#FF5733]/10 px-3 py-1.5 text-[8px] font-black uppercase tracking-[0.12em] text-[#FF5733] sm:tracking-widest">
                                          Source Drift
                                       </div>
                                     )}
@@ -838,16 +838,16 @@ export const WorkspaceEngine = () => {
                                  </div>
                               </div>
                               <div className="space-y-4 relative z-10">
-                                 <h4 className="text-lg font-black text-white uppercase tracking-tighter">{item.title}</h4>
+                                 <h4 className="break-words text-lg font-black uppercase tracking-tight text-white">{item.title}</h4>
                                  <p className="text-xs text-slate-400 font-medium leading-relaxed italic line-clamp-2">"{item.aethosNote || "Primary operational anchor for project context."}"</p>
                               </div>
                               <div className="mt-8 pt-6 md:pt-8 border-t border-white/5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 relative z-10">
-                                 <span className={`text-[9px] font-black uppercase tracking-[0.2em] ${item.syncStatus === 'broken' ? 'text-[#FF5733]' : 'text-[#00F0FF]'}`}>{item.provider} - {item.type}</span>
+                                 <span className={`break-words text-[9px] font-black uppercase tracking-[0.12em] sm:tracking-[0.2em] ${item.syncStatus === 'broken' ? 'text-[#FF5733]' : 'text-[#00F0FF]'}`}>{item.provider} - {item.type}</span>
                                  <div className="flex items-center gap-2">
                                    {item.syncStatus === 'broken' ? (
                                      <button 
                                        onClick={handleSync}
-                                       className="px-4 py-2 rounded-xl bg-[#FF5733] text-white text-[9px] font-black uppercase tracking-widest hover:scale-105 transition-all"
+                                       className="min-h-[44px] rounded-xl bg-[#FF5733] px-4 py-2 text-[9px] font-black uppercase tracking-[0.12em] text-white transition-all hover:scale-105 sm:tracking-widest"
                                      >
                                        Heal Link
                                      </button>
@@ -863,7 +863,7 @@ export const WorkspaceEngine = () => {
                          {criticalItems.length === 0 && (
                            <div className="md:col-span-2 p-8 md:p-10 rounded-[32px] md:rounded-[40px] border border-dashed border-white/10 flex flex-col items-center justify-center text-center space-y-4">
                               <Pin className="w-8 h-8 text-slate-700" />
-                              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Pin artifacts to create Key Operational Anchors</p>
+                              <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500 sm:tracking-widest">Pin artifacts to create Key Operational Anchors</p>
                            </div>
                          )}
                       </div>
@@ -872,8 +872,8 @@ export const WorkspaceEngine = () => {
                    {/* Other Lattice Resources */}
                    <div className="space-y-8">
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pl-0 sm:pl-4">
-                         <h3 className="text-[11px] font-black uppercase tracking-[0.4em] text-slate-400">Supporting Synthesis</h3>
-                         <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">{otherItems.length} Discovered Artifacts</span>
+                         <h3 className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400 sm:tracking-[0.4em]">Supporting Synthesis</h3>
+                         <span className="text-[9px] font-black uppercase tracking-[0.12em] text-slate-500 sm:tracking-widest">{otherItems.length} Discovered Artifacts</span>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                          {otherItems.map(item => (
@@ -882,13 +882,13 @@ export const WorkspaceEngine = () => {
                                   <div className="p-2.5 rounded-xl bg-black/40 border border-white/10 text-slate-500 group-hover:text-[#00F0FF] transition-colors">
                                      <Link2 className="w-4 h-4" />
                                   </div>
-                                  <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">{item.provider}</span>
+                                  <span className="text-[9px] font-black uppercase tracking-[0.12em] text-slate-600 sm:tracking-widest">{item.provider}</span>
                                </div>
-                               <h5 className="text-[13px] font-black text-white uppercase tracking-tight mb-3 truncate">{item.title}</h5>
+                               <h5 className="mb-3 break-words text-[13px] font-black uppercase tracking-tight text-white">{item.title}</h5>
                                <p className="text-[10px] text-slate-500 leading-relaxed line-clamp-2 mb-6">{item.aethosNote || "Federated resource pointer."}</p>
                                <div className="mt-auto flex items-center justify-between pt-4 border-t border-white/5">
-                                  <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">{item.type}</span>
-                                  <button onClick={() => unpinFromWorkspace(selectedWorkspace.id, item.id)} className="text-slate-700 hover:text-[#FF5733] transition-colors">
+                                  <span className="text-[8px] font-black uppercase tracking-[0.12em] text-slate-600 sm:tracking-widest">{item.type}</span>
+                                  <button onClick={() => unpinFromWorkspace(selectedWorkspace.id, item.id)} className="flex min-h-[44px] min-w-[44px] items-center justify-center text-slate-700 transition-colors hover:text-[#FF5733]">
                                      <Trash2 className="w-3.5 h-3.5" />
                                   </button>
                                </div>
@@ -910,10 +910,10 @@ export const WorkspaceEngine = () => {
                    {/* Retention Countdown Monitor */}
                    <div className="space-y-6">
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-2 sm:px-4">
-                         <h3 className="text-[11px] font-black uppercase tracking-[0.4em] text-slate-500">Retention Countdown Monitor</h3>
+                         <h3 className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500 sm:tracking-[0.4em]">Retention Countdown Monitor</h3>
                          <button 
                            onClick={tickRetention}
-                           className="text-[9px] font-black text-[#00F0FF] uppercase tracking-widest hover:text-white transition-colors"
+                           className="min-h-[44px] text-[9px] font-black uppercase tracking-[0.12em] text-[#00F0FF] transition-colors hover:text-white sm:tracking-widest"
                          >
                             Simulate Day Transition
                          </button>
@@ -932,13 +932,13 @@ export const WorkspaceEngine = () => {
                                <div className="flex justify-between items-start gap-4 mb-6">
                                   <div className="min-w-0">
                                      <h4 className="text-sm font-black text-white uppercase tracking-tight">{c.title}</h4>
-                                     <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1 break-words">{c.provider} - {c.type}</p>
+                                     <p className="mt-1 break-words text-[9px] font-black uppercase tracking-[0.12em] text-slate-500 sm:tracking-widest">{c.provider} - {c.type}</p>
                                   </div>
                                   <div className="text-right">
                                      <div className={`text-3xl font-black font-['JetBrains_Mono'] ${c.retentionDaysLeft! <= 3 ? 'text-[#FF5733]' : 'text-white'}`}>
                                         {c.retentionDaysLeft}
                                      </div>
-                                     <p className="text-[7px] font-black text-slate-600 uppercase tracking-widest">Days Remaining</p>
+                                     <p className="text-[7px] font-black uppercase tracking-[0.12em] text-slate-600 sm:tracking-widest">Days Remaining</p>
                                   </div>
                                </div>
                                <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden mb-6">
@@ -948,8 +948,8 @@ export const WorkspaceEngine = () => {
                                   />
                                </div>
                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                                  <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest italic">Target: Governance_Vault</span>
-                                  <button className={`min-h-[44px] px-4 py-2 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all ${c.retentionDaysLeft! <= 3 ? 'bg-[#FF5733] text-white' : 'bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10'}`}>
+                                  <span className="break-words text-[8px] font-black uppercase tracking-[0.12em] text-slate-500 italic sm:tracking-widest">Target: Governance_Vault</span>
+                                  <button className={`min-h-[44px] w-full rounded-xl px-4 py-2 text-[8px] font-black uppercase tracking-[0.12em] transition-all sm:w-auto sm:tracking-widest ${c.retentionDaysLeft! <= 3 ? 'bg-[#FF5733] text-white' : 'bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10'}`}>
                                      {c.retentionDaysLeft! === 0 ? 'Purge Now' : 'Grant Extension'}
                                   </button>
                                </div>
@@ -968,26 +968,26 @@ export const WorkspaceEngine = () => {
                          </div>
                          <div className="min-w-0">
                             <h3 className="text-xl md:text-2xl font-black uppercase tracking-tight text-white">Workspace Purge Ops</h3>
-                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mt-1 italic">Identify and eliminate dead capital from the lattice</p>
+                            <p className="mt-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500 italic sm:tracking-[0.3em]">Identify and eliminate dead capital from the lattice</p>
                          </div>
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-10 mb-8 md:mb-12 relative z-10">
                          <div className="p-5 md:p-8 rounded-3xl bg-white/[0.02] border border-white/5">
-                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-4">Redundant Bloat</span>
+                            <span className="mb-4 block text-[9px] font-black uppercase tracking-[0.12em] text-slate-500 sm:tracking-widest">Redundant Bloat</span>
                             <div className="text-3xl md:text-4xl font-black text-[#FF5733]">{isDemoMode ? '1.2 TB' : '0 B'}</div>
                          </div>
                          <div className="p-5 md:p-8 rounded-3xl bg-white/[0.02] border border-white/5">
-                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-4">Exposure Risks</span>
+                            <span className="mb-4 block text-[9px] font-black uppercase tracking-[0.12em] text-slate-500 sm:tracking-widest">Exposure Risks</span>
                             <div className="text-3xl md:text-4xl font-black text-white">{isDemoMode ? '04' : '0'}</div>
                          </div>
                          <div className="p-5 md:p-8 rounded-3xl bg-white/[0.02] border border-white/5">
-                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-4">Orphaned Nodes</span>
+                            <span className="mb-4 block text-[9px] font-black uppercase tracking-[0.12em] text-slate-500 sm:tracking-widest">Orphaned Nodes</span>
                             <div className="text-3xl md:text-4xl font-black text-white">{isDemoMode ? '12' : '0'}</div>
                          </div>
                       </div>
 
-                      <button className="w-full min-h-[44px] px-4 py-5 md:py-6 rounded-2xl bg-[#FF5733]/10 border border-[#FF5733]/30 text-[#FF5733] text-[10px] md:text-[11px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] hover:bg-[#FF5733] hover:text-black transition-all shadow-xl shadow-[#FF5733]/10">
+                      <button className="min-h-[44px] w-full rounded-2xl border border-[#FF5733]/30 bg-[#FF5733]/10 px-4 py-5 text-[10px] font-black uppercase tracking-[0.14em] text-[#FF5733] shadow-xl shadow-[#FF5733]/10 transition-all hover:bg-[#FF5733] hover:text-black md:py-6 md:text-[11px] md:tracking-[0.3em]">
                          {isDemoMode ? 'Simulate Global Cleanup Protocol' : 'Run Remediation Dry Run'}
                       </button>
                    </div>
@@ -1018,14 +1018,14 @@ export const WorkspaceEngine = () => {
                           </p>
                         </div>
                       </div>
-                      <span className="w-fit rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[9px] font-black uppercase tracking-widest text-emerald-400">
+                      <span className="w-fit rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-emerald-400 sm:tracking-widest">
                         Data source: Live tenant
                       </span>
                     </div>
 
                     <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
                       <div className="rounded-3xl border border-white/5 bg-white/[0.02] p-5 md:p-8">
-                        <span className="mb-4 block text-[9px] font-black uppercase tracking-widest text-slate-500">
+                        <span className="mb-4 block text-[9px] font-black uppercase tracking-[0.12em] text-slate-500 sm:tracking-widest">
                           Anchored Files
                         </span>
                         <div className="text-3xl font-black text-[#00F0FF] md:text-4xl">
@@ -1033,7 +1033,7 @@ export const WorkspaceEngine = () => {
                         </div>
                       </div>
                       <div className="rounded-3xl border border-white/5 bg-white/[0.02] p-5 md:p-8">
-                        <span className="mb-4 block text-[9px] font-black uppercase tracking-widest text-slate-500">
+                        <span className="mb-4 block text-[9px] font-black uppercase tracking-[0.12em] text-slate-500 sm:tracking-widest">
                           Critical Anchors
                         </span>
                         <div className="text-3xl font-black text-white md:text-4xl">
@@ -1041,7 +1041,7 @@ export const WorkspaceEngine = () => {
                         </div>
                       </div>
                       <div className="rounded-3xl border border-white/5 bg-white/[0.02] p-5 md:p-8">
-                        <span className="mb-4 block text-[9px] font-black uppercase tracking-widest text-slate-500">
+                        <span className="mb-4 block text-[9px] font-black uppercase tracking-[0.12em] text-slate-500 sm:tracking-widest">
                           Review State
                         </span>
                         <div className="text-3xl font-black text-emerald-500 md:text-4xl">
@@ -1053,7 +1053,7 @@ export const WorkspaceEngine = () => {
                     <button
                       type="button"
                       onClick={() => openRemediation()}
-                      className="w-full min-h-[44px] rounded-2xl border border-[#00F0FF]/30 bg-[#00F0FF] px-4 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-[#0B0F19] shadow-xl shadow-[#00F0FF]/10 transition-all hover:bg-white md:py-6 md:text-[11px] md:tracking-[0.3em]"
+                      className="min-h-[44px] w-full rounded-2xl border border-[#00F0FF]/30 bg-[#00F0FF] px-4 py-5 text-[10px] font-black uppercase tracking-[0.14em] text-[#0B0F19] shadow-xl shadow-[#00F0FF]/10 transition-all hover:bg-white md:py-6 md:text-[11px] md:tracking-[0.3em]"
                     >
                       Open Remediation Dry Runs
                     </button>
@@ -1069,12 +1069,12 @@ export const WorkspaceEngine = () => {
             <div className={`p-6 sm:p-8 rounded-[32px] border ${isDaylight ? 'bg-white border-slate-100 shadow-xl' : 'bg-white/[0.02] border-white/10'}`}>
               <div className="flex items-center gap-4">
                 <Users className="h-5 w-5 text-[#00F0FF]" />
-                <h3 className="text-[10px] font-black uppercase tracking-[0.35em] text-slate-500">
+                <h3 className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 sm:tracking-[0.35em]">
                   Workspace Loop
                 </h3>
               </div>
               <div className="mt-6 space-y-3">
-                <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">
+                <p className="text-[9px] font-black uppercase tracking-[0.12em] text-slate-500 sm:tracking-widest">
                   Persona View Mode
                 </p>
                 <div className="grid grid-cols-1 gap-2">
@@ -1089,10 +1089,10 @@ export const WorkspaceEngine = () => {
                           : 'border-white/5 bg-white/[0.02] text-slate-500 hover:border-white/20 hover:text-white'
                       }`}
                     >
-                      <span className="block text-[10px] font-black uppercase tracking-[0.2em]">
+                      <span className="block text-[10px] font-black uppercase tracking-[0.14em] sm:tracking-[0.2em]">
                         {mode.label}
                       </span>
-                      <span className="mt-1 block text-[9px] font-black uppercase tracking-widest opacity-70">
+                      <span className="mt-1 block text-[9px] font-black uppercase tracking-[0.12em] opacity-70 sm:tracking-widest">
                         {mode.role}
                       </span>
                     </button>
@@ -1111,7 +1111,7 @@ export const WorkspaceEngine = () => {
                       )}
                     </div>
                     <div className="pb-2">
-                      <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">{persona.role}</p>
+                      <p className="text-[9px] font-black uppercase tracking-[0.12em] text-slate-500 sm:tracking-widest">{persona.role}</p>
                       <p className={`mt-1 text-sm font-black uppercase tracking-tight ${isDaylight ? 'text-slate-900' : 'text-white'}`}>{persona.label}</p>
                       <p className="mt-1 text-xs leading-5 text-slate-500">{persona.detail}</p>
                     </div>
@@ -1127,7 +1127,7 @@ export const WorkspaceEngine = () => {
                <div className="relative z-10 space-y-8">
                  <div className="flex items-center gap-4">
                     <Sparkles className="w-6 h-6 text-[#00F0FF]" />
-                    <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">Oracle Synthesis</h3>
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 sm:tracking-[0.4em]">Oracle Synthesis</h3>
                  </div>
                  
                  <div className="space-y-6">
@@ -1145,7 +1145,7 @@ export const WorkspaceEngine = () => {
 
                  <button 
                   onClick={handlePersonaAction}
-                  className="w-full min-h-[44px] px-4 py-5 rounded-2xl bg-[#00F0FF] text-black text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] flex items-center justify-center gap-4 shadow-xl shadow-[#00F0FF]/20 hover:scale-105 transition-all"
+                  className="flex min-h-[44px] w-full items-center justify-center gap-4 rounded-2xl bg-[#00F0FF] px-4 py-5 text-[10px] font-black uppercase tracking-[0.14em] text-black shadow-xl shadow-[#00F0FF]/20 transition-all hover:scale-105 md:tracking-[0.3em]"
                  >
                    <Cpu className="w-4 h-4" /> {isDemoMode ? 'Deconstruct Delta' : activePersonaMode.action}
                  </button>
@@ -1155,28 +1155,28 @@ export const WorkspaceEngine = () => {
             {/* Anchored Providers */}
             <div className="p-6 sm:p-8 md:p-10 rounded-[32px] md:rounded-[48px] border border-white/5 bg-white/[0.01] space-y-8 md:space-y-10">
                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-2">
-                  <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">Universal Anchors</h3>
+                  <h3 className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 sm:tracking-[0.4em]">Universal Anchors</h3>
                   <button className="p-2 rounded-lg hover:bg-white/5 text-slate-600 transition-colors"><MoreVertical className="w-4 h-4" /></button>
                </div>
                
                <div className="space-y-4">
                   {selectedWorkspace.linkedSources.map((source, i) => (
-                    <div key={i} className="flex items-center justify-between gap-4 p-5 md:p-6 rounded-3xl bg-white/[0.03] border border-white/5 group hover:bg-white/5 transition-all cursor-pointer">
-                       <div className="flex items-center gap-5">
+                    <div key={i} className="group flex items-center justify-between gap-4 rounded-3xl border border-white/5 bg-white/[0.03] p-5 transition-all hover:bg-white/5 md:p-6">
+                       <div className="flex min-w-0 items-center gap-5">
                           <div className="p-3.5 rounded-2xl bg-black/60 border border-white/10 group-hover:border-[#00F0FF]/40 transition-colors">
                              {source.provider === 'microsoft' ? <Share2 className="w-5 h-5 text-blue-500" /> : 
                               source.provider === 'slack' ? <Slack className="w-5 h-5 text-[#E01E5A]" /> : 
                               <Globe className="w-5 h-5 text-emerald-500" />}
                           </div>
                           <div>
-                             <p className="text-xs font-black uppercase tracking-tight text-white truncate max-w-[120px]">{source.name}</p>
-                             <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mt-1">Provider Node</p>
+                             <p className="max-w-[120px] truncate text-xs font-black uppercase tracking-tight text-white sm:max-w-[180px]">{source.name}</p>
+                             <p className="mt-1 text-[9px] font-black uppercase tracking-[0.12em] text-slate-600 sm:tracking-widest">Provider Node</p>
                           </div>
                        </div>
                        <ArrowRight className="w-4 h-4 text-slate-700 group-hover:text-white group-hover:translate-x-1 transition-all" />
                     </div>
                   ))}
-                  <button className="w-full py-5 rounded-3xl border border-dashed border-white/10 text-[9px] font-black uppercase tracking-[0.3em] text-slate-600 hover:text-[#00F0FF] hover:border-[#00F0FF]/30 transition-all flex items-center justify-center gap-3">
+                  <button className="flex min-h-[44px] w-full items-center justify-center gap-3 rounded-3xl border border-dashed border-white/10 py-5 text-[9px] font-black uppercase tracking-[0.16em] text-slate-600 transition-all hover:border-[#00F0FF]/30 hover:text-[#00F0FF] sm:tracking-[0.3em]">
                      <Plus className="w-4 h-4" /> Sync New Anchor
                   </button>
                </div>
