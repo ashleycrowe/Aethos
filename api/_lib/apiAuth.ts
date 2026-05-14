@@ -13,6 +13,10 @@ type ApiAuthOptions = {
   methods?: string[];
   requireAuth?: boolean;
   requireTenant?: boolean;
+  rateLimit?: false | {
+    limit: number;
+    windowMs: number;
+  };
 };
 
 export type ApiAuthContext = {
@@ -37,6 +41,7 @@ export type ApiErrorCode =
   | 'VALIDATION_ERROR'
   | 'DATABASE_ERROR'
   | 'UPSTREAM_ERROR'
+  | 'RATE_LIMITED'
   | 'INTERNAL_ERROR';
 
 export type ApiErrorEnvelope = {
@@ -51,6 +56,48 @@ export type ApiErrorEnvelope = {
 function firstString(value: unknown): string | undefined {
   if (Array.isArray(value)) return typeof value[0] === 'string' ? value[0] : undefined;
   return typeof value === 'string' ? value : undefined;
+}
+
+const DEFAULT_RATE_LIMIT = {
+  limit: 120,
+  windowMs: 60_000,
+};
+
+const rateLimitBuckets = new Map<string, { count: number; resetAt: number }>();
+
+function getClientIp(req: VercelRequest): string {
+  const forwardedFor = firstString(req.headers['x-forwarded-for']);
+  if (forwardedFor) return forwardedFor.split(',')[0].trim();
+  return firstString(req.headers['x-real-ip']) || firstString(req.headers['x-vercel-forwarded-for']) || 'unknown';
+}
+
+export function getRateLimitKey(req: VercelRequest, tokenClaims?: Record<string, unknown> | null) {
+  const tokenSubject = firstString(tokenClaims?.oid) || firstString(tokenClaims?.sub);
+  const tenantId = firstString(tokenClaims?.tid) || getRequestTenantId(req);
+  const requester = tokenSubject ? `user:${tenantId || 'unknown'}:${tokenSubject}` : `ip:${getClientIp(req)}`;
+  return `${req.url || 'api'}:${requester}`;
+}
+
+export function checkRateLimit(key: string, limit: number, windowMs: number, now = Date.now()) {
+  for (const [bucketKey, bucket] of rateLimitBuckets.entries()) {
+    if (bucket.resetAt <= now) {
+      rateLimitBuckets.delete(bucketKey);
+    }
+  }
+
+  const bucket = rateLimitBuckets.get(key);
+  if (!bucket || bucket.resetAt <= now) {
+    const resetAt = now + windowMs;
+    rateLimitBuckets.set(key, { count: 1, resetAt });
+    return { allowed: true, remaining: limit - 1, resetAt };
+  }
+
+  if (bucket.count >= limit) {
+    return { allowed: false, remaining: 0, resetAt: bucket.resetAt };
+  }
+
+  bucket.count += 1;
+  return { allowed: true, remaining: Math.max(0, limit - bucket.count), resetAt: bucket.resetAt };
 }
 
 export function getBearerToken(req: VercelRequest): string | undefined {
@@ -193,6 +240,7 @@ export async function requireApiContext(
   const methods = options.methods || ['POST'];
   const requireAuth = options.requireAuth ?? true;
   const requireTenant = options.requireTenant ?? true;
+  const rateLimit = options.rateLimit === false ? false : options.rateLimit || DEFAULT_RATE_LIMIT;
 
   if (!methods.includes(req.method || '')) {
     sendApiError(res, 405, 'Method not allowed', 'METHOD_NOT_ALLOWED', { allowedMethods: methods });
@@ -214,6 +262,25 @@ export async function requireApiContext(
   const requestedTenantId = getRequestTenantId(req);
   let tenantId = requestedTenantId;
   let userId = getRequestUserId(req);
+
+  if (rateLimit) {
+    const rateLimitResult = checkRateLimit(
+      getRateLimitKey(req, tokenClaims),
+      rateLimit.limit,
+      rateLimit.windowMs
+    );
+
+    res.setHeader?.('X-RateLimit-Limit', String(rateLimit.limit));
+    res.setHeader?.('X-RateLimit-Remaining', String(rateLimitResult.remaining));
+    res.setHeader?.('X-RateLimit-Reset', String(Math.ceil(rateLimitResult.resetAt / 1000)));
+
+    if (!rateLimitResult.allowed) {
+      sendApiError(res, 429, 'Rate limit exceeded', 'RATE_LIMITED', {
+        retryAfterSeconds: Math.max(1, Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000)),
+      });
+      return null;
+    }
+  }
 
   if (requireAuth && !accessToken) {
     sendApiError(res, 401, 'Missing authorization token', 'AUTH_TOKEN_MISSING');

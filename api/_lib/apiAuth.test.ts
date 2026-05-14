@@ -98,4 +98,29 @@ describe('apiAuth request parsing', () => {
       },
     });
   });
+
+  it('tracks per-key rate limits with reset windows', async () => {
+    process.env.SUPABASE_URL = 'https://example.supabase.co';
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key';
+
+    const { checkRateLimit } = await import('./apiAuth');
+    const key = `test-key-${Date.now()}`;
+
+    expect(checkRateLimit(key, 2, 1000, 1000)).toMatchObject({
+      allowed: true,
+      remaining: 1,
+    });
+    expect(checkRateLimit(key, 2, 1000, 1100)).toMatchObject({
+      allowed: true,
+      remaining: 0,
+    });
+    expect(checkRateLimit(key, 2, 1000, 1200)).toMatchObject({
+      allowed: false,
+      remaining: 0,
+    });
+    expect(checkRateLimit(key, 2, 1000, 2101)).toMatchObject({
+      allowed: true,
+      remaining: 1,
+    });
+  });
 });

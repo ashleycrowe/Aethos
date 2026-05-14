@@ -23,6 +23,13 @@ describe('V1 API error envelope contract', () => {
     expect(authSource).toContain('details?: unknown');
   });
 
+  it('applies a shared default rate limit to authenticated V1 APIs', () => {
+    expect(authSource).toContain('const DEFAULT_RATE_LIMIT');
+    expect(authSource).toContain("'RATE_LIMITED'");
+    expect(authSource).toContain("'X-RateLimit-Remaining'");
+    expect(authSource).toContain('sendApiError(res, 429');
+  });
+
   it('uses sendApiError across V1 tester endpoints', () => {
     v1EndpointSources.forEach((source) => {
       expect(source).toContain('sendApiError');
