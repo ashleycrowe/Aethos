@@ -77,21 +77,34 @@ The highest-risk issue is schema drift: the V1 schema uses `files`, while later 
 
 ## Today's Vercel Deployment Plan
 
-For the initial Vercel deployment, ship the frontend only and intentionally exclude the root `api/` folder with `.vercelignore`.
+For the initial Vercel deployment, ship the V1 walkthrough surface and intentionally exclude future-phase API folders with `.vercelignore`.
 
 Rationale:
 
 - Vercel treats a root `api/` directory as serverless functions.
-- The current backend is not Phase 1 hardened yet.
-- Excluding `api/` avoids deploying unfinished backend functions while still allowing the Vite frontend to go live today.
+- The V1 backend now has shared tenant/auth validation, consistent error envelopes, and a narrower live/demo boundary.
+- Future-phase functions remain excluded until their auth, data contracts, and product boundaries are ready for tester traffic.
 
 Current `.vercelignore`:
 
 ```text
-api/
+api/analytics/
+api/compliance/
+api/cron/*
+!api/cron/daily-scan.ts
+api/federation/
+api/providers/
+api/public/
+api/webhooks/
+api/intelligence/embeddings.ts
+api/intelligence/enrich.ts
+api/intelligence/pii-detection.ts
+api/intelligence/semantic-search.ts
+api/intelligence/summarize.ts
+api/**/*.test.ts
 ```
 
-After the frontend is live, re-enable backend deployment only after the P0 API/schema/auth items in `V1_TESTABLE_QUEUE.md` are resolved.
+The daily discovery cron is included because `vercel.json` schedules `/api/cron/daily-scan`.
 
 ---
 
