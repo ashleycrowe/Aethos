@@ -233,6 +233,7 @@ Priority order:
 
 Completed component passes:
 - [x] RemediationCenter: stack filters/tabs/actions at mobile widths, make candidate cards wrap instead of truncate, and use a bottom-sheet confirmation dialog on phones.
+- [x] AdminCenter: stack header/setup/diagnostic controls at mobile widths, reduce tight tracking, wrap long status values, and reduce mobile backdrop cost.
 
 Audit rules:
 - [ ] Test at 375px, 390px, 768px, 820px, 1024px, 1280px, and 1920px.

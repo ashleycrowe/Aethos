@@ -58,9 +58,9 @@ const toneClasses = {
 };
 
 const AdminStatusCard = ({ icon: Icon, label, value, tone = 'slate' }: AdminStatusCardProps) => (
-  <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl">
+  <div className="min-w-0 rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-sm lg:backdrop-blur-xl">
     <div className="mb-4 flex items-center justify-between gap-3">
-      <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">{label}</p>
+      <p className="break-words text-[10px] font-black uppercase tracking-[0.14em] text-slate-500 sm:tracking-[0.22em]">{label}</p>
       <div className={`flex h-10 w-10 items-center justify-center rounded-2xl border ${toneClasses[tone]}`}>
         <Icon className="h-5 w-5" />
       </div>
@@ -71,8 +71,8 @@ const AdminStatusCard = ({ icon: Icon, label, value, tone = 'slate' }: AdminStat
 
 const AdminRow = ({ label, value }: { label: string; value: React.ReactNode }) => (
   <div className="flex flex-col gap-1 border-b border-white/10 py-4 last:border-b-0 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-    <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">{label}</span>
-    <span className="break-words text-sm font-semibold text-slate-200 sm:text-right">{value}</span>
+    <span className="break-words text-xs font-black uppercase tracking-[0.14em] text-slate-500 sm:tracking-[0.18em]">{label}</span>
+    <span className="min-w-0 break-words text-sm font-semibold text-slate-200 sm:text-right">{value}</span>
   </div>
 );
 
@@ -116,7 +116,7 @@ const SetupStep = ({
   action?: React.ReactNode;
 }) => (
   <div className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-white/[0.035] p-4 sm:flex-row sm:items-center sm:justify-between">
-    <div className="flex gap-4">
+    <div className="flex min-w-0 gap-4">
       <div
         className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border text-sm font-black ${
           complete
@@ -131,7 +131,7 @@ const SetupStep = ({
         <p className="mt-1 text-sm leading-6 text-slate-400">{description}</p>
       </div>
     </div>
-    {action && <div className="shrink-0">{action}</div>}
+    {action && <div className="w-full shrink-0 sm:w-auto">{action}</div>}
   </div>
 );
 
@@ -399,14 +399,14 @@ export const AdminCenter = () => {
 
   return (
     <div
-      className={`min-h-full px-4 pb-24 pt-4 sm:px-6 lg:px-8 ${
+      className={`min-h-full overflow-x-hidden px-4 pb-24 pt-4 sm:px-6 lg:px-8 ${
         isDaylight ? 'text-slate-950' : 'text-white'
       }`}
     >
       <section className="mx-auto flex w-full max-w-7xl flex-col gap-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="mb-3 text-[10px] font-black uppercase tracking-[0.35em] text-[#00F0FF]">
+            <p className="mb-3 text-[10px] font-black uppercase tracking-[0.22em] text-[#00F0FF] sm:tracking-[0.35em]">
               Admin Center
             </p>
             <h1 className="text-3xl font-black tracking-tight text-white sm:text-4xl">
@@ -418,12 +418,12 @@ export const AdminCenter = () => {
             </p>
           </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="grid w-full grid-cols-1 gap-3 sm:w-auto sm:grid-cols-2">
             <button
               type="button"
               onClick={() => applyDemoMode(!demoMode)}
               disabled={!demoOverrideAllowed}
-              className="flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-[#00F0FF]/25 bg-[#00F0FF]/10 px-4 text-xs font-black uppercase tracking-[0.16em] text-[#00F0FF] transition hover:bg-[#00F0FF]/20 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-[#00F0FF]/25 bg-[#00F0FF]/10 px-4 text-xs font-black uppercase tracking-[0.12em] text-[#00F0FF] transition hover:bg-[#00F0FF]/20 disabled:cursor-not-allowed disabled:opacity-50 sm:tracking-[0.16em]"
             >
               {demoMode ? <ToggleRight className="h-5 w-5" /> : <ToggleLeft className="h-5 w-5" />}
               {demoMode ? 'Use Live Mode' : 'Use Demo Mode'}
@@ -433,7 +433,7 @@ export const AdminCenter = () => {
                 type="button"
                 onClick={handleLogout}
                 disabled={isLoading}
-                className="flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-rose-300/25 bg-rose-400/10 px-4 text-xs font-black uppercase tracking-[0.16em] text-rose-200 transition hover:bg-rose-400/20 disabled:cursor-wait disabled:opacity-60"
+                className="flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-rose-300/25 bg-rose-400/10 px-4 text-xs font-black uppercase tracking-[0.12em] text-rose-200 transition hover:bg-rose-400/20 disabled:cursor-wait disabled:opacity-60 sm:tracking-[0.16em]"
               >
                 <LogOut className="h-5 w-5" />
                 Sign Out
@@ -443,7 +443,7 @@ export const AdminCenter = () => {
                 type="button"
                 onClick={handleLogin}
                 disabled={isLoading}
-                className="flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white px-4 text-xs font-black uppercase tracking-[0.16em] text-slate-950 transition hover:bg-[#00F0FF] disabled:cursor-wait disabled:opacity-60"
+                className="flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white px-4 text-xs font-black uppercase tracking-[0.12em] text-slate-950 transition hover:bg-[#00F0FF] disabled:cursor-wait disabled:opacity-60 sm:tracking-[0.16em]"
               >
                 <LogIn className="h-5 w-5" />
                 Sign In
@@ -479,7 +479,7 @@ export const AdminCenter = () => {
           />
         </div>
 
-        <section className="rounded-[28px] border border-[#00F0FF]/20 bg-[#00F0FF]/[0.045] p-5 shadow-2xl backdrop-blur-2xl sm:p-6">
+        <section className="rounded-[28px] border border-[#00F0FF]/20 bg-[#00F0FF]/[0.045] p-5 shadow-2xl backdrop-blur-sm sm:p-6 lg:backdrop-blur-2xl">
           <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <p className="mb-2 text-[10px] font-black uppercase tracking-[0.3em] text-[#00F0FF]">
@@ -506,7 +506,7 @@ export const AdminCenter = () => {
                 <button
                   type="button"
                   onClick={handleLogin}
-                  className="min-h-11 rounded-xl border border-[#00F0FF]/25 bg-[#00F0FF] px-4 text-xs font-black uppercase tracking-[0.16em] text-slate-950 transition hover:bg-white"
+                  className="min-h-11 w-full rounded-xl border border-[#00F0FF]/25 bg-[#00F0FF] px-4 text-xs font-black uppercase tracking-[0.14em] text-slate-950 transition hover:bg-white sm:w-auto sm:tracking-[0.16em]"
                 >
                   Sign In
                 </button>
@@ -534,7 +534,7 @@ export const AdminCenter = () => {
                   type="button"
                   onClick={handleDiscoveryScan}
                   disabled={isScanning || !isAuthenticated}
-                  className="min-h-11 rounded-xl border border-[#00F0FF]/30 bg-[#00F0FF]/10 px-4 text-xs font-black uppercase tracking-[0.16em] text-[#00F0FF] transition hover:bg-[#00F0FF]/20 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="min-h-11 w-full rounded-xl border border-[#00F0FF]/30 bg-[#00F0FF]/10 px-4 text-xs font-black uppercase tracking-[0.14em] text-[#00F0FF] transition hover:bg-[#00F0FF]/20 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:tracking-[0.16em]"
                 >
                   {isScanning ? 'Scanning' : 'Run Scan'}
                 </button>
@@ -549,14 +549,14 @@ export const AdminCenter = () => {
           </div>
         </section>
 
-        <section className="rounded-[28px] border border-amber-300/20 bg-amber-300/[0.045] p-5 shadow-2xl backdrop-blur-2xl sm:p-6">
+        <section className="rounded-[28px] border border-amber-300/20 bg-amber-300/[0.045] p-5 shadow-2xl backdrop-blur-sm sm:p-6 lg:backdrop-blur-2xl">
             <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div className="flex gap-4">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-amber-300/25 bg-amber-300/10 text-amber-200">
                   <Bug className="h-6 w-6" />
                 </div>
                 <div>
-                  <p className="mb-2 text-[10px] font-black uppercase tracking-[0.3em] text-amber-200">
+                  <p className="mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-amber-200 sm:tracking-[0.3em]">
                     {demoMode ? 'Demo Diagnostics' : 'Live Diagnostics'}
                   </p>
                   <h2 className="text-xl font-black text-white">
@@ -579,12 +579,12 @@ export const AdminCenter = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
+              <div className="grid w-full grid-cols-1 gap-3 sm:w-auto sm:grid-cols-3 lg:flex lg:flex-wrap">
                 <button
                   type="button"
                   onClick={refreshDiagnostics}
                   disabled={isLoadingDiagnostics}
-                  className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 text-xs font-black uppercase tracking-[0.14em] text-slate-200 transition hover:bg-white/[0.08]"
+                  className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 text-xs font-black uppercase tracking-[0.12em] text-slate-200 transition hover:bg-white/[0.08] sm:tracking-[0.14em]"
                 >
                   <RefreshCw className="h-4 w-4" />
                   {isLoadingDiagnostics ? 'Loading' : 'Refresh'}
@@ -593,7 +593,7 @@ export const AdminCenter = () => {
                   type="button"
                   onClick={copyDiagnostics}
                   disabled={visibleDiagnostics.length === 0}
-                  className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#00F0FF]/25 bg-[#00F0FF]/10 px-4 text-xs font-black uppercase tracking-[0.14em] text-[#00F0FF] transition hover:bg-[#00F0FF]/20 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#00F0FF]/25 bg-[#00F0FF]/10 px-4 text-xs font-black uppercase tracking-[0.12em] text-[#00F0FF] transition hover:bg-[#00F0FF]/20 disabled:cursor-not-allowed disabled:opacity-50 sm:tracking-[0.14em]"
                 >
                   <Clipboard className="h-4 w-4" />
                   Copy All
@@ -603,7 +603,7 @@ export const AdminCenter = () => {
                     type="button"
                     onClick={clearDiagnostics}
                     disabled={localDiagnostics.length === 0}
-                    className="col-span-2 flex min-h-11 items-center justify-center gap-2 rounded-xl border border-rose-300/25 bg-rose-400/10 px-4 text-xs font-black uppercase tracking-[0.14em] text-rose-200 transition hover:bg-rose-400/20 disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-1"
+                    className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-rose-300/25 bg-rose-400/10 px-4 text-xs font-black uppercase tracking-[0.12em] text-rose-200 transition hover:bg-rose-400/20 disabled:cursor-not-allowed disabled:opacity-50 sm:tracking-[0.14em]"
                   >
                     <Trash2 className="h-4 w-4" />
                     Clear

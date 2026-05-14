@@ -50,4 +50,12 @@ describe('AdminCenter smoke contract', () => {
     expect(source).toContain('Metadata only; content scanning stayed off.');
     expect(source).toContain('SharePoint Lists and document bodies deferred.');
   });
+
+  it('keeps admin setup controls mobile-first', () => {
+    expect(source).toContain('overflow-x-hidden');
+    expect(source).toContain('grid w-full grid-cols-1 gap-3 sm:w-auto sm:grid-cols-2');
+    expect(source).toContain('w-full shrink-0 sm:w-auto');
+    expect(source).toContain('break-words text-[10px] font-black uppercase');
+    expect(source).toContain('backdrop-blur-sm sm:p-6 lg:backdrop-blur-2xl');
+  });
 });
