@@ -118,6 +118,18 @@ const WORKSPACE_REVIEW_STATUS_LABELS: Record<NonNullable<Workspace['stewardship'
   archived: 'Archived',
 };
 
+const WORKSPACE_TRUST_FILTERS = [
+  { id: 'all', label: 'All', detail: 'Every anchor', icon: GridIcon },
+  { id: 'source-of-truth', label: 'Source Truth', detail: 'Pinned or critical', icon: Pin },
+  { id: 'fresh', label: 'Fresh', detail: 'Recently modified', icon: Clock },
+  { id: 'owned', label: 'Owned', detail: 'Has owner', icon: Users },
+  { id: 'external', label: 'External', detail: 'Shared outside', icon: Globe },
+  { id: 'stale', label: 'Stale', detail: 'Needs freshness review', icon: History },
+  { id: 'needs-review', label: 'Needs Review', detail: 'Access or drift', icon: AlertCircle },
+] as const;
+
+type WorkspaceTrustFilterId = typeof WORKSPACE_TRUST_FILTERS[number]['id'];
+
 function getStoredHandoffPacket(row: any): WorkspaceHandoffPacket | null {
   const packet = row.handoffPacket || row.handoff_packet || row.suggestionDecisions?.handoffPacket || row.suggestion_decisions?.handoffPacket;
   if (!packet || typeof packet !== 'object') return null;
@@ -209,6 +221,76 @@ const getPermissionBridgeLabel = (state?: PinnedArtifact['permissionBridge']) =>
       return 'Access Unknown';
   }
 };
+
+function getSourceMetadataValue(item: PinnedArtifact, keys: string[]) {
+  return keys.find((key) => item.sourceMetadata?.[key] !== undefined);
+}
+
+function hasItemOwner(item: PinnedArtifact) {
+  return Boolean(getSourceMetadataValue(item, ['ownerEmail', 'owner_email', 'ownerName', 'owner_name']));
+}
+
+function isItemSourceOfTruth(item: PinnedArtifact, workspace?: Workspace) {
+  return item.category === 'critical' || Boolean(workspace?.stewardship?.sourceOfTruthItemIds?.includes(item.id));
+}
+
+function isItemExternallyShared(item: PinnedArtifact) {
+  const externalShareKey = getSourceMetadataValue(item, ['hasExternalShare', 'has_external_share']);
+  return Boolean(
+    item.permissionBridge?.externalUserCount ||
+    (externalShareKey && item.sourceMetadata?.[externalShareKey])
+  );
+}
+
+function getItemModifiedAt(item: PinnedArtifact) {
+  const modifiedKey = getSourceMetadataValue(item, ['modifiedAt', 'modified_at', 'updatedAt', 'updated_at']);
+  const rawDate = modifiedKey ? item.sourceMetadata?.[modifiedKey] : item.pinnedAt;
+  const date = rawDate ? new Date(rawDate) : null;
+  return date && Number.isFinite(date.getTime()) ? date : null;
+}
+
+function isItemStale(item: PinnedArtifact) {
+  const staleKey = getSourceMetadataValue(item, ['isStale', 'is_stale']);
+  if (staleKey) return Boolean(item.sourceMetadata?.[staleKey]);
+
+  const modifiedAt = getItemModifiedAt(item);
+  if (!modifiedAt) return false;
+
+  const staleAfterMs = 1000 * 60 * 60 * 24 * 365;
+  return Date.now() - modifiedAt.getTime() > staleAfterMs;
+}
+
+function isItemFresh(item: PinnedArtifact) {
+  const modifiedAt = getItemModifiedAt(item);
+  if (!modifiedAt) return false;
+
+  const freshWindowMs = 1000 * 60 * 60 * 24 * 180;
+  return Date.now() - modifiedAt.getTime() <= freshWindowMs;
+}
+
+function itemNeedsReview(item: PinnedArtifact) {
+  return item.syncStatus === 'broken' ||
+    ['access_missing', 'owner_review_required', 'unknown'].includes(item.permissionBridge?.stewardAccess || '');
+}
+
+function matchesWorkspaceTrustFilter(item: PinnedArtifact, filterId: WorkspaceTrustFilterId, workspace?: Workspace) {
+  switch (filterId) {
+    case 'source-of-truth':
+      return isItemSourceOfTruth(item, workspace);
+    case 'fresh':
+      return isItemFresh(item);
+    case 'owned':
+      return hasItemOwner(item);
+    case 'external':
+      return isItemExternallyShared(item);
+    case 'stale':
+      return isItemStale(item);
+    case 'needs-review':
+      return itemNeedsReview(item);
+    default:
+      return true;
+  }
+}
 
 function fileTypeFromMime(mimeType?: string): PinnedArtifact['type'] {
   if (!mimeType) return 'document';
@@ -356,6 +438,7 @@ export const WorkspaceEngine = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'lattice' | 'pulse' | 'forensic'>('pulse');
   const [personaModeId, setPersonaModeId] = useState<WorkspacePersonaModeId>('admin');
+  const [trustFilterId, setTrustFilterId] = useState<WorkspaceTrustFilterId>('all');
   const [isSyncing, setIsSyncing] = useState(false);
 
   // Use API data if available, otherwise fall back to context
@@ -634,8 +717,11 @@ export const WorkspaceEngine = () => {
     );
   }
 
-  const criticalItems = selectedWorkspace?.pinnedItems.filter(item => item.category === 'critical') || [];
-  const otherItems = selectedWorkspace?.pinnedItems.filter(item => item.category !== 'critical') || [];
+  const filteredPinnedItems = selectedWorkspace?.pinnedItems.filter((item) =>
+    matchesWorkspaceTrustFilter(item, trustFilterId, selectedWorkspace)
+  ) || [];
+  const criticalItems = filteredPinnedItems.filter(item => item.category === 'critical');
+  const otherItems = filteredPinnedItems.filter(item => item.category !== 'critical');
   const accessGapItems = selectedWorkspace?.pinnedItems.filter((item) =>
     ['access_missing', 'owner_review_required', 'unknown'].includes(item.permissionBridge?.stewardAccess || 'unknown')
   ) || [];
@@ -652,7 +738,11 @@ export const WorkspaceEngine = () => {
     { id: 'pulse', label: 'Signal Feed', icon: Activity },
     { id: 'lattice', label: 'Lattice Resources', icon: Database },
     { id: 'forensic', label: isDemoMode ? 'Purge Ops' : 'Review Handoff', icon: ShieldCheck },
-  ] as const;
+  ].filter((tab) => personaModeId !== 'worker' || tab.id !== 'forensic') as Array<{
+    id: 'pulse' | 'lattice' | 'forensic';
+    label: string;
+    icon: typeof Activity;
+  }>;
   const liveWorkspaceCoverage = selectedWorkspace
     ? selectedWorkspace.pinnedItems.length > 0
       ? `${Math.min(100, 55 + selectedWorkspace.pinnedItems.length * 10)}/100`
@@ -660,6 +750,7 @@ export const WorkspaceEngine = () => {
     : 'Pending';
   const activePersonaMode =
     WORKSPACE_PERSONA_MODES.find((mode) => mode.id === personaModeId) || WORKSPACE_PERSONA_MODES[0];
+  const isTeamView = activePersonaMode.id === 'worker';
 
   const handlePersonaAction = () => {
     if (!selectedWorkspace) return;
@@ -932,20 +1023,24 @@ export const WorkspaceEngine = () => {
                 >
                     {/* Actions Strip */}
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-                       <button 
-                         onClick={() => setIsSynthesizerOpen(true)}
-                         className="flex min-h-[44px] w-full items-center justify-center gap-3 rounded-2xl bg-[#00F0FF] px-6 py-4 text-[11px] font-black uppercase tracking-[0.14em] text-black shadow-xl shadow-[#00F0FF]/20 transition-all hover:scale-105 sm:w-auto sm:px-10 sm:tracking-[0.2em]"
-                       >
-                          <PlusCircle className="w-5 h-5" /> Synthesize Resource
-                       </button>
-                       <button 
-                         onClick={handleSync}
-                         disabled={isSyncing}
-                         className={`flex min-h-[44px] w-full items-center justify-center gap-3 rounded-2xl border px-6 py-4 text-[11px] font-black uppercase tracking-[0.14em] transition-all sm:w-auto sm:px-8 sm:tracking-[0.2em] ${isSyncing ? 'bg-white/5 border-white/5 text-slate-500' : 'bg-white/5 border-white/10 text-white hover:bg-white/10'}`}
-                       >
-                          <RefreshCcw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
-                          {isSyncing ? 'Validating Pointers...' : 'Workspace Sync Engine'}
-                       </button>
+                       {!isTeamView && (
+                         <>
+                           <button 
+                             onClick={() => setIsSynthesizerOpen(true)}
+                             className="flex min-h-[44px] w-full items-center justify-center gap-3 rounded-2xl bg-[#00F0FF] px-6 py-4 text-[11px] font-black uppercase tracking-[0.14em] text-black shadow-xl shadow-[#00F0FF]/20 transition-all hover:scale-105 sm:w-auto sm:px-10 sm:tracking-[0.2em]"
+                           >
+                              <PlusCircle className="w-5 h-5" /> Synthesize Resource
+                           </button>
+                           <button 
+                             onClick={handleSync}
+                             disabled={isSyncing}
+                             className={`flex min-h-[44px] w-full items-center justify-center gap-3 rounded-2xl border px-6 py-4 text-[11px] font-black uppercase tracking-[0.14em] transition-all sm:w-auto sm:px-8 sm:tracking-[0.2em] ${isSyncing ? 'bg-white/5 border-white/5 text-slate-500' : 'bg-white/5 border-white/10 text-white hover:bg-white/10'}`}
+                           >
+                              <RefreshCcw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                              {isSyncing ? 'Validating Pointers...' : 'Workspace Sync Engine'}
+                           </button>
+                         </>
+                       )}
                        <div className="flex-1 relative min-h-[44px]">
                           <Search className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
                           <input 
@@ -983,7 +1078,7 @@ export const WorkspaceEngine = () => {
                       </Motion.div>
                     )}
 
-                    {!isDemoMode && accessGapItems.length > 0 && (
+                    {!isDemoMode && !isTeamView && accessGapItems.length > 0 && (
                       <Motion.div
                         initial={{ opacity: 0, scale: 0.98 }}
                         animate={{ opacity: 1, scale: 1 }}
@@ -1007,6 +1102,62 @@ export const WorkspaceEngine = () => {
                           Copy Access Packet
                         </button>
                       </Motion.div>
+                    )}
+
+                    {/* Workspace-scoped Trust Filters */}
+                    <div className="rounded-[28px] border border-white/10 bg-white/[0.03] p-4 sm:p-5">
+                      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                        <div>
+                          <p className="text-[9px] font-black uppercase tracking-[0.12em] text-[#00F0FF] sm:tracking-widest">
+                            Workspace Trust Filters
+                          </p>
+                          <p className="mt-1 text-xs leading-5 text-slate-500">
+                            Narrow this workspace to trusted, fresh, owned, exposed, stale, or needs-review files.
+                          </p>
+                        </div>
+                        <span className="text-[9px] font-black uppercase tracking-[0.12em] text-slate-500 sm:tracking-widest">
+                          {filteredPinnedItems.length} of {selectedWorkspace.pinnedItems.length} visible
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-7">
+                        {WORKSPACE_TRUST_FILTERS.map((filter) => (
+                          <button
+                            key={filter.id}
+                            type="button"
+                            onClick={() => setTrustFilterId(filter.id)}
+                            className={`min-h-[44px] rounded-2xl border px-3 py-3 text-left transition-all ${
+                              trustFilterId === filter.id
+                                ? 'border-[#00F0FF]/50 bg-[#00F0FF]/10 text-[#00F0FF]'
+                                : 'border-white/5 bg-black/10 text-slate-500 hover:border-white/20 hover:text-white'
+                            }`}
+                          >
+                            <span className="flex min-w-0 items-center gap-2">
+                              <filter.icon className="h-4 w-4 shrink-0" />
+                              <span className="break-words text-[9px] font-black uppercase tracking-[0.1em] sm:tracking-[0.12em]">
+                                {filter.label}
+                              </span>
+                            </span>
+                            <span className="mt-1 block text-[8px] font-black uppercase tracking-[0.08em] opacity-65">
+                              {filter.detail}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {isTeamView && (
+                      <div className="rounded-[28px] border border-emerald-400/20 bg-emerald-400/[0.04] p-5">
+                        <div className="flex items-start gap-4">
+                          <Eye className="mt-1 h-5 w-5 shrink-0 text-emerald-300" />
+                          <div>
+                            <h4 className="text-sm font-black uppercase tracking-tight text-white">Team View Is Read-Focused</h4>
+                            <p className="mt-2 text-xs leading-5 text-slate-400">
+                              Admin remediation controls are hidden here so knowledge workers can scan trusted files,
+                              open source links, and avoid governance noise on phone-sized screens.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
                     )}
 
                     {/* Key Resources Section */}
@@ -1295,7 +1446,12 @@ export const WorkspaceEngine = () => {
                     <button
                       key={mode.id}
                       type="button"
-                      onClick={() => setPersonaModeId(mode.id)}
+                      onClick={() => {
+                        setPersonaModeId(mode.id);
+                        if (mode.id === 'worker' && activeTab === 'forensic') {
+                          setActiveTab('lattice');
+                        }
+                      }}
                       className={`min-h-[44px] rounded-2xl border px-4 py-3 text-left transition-all ${
                         personaModeId === mode.id
                           ? 'border-[#00F0FF]/50 bg-[#00F0FF]/10 text-[#00F0FF]'

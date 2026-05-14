@@ -64,6 +64,27 @@ describe('WorkspaceEngine smoke contract', () => {
     expect(engineSource).not.toContain('Grant Access');
   });
 
+  it('adds workspace-scoped trust filters for mobile review', () => {
+    expect(engineSource).toContain('WORKSPACE_TRUST_FILTERS');
+    expect(engineSource).toContain('Workspace Trust Filters');
+    expect(engineSource).toContain('matchesWorkspaceTrustFilter');
+    expect(engineSource).toContain('source-of-truth');
+    expect(engineSource).toContain('fresh');
+    expect(engineSource).toContain('owned');
+    expect(engineSource).toContain('external');
+    expect(engineSource).toContain('stale');
+    expect(engineSource).toContain('needs-review');
+    expect(engineSource).toContain('grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-7');
+  });
+
+  it('makes Team View a read-focused workspace mode', () => {
+    expect(engineSource).toContain("personaModeId !== 'worker' || tab.id !== 'forensic'");
+    expect(engineSource).toContain('Team View Is Read-Focused');
+    expect(engineSource).toContain('Admin remediation controls are hidden here');
+    expect(engineSource).toContain('!isTeamView && accessGapItems.length > 0');
+    expect(engineSource).toContain('!isTeamView && (');
+  });
+
   it('keeps workspace controls mobile-first', () => {
     expect(engineSource).toContain('overflow-x-hidden');
     expect(engineSource).toContain('sm:w-auto sm:px-10');

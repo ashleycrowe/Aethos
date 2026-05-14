@@ -1,6 +1,6 @@
 # Aethos V1 Testable Queue
 
-**Last Updated:** May 12, 2026  
+**Last Updated:** May 14, 2026  
 **Status:** V1 live walkthrough blocked by Live-vs-Demo boundary polish  
 **Scope:** First testable V1, not full production readiness
 
@@ -150,8 +150,8 @@ See `docs/OPERATIONAL_INTELLIGENCE_DEVELOPMENT_QUEUE.md` for the detailed implem
 - [x] Persist workspace stewardship metadata: steward owner, review status, source-of-truth pins, and suggestion decisions.
 - [x] Add Permission Bridge scaffolding: steward visibility state, access-gap flag, copy outreach packet, and source deep-link posture without source permission mutation.
 - [x] Add Workspace handoff packets with reason codes from Discovery, Operational Intelligence, owner risk, stale content, exposure, and metadata quality.
-- [ ] Add workspace-scoped trust filters for source-of-truth, freshness, owner, external share, stale, and needs-review state.
-- [ ] Add read-focused Team View for Knowledge Workers with fewer admin/remediation controls.
+- [x] Add workspace-scoped trust filters for source-of-truth, freshness, owner, external share, stale, and needs-review state.
+- [x] Add read-focused Team View for Knowledge Workers with fewer admin/remediation controls.
 - [ ] Add steward audit trail before Microsoft 365 write-back or destructive remediation actions.
 
 ---
