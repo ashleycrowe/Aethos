@@ -507,18 +507,18 @@ export const RemediationCenter: React.FC = () => {
   };
 
   return (
-    <div className="h-full flex flex-col space-y-6">
+    <div className="flex h-full min-w-0 flex-col space-y-6 overflow-x-hidden">
       {/* Header */}
       <div className="space-y-4">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <div className="p-2 rounded-xl bg-[#FF5733]/10 text-[#FF5733] shadow-[0_0_15px_rgba(255,87,51,0.2)]">
             <Archive className="w-5 h-5" />
           </div>
-          <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">
+          <h2 className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-500 sm:tracking-[0.4em]">
             Remediation Protocol
           </h2>
         </div>
-        <h1 className={`text-4xl font-black uppercase tracking-tighter ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
+        <h1 className={`text-3xl font-black uppercase tracking-tight sm:text-4xl ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
           Remediation <span className="text-[#FF5733]">Center</span>
         </h1>
         <p className="text-xs text-slate-500 italic max-w-3xl">
@@ -534,12 +534,12 @@ export const RemediationCenter: React.FC = () => {
       </div>
 
       {/* View Mode Tabs */}
-      <div className={`flex items-center gap-2 p-1 rounded-xl w-fit ${
+      <div className={`grid w-full grid-cols-1 gap-2 rounded-xl p-1 sm:w-fit sm:grid-cols-2 ${
         isDaylight ? 'bg-slate-100' : 'bg-white/5 border border-white/10'
       }`}>
         <button
           onClick={() => setViewMode('pending')}
-          className={`px-4 py-2 rounded-lg text-sm font-bold uppercase tracking-tight transition-all ${
+          className={`min-h-[44px] rounded-lg px-4 py-2 text-sm font-bold uppercase tracking-tight transition-all ${
             viewMode === 'pending'
               ? 'bg-[#FF5733] text-white'
               : isDaylight
@@ -551,7 +551,7 @@ export const RemediationCenter: React.FC = () => {
         </button>
         <button
           onClick={() => setViewMode('history')}
-          className={`px-4 py-2 rounded-lg text-sm font-bold uppercase tracking-tight transition-all ${
+          className={`min-h-[44px] rounded-lg px-4 py-2 text-sm font-bold uppercase tracking-tight transition-all ${
             viewMode === 'history'
               ? 'bg-[#FF5733] text-white'
               : isDaylight
@@ -566,15 +566,15 @@ export const RemediationCenter: React.FC = () => {
       {viewMode === 'pending' ? (
         <>
           {/* Filters & Search */}
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex-1 min-w-[300px] relative">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:flex xl:flex-wrap xl:items-center xl:gap-4">
+            <div className="relative min-w-0 sm:col-span-2 xl:flex-1">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
               <input
                 type="text"
                 placeholder="Search by name or owner..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className={`w-full pl-12 pr-4 py-3 rounded-xl border text-sm transition-all ${
+                className={`min-h-[44px] w-full rounded-xl border py-3 pl-12 pr-4 text-sm transition-all ${
                   isDaylight
                     ? 'bg-white border-slate-200 text-slate-900 focus:border-[#FF5733]'
                     : 'bg-white/5 border-white/10 text-white focus:border-[#FF5733]/50'
@@ -585,7 +585,7 @@ export const RemediationCenter: React.FC = () => {
             <select
               value={filterRisk}
               onChange={(e) => setFilterRisk(e.target.value as any)}
-              className={`px-4 py-3 rounded-xl border text-sm font-bold transition-all ${
+              className={`min-h-[44px] w-full rounded-xl border px-4 py-3 text-sm font-bold transition-all xl:w-auto ${
                 isDaylight
                   ? 'bg-white border-slate-200 text-slate-900'
                   : 'bg-white/5 border-white/10 text-white'
@@ -600,7 +600,7 @@ export const RemediationCenter: React.FC = () => {
             <select
               value={filterIssue}
               onChange={(e) => setFilterIssue(e.target.value as any)}
-              className={`px-4 py-3 rounded-xl border text-sm font-bold transition-all ${
+              className={`min-h-[44px] w-full rounded-xl border px-4 py-3 text-sm font-bold transition-all xl:w-auto ${
                 isDaylight
                   ? 'bg-white border-slate-200 text-slate-900'
                   : 'bg-white/5 border-white/10 text-white'
@@ -620,7 +620,7 @@ export const RemediationCenter: React.FC = () => {
               type="button"
               onClick={() => copyIssueList(filteredItems)}
               disabled={filteredItems.length === 0}
-              className="min-h-[44px] px-4 py-3 rounded-xl border border-white/10 bg-white/5 text-xs font-black uppercase tracking-widest text-slate-300 transition-all hover:border-[#00F0FF]/40 hover:text-white disabled:cursor-not-allowed disabled:opacity-40 flex items-center gap-2"
+              className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-xs font-black uppercase tracking-widest text-slate-300 transition-all hover:border-[#00F0FF]/40 hover:text-white disabled:cursor-not-allowed disabled:opacity-40 xl:w-auto"
             >
               <ClipboardCopy className="w-4 h-4" />
               Copy Filtered
@@ -630,7 +630,7 @@ export const RemediationCenter: React.FC = () => {
               type="button"
               onClick={() => exportCsv(filteredItems)}
               disabled={filteredItems.length === 0}
-              className="min-h-[44px] px-4 py-3 rounded-xl border border-white/10 bg-white/5 text-xs font-black uppercase tracking-widest text-slate-300 transition-all hover:border-[#00F0FF]/40 hover:text-white disabled:cursor-not-allowed disabled:opacity-40 flex items-center gap-2"
+              className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-xs font-black uppercase tracking-widest text-slate-300 transition-all hover:border-[#00F0FF]/40 hover:text-white disabled:cursor-not-allowed disabled:opacity-40 xl:w-auto"
             >
               <Download className="w-4 h-4" />
               CSV
@@ -690,45 +690,45 @@ export const RemediationCenter: React.FC = () => {
                       </button>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-3">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:flex xl:flex-wrap xl:items-center">
                       <button
                         onClick={() => copyIssueList()}
-                        className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 transition-all flex items-center gap-2 text-sm font-black uppercase tracking-tight"
+                        className="flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-black uppercase tracking-tight text-slate-300 transition-all hover:bg-white/10"
                       >
                         <ClipboardCopy className="w-4 h-4" />
                         Copy
                       </button>
                       <button
                         onClick={() => exportCsv()}
-                        className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 transition-all flex items-center gap-2 text-sm font-black uppercase tracking-tight"
+                        className="flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-black uppercase tracking-tight text-slate-300 transition-all hover:bg-white/10"
                       >
                         <Download className="w-4 h-4" />
                         CSV
                       </button>
                       <button
                         onClick={copyDryRunScript}
-                        className="px-4 py-2 rounded-xl bg-[#00F0FF]/10 border border-[#00F0FF]/30 text-[#00F0FF] hover:bg-[#00F0FF]/20 transition-all flex items-center gap-2 text-sm font-black uppercase tracking-tight"
+                        className="flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-[#00F0FF]/30 bg-[#00F0FF]/10 px-4 py-2 text-sm font-black uppercase tracking-tight text-[#00F0FF] transition-all hover:bg-[#00F0FF]/20"
                       >
                         <FileCode2 className="w-4 h-4" />
                         Dry-Run Script
                       </button>
                       <button
                         onClick={() => initiateAction('archive')}
-                        className="px-4 py-2 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/20 transition-all flex items-center gap-2 text-sm font-black uppercase tracking-tight"
+                        className="flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-yellow-500/30 bg-yellow-500/10 px-4 py-2 text-sm font-black uppercase tracking-tight text-yellow-500 transition-all hover:bg-yellow-500/20"
                       >
                         <Archive className="w-4 h-4" />
                         Archive
                       </button>
                       <button
                         onClick={() => initiateAction('revoke_links')}
-                        className="px-4 py-2 rounded-xl bg-orange-500/10 border border-orange-500/30 text-orange-500 hover:bg-orange-500/20 transition-all flex items-center gap-2 text-sm font-black uppercase tracking-tight"
+                        className="flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-orange-500/30 bg-orange-500/10 px-4 py-2 text-sm font-black uppercase tracking-tight text-orange-500 transition-all hover:bg-orange-500/20"
                       >
                         <ShieldOff className="w-4 h-4" />
                         Revoke Links
                       </button>
                       <button
                         onClick={() => initiateAction('delete')}
-                        className="px-4 py-2 rounded-xl bg-[#FF5733]/10 border border-[#FF5733]/30 text-[#FF5733] hover:bg-[#FF5733]/20 transition-all flex items-center gap-2 text-sm font-black uppercase tracking-tight"
+                        className="flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-[#FF5733]/30 bg-[#FF5733]/10 px-4 py-2 text-sm font-black uppercase tracking-tight text-[#FF5733] transition-all hover:bg-[#FF5733]/20 sm:col-span-2 xl:col-span-1"
                       >
                         <Trash2 className="w-4 h-4" />
                         Delete
@@ -801,41 +801,41 @@ export const RemediationCenter: React.FC = () => {
                       animate={{ opacity: 1, y: 0 }}
                     >
                       <GlassCard
-                        className={`p-6 cursor-pointer transition-all ${
+                        className={`cursor-pointer p-4 transition-all sm:p-6 ${
                           isSelected 
                             ? 'border-[#00F0FF]/50 bg-[#00F0FF]/5' 
                             : 'hover:bg-white/[0.02]'
                         }`}
                         onClick={() => toggleSelect(item.id)}
                       >
-                        <div className="flex items-start gap-4">
+                        <div className="flex items-start gap-3 sm:gap-4">
                           <input
                             type="checkbox"
                             checked={isSelected}
                             onChange={() => {}}
-                            className="mt-1 w-5 h-5 rounded border-2 border-white/20 bg-white/5 checked:bg-[#00F0FF] checked:border-[#00F0FF] cursor-pointer"
+                            className="mt-1 h-5 w-5 shrink-0 cursor-pointer rounded border-2 border-white/20 bg-white/5 checked:border-[#00F0FF] checked:bg-[#00F0FF]"
                             onClick={(e) => e.stopPropagation()}
                           />
 
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-4 mb-3">
+                            <div className="mb-3 flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-4">
                               <div className="flex-1 min-w-0">
-                                <h3 className={`text-sm font-black mb-1 truncate ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
+                                <h3 className={`mb-2 break-words text-sm font-black ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
                                   {item.name}
                                 </h3>
-                                <div className="flex items-center gap-3 text-[10px] text-slate-500 uppercase tracking-widest font-black">
+                                <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[10px] font-black uppercase tracking-widest text-slate-500">
                                   <span className="flex items-center gap-1">
                                     <ProviderIcon className="w-3 h-3" />
                                     {item.provider}
                                   </span>
-                                  <span>•</span>
+                                  <span className="hidden sm:inline">-</span>
                                   <span>{item.size}</span>
-                                  <span>•</span>
+                                  <span className="hidden sm:inline">-</span>
                                   <span className="flex items-center gap-1">
                                     <Clock className="w-3 h-3" />
                                     {item.lastModified}
                                   </span>
-                                  <span>•</span>
+                                  <span className="hidden sm:inline">-</span>
                                   <span className="flex items-center gap-1">
                                     <Users className="w-3 h-3" />
                                     {item.owner}
@@ -843,7 +843,7 @@ export const RemediationCenter: React.FC = () => {
                                 </div>
                               </div>
 
-                              <div className="flex items-center gap-2 shrink-0">
+                              <div className="flex flex-wrap items-center gap-2 md:shrink-0 md:justify-end">
                                 <div
                                   className="px-3 py-1 rounded-lg border text-[9px] font-black uppercase tracking-widest"
                                   style={{
@@ -861,7 +861,7 @@ export const RemediationCenter: React.FC = () => {
                             </div>
 
                             {item.externalUsers && (
-                              <div className="flex items-center gap-2 p-3 rounded-xl bg-[#FF5733]/10 border border-[#FF5733]/20">
+                              <div className="flex items-start gap-2 rounded-xl border border-[#FF5733]/20 bg-[#FF5733]/10 p-3 sm:items-center">
                                 <Globe className="w-4 h-4 text-[#FF5733]" />
                                 <span className="text-xs font-bold text-[#FF5733]">
                                   Shared with {item.externalUsers} external user{item.externalUsers > 1 ? 's' : ''}
@@ -893,8 +893,8 @@ export const RemediationCenter: React.FC = () => {
             </GlassCard>
           ) : (
             completedActions.map(action => (
-              <GlassCard key={action.id} className="p-6">
-                <div className="flex items-start justify-between mb-4">
+              <GlassCard key={action.id} className="p-4 sm:p-6">
+                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-500">
                       <CheckCircle2 className="w-5 h-5" />
@@ -904,7 +904,7 @@ export const RemediationCenter: React.FC = () => {
                         {action.action === 'archive' ? 'Archived' : action.action === 'delete' ? 'Deleted' : 'Links Revoked'}
                       </h4>
                       <p className="text-[10px] text-slate-500 uppercase tracking-widest font-black mt-1">
-                        {new Date(action.timestamp).toLocaleString()} • {action.executedBy}
+                        {new Date(action.timestamp).toLocaleString()} - {action.executedBy}
                       </p>
                     </div>
                   </div>
@@ -937,7 +937,7 @@ export const RemediationCenter: React.FC = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-3 backdrop-blur-sm sm:items-center sm:p-6"
             onClick={() => setShowConfirmDialog(false)}
           >
             <Motion.div
@@ -947,7 +947,7 @@ export const RemediationCenter: React.FC = () => {
               onClick={(e) => e.stopPropagation()}
               className="w-full max-w-md"
             >
-              <GlassCard className="p-8 border-[#FF5733]/30">
+              <GlassCard className="max-h-[calc(100vh-1.5rem)] overflow-y-auto rounded-b-none border-[#FF5733]/30 p-5 sm:rounded-[28px] sm:p-8">
                 <div className="flex items-start gap-4 mb-6">
                   <div className="p-3 rounded-xl bg-[#FF5733]/10 text-[#FF5733]">
                     <AlertTriangle className="w-6 h-6" />
@@ -967,10 +967,10 @@ export const RemediationCenter: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <button
                     onClick={() => setShowConfirmDialog(false)}
-                    className={`flex-1 px-4 py-3 rounded-xl border font-black uppercase text-sm tracking-tight transition-all ${
+                    className={`min-h-[44px] rounded-xl border px-4 py-3 text-sm font-black uppercase tracking-tight transition-all ${
                       isDaylight
                         ? 'bg-white border-slate-200 text-slate-900 hover:bg-slate-50'
                         : 'bg-white/5 border-white/10 text-white hover:bg-white/10'
@@ -980,7 +980,7 @@ export const RemediationCenter: React.FC = () => {
                   </button>
                   <button
                     onClick={executeAction}
-                    className="flex-1 px-4 py-3 rounded-xl bg-[#FF5733] text-white font-black uppercase text-sm tracking-tight hover:bg-[#FF5733]/90 transition-all shadow-lg shadow-[#FF5733]/20"
+                    className="min-h-[44px] rounded-xl bg-[#FF5733] px-4 py-3 text-sm font-black uppercase tracking-tight text-white shadow-lg shadow-[#FF5733]/20 transition-all hover:bg-[#FF5733]/90"
                   >
                     Confirm
                   </button>

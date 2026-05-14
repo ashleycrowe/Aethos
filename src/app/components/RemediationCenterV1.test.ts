@@ -25,4 +25,12 @@ describe('RemediationCenterV1 live/demo smoke contract', () => {
     expect(source).toContain('Live Remediation Unavailable');
     expect(source).toContain('Run discovery first if this tenant has not been indexed.');
   });
+
+  it('keeps remediation controls mobile-first', () => {
+    expect(source).toContain('overflow-x-hidden');
+    expect(source).toContain('grid w-full grid-cols-1');
+    expect(source).toContain('sm:grid-cols-2 xl:flex');
+    expect(source).toContain('break-words text-sm font-black');
+    expect(source).toContain('sm:items-center sm:p-6');
+  });
 });
