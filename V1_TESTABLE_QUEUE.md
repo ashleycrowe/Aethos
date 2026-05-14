@@ -238,7 +238,7 @@ Audit rules:
 - [ ] Keep forms readable with stacked fields/buttons and iOS keyboard-safe spacing.
 - [ ] Make charts responsive with aspect-ratio containers and reduced mobile axis labels.
 - [ ] Reduce expensive blur/backdrop effects on mobile: `backdrop-blur-sm sm:backdrop-blur-md lg:backdrop-blur-xl`.
-- [ ] Add `scrollbar-hide` and `safe-area-inset` utilities if missing; `snap-x` and `snap-start` are native Tailwind utilities.
+- [x] Add `scrollbar-hide` and `safe-area-inset` utilities if missing; `snap-x` and `snap-start` are native Tailwind utilities.
 - [ ] Test with the existing bottom nav; do not replace it with a drawer unless testing proves the bottom nav fails.
 - [ ] Run a final smoke test on real iPhone SE or Chrome DevTools 375px: navigate core V1 screens, tap every button, open every modal, verify forms and charts.
 
