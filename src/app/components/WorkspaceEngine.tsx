@@ -130,6 +130,14 @@ const WORKSPACE_TRUST_FILTERS = [
 
 type WorkspaceTrustFilterId = typeof WORKSPACE_TRUST_FILTERS[number]['id'];
 
+type StewardAuditEvent = {
+  id: string;
+  label: string;
+  detail: string;
+  timestamp: string;
+  tone: 'info' | 'success' | 'warning';
+};
+
 function getStoredHandoffPacket(row: any): WorkspaceHandoffPacket | null {
   const packet = row.handoffPacket || row.handoff_packet || row.suggestionDecisions?.handoffPacket || row.suggestion_decisions?.handoffPacket;
   if (!packet || typeof packet !== 'object') return null;
@@ -290,6 +298,84 @@ function matchesWorkspaceTrustFilter(item: PinnedArtifact, filterId: WorkspaceTr
     default:
       return true;
   }
+}
+
+function buildStewardAuditTrail(
+  workspace: Workspace,
+  handoffPacket: WorkspaceHandoffPacket | null,
+  accessGapItems: PinnedArtifact[]
+): StewardAuditEvent[] {
+  const stewardship = workspace.stewardship;
+  const events: StewardAuditEvent[] = [
+    {
+      id: 'workspace-created',
+      label: 'Workspace Created',
+      detail: 'Workspace exists in Aethos before any source-system write-back.',
+      timestamp: workspace.createdAt,
+      tone: 'info',
+    },
+  ];
+
+  if (handoffPacket) {
+    events.push({
+      id: 'handoff-packet',
+      label: 'Handoff Packet Captured',
+      detail: `${handoffPacket.reasonCodes.join(', ') || 'manual-review'}: ${handoffPacket.suggestedAction}`,
+      timestamp: workspace.updatedAt,
+      tone: handoffPacket.ownerReviewRequired ? 'warning' : 'info',
+    });
+  }
+
+  if (stewardship?.stewardOwnerEmail || stewardship?.stewardOwnerName) {
+    events.push({
+      id: 'steward-assigned',
+      label: 'Context Steward Assigned',
+      detail: stewardship.stewardOwnerName || stewardship.stewardOwnerEmail || 'Assigned steward recorded.',
+      timestamp: workspace.updatedAt,
+      tone: 'success',
+    });
+  }
+
+  if (stewardship?.sourceOfTruthItemIds.length) {
+    events.push({
+      id: 'source-of-truth-pins',
+      label: 'Source-Of-Truth Pins Recorded',
+      detail: `${stewardship.sourceOfTruthItemIds.length} item${stewardship.sourceOfTruthItemIds.length === 1 ? '' : 's'} marked as trusted anchors.`,
+      timestamp: workspace.updatedAt,
+      tone: 'success',
+    });
+  }
+
+  const decisionCount = Object.keys(stewardship?.suggestionDecisions || {}).length;
+  if (decisionCount > 0) {
+    events.push({
+      id: 'suggestion-decisions',
+      label: 'Suggestion Decisions Preserved',
+      detail: `${decisionCount} metadata or handoff decision${decisionCount === 1 ? '' : 's'} retained for review.`,
+      timestamp: workspace.updatedAt,
+      tone: 'info',
+    });
+  }
+
+  if (accessGapItems.length > 0) {
+    events.push({
+      id: 'permission-bridge-gaps',
+      label: 'Permission Gaps Flagged',
+      detail: `${accessGapItems.length} item${accessGapItems.length === 1 ? '' : 's'} need source-system access review before cleanup or team-ready promotion.`,
+      timestamp: workspace.updatedAt,
+      tone: 'warning',
+    });
+  }
+
+  events.push({
+    id: 'write-back-boundary',
+    label: 'Write-Back Boundary Held',
+    detail: 'No Microsoft 365 permission or destructive remediation action is executed from this audit trail.',
+    timestamp: workspace.updatedAt,
+    tone: 'info',
+  });
+
+  return events;
 }
 
 function fileTypeFromMime(mimeType?: string): PinnedArtifact['type'] {
@@ -751,6 +837,9 @@ export const WorkspaceEngine = () => {
   const activePersonaMode =
     WORKSPACE_PERSONA_MODES.find((mode) => mode.id === personaModeId) || WORKSPACE_PERSONA_MODES[0];
   const isTeamView = activePersonaMode.id === 'worker';
+  const stewardAuditTrail = selectedWorkspace
+    ? buildStewardAuditTrail(selectedWorkspace, selectedHandoffPacket, accessGapItems)
+    : [];
 
   const handlePersonaAction = () => {
     if (!selectedWorkspace) return;
@@ -1580,6 +1669,60 @@ export const WorkspaceEngine = () => {
                       'This workspace can carry a handoff packet from discovery into steward curation before the team consumes it.'}
                   </p>
                 </div>
+              </div>
+            </div>
+
+            {/* Steward Audit Trail */}
+            <div className={`rounded-[32px] border p-6 sm:p-8 ${isDaylight ? 'border-slate-100 bg-white shadow-xl' : 'border-white/10 bg-white/[0.02]'}`}>
+              <div className="flex items-center gap-4">
+                <History className="h-5 w-5 text-[#00F0FF]" />
+                <h3 className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 sm:tracking-[0.35em]">
+                  Steward Audit Trail
+                </h3>
+              </div>
+              <p className="mt-3 text-xs leading-5 text-slate-500">
+                Review evidence before team-ready promotion, Microsoft 365 write-back, or destructive remediation.
+              </p>
+              <div className="mt-6 space-y-3">
+                {stewardAuditTrail.map((event) => (
+                  <div
+                    key={event.id}
+                    className={`rounded-2xl border p-4 ${
+                      event.tone === 'warning'
+                        ? 'border-amber-300/20 bg-amber-300/[0.05]'
+                        : event.tone === 'success'
+                          ? 'border-emerald-400/20 bg-emerald-400/[0.05]'
+                          : 'border-white/5 bg-black/10'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={`mt-1 h-2 w-2 shrink-0 rounded-full ${
+                        event.tone === 'warning'
+                          ? 'bg-amber-300'
+                          : event.tone === 'success'
+                            ? 'bg-emerald-400'
+                            : 'bg-[#00F0FF]'
+                      }`} />
+                      <div className="min-w-0 flex-1">
+                        <p className={`break-words text-[10px] font-black uppercase tracking-[0.12em] sm:tracking-[0.16em] ${
+                          event.tone === 'warning'
+                            ? 'text-amber-200'
+                            : event.tone === 'success'
+                              ? 'text-emerald-300'
+                              : 'text-[#00F0FF]'
+                        }`}>
+                          {event.label}
+                        </p>
+                        <p className="mt-1 text-xs leading-5 text-slate-500">
+                          {event.detail}
+                        </p>
+                        <p className="mt-2 text-[8px] font-black uppercase tracking-[0.1em] text-slate-600 sm:tracking-widest">
+                          {new Date(event.timestamp).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 

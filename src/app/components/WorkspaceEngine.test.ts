@@ -85,6 +85,19 @@ describe('WorkspaceEngine smoke contract', () => {
     expect(engineSource).toContain('!isTeamView && (');
   });
 
+  it('shows a steward audit trail before source-system action', () => {
+    expect(engineSource).toContain('buildStewardAuditTrail');
+    expect(engineSource).toContain('Steward Audit Trail');
+    expect(engineSource).toContain('Workspace Created');
+    expect(engineSource).toContain('Handoff Packet Captured');
+    expect(engineSource).toContain('Context Steward Assigned');
+    expect(engineSource).toContain('Source-Of-Truth Pins Recorded');
+    expect(engineSource).toContain('Suggestion Decisions Preserved');
+    expect(engineSource).toContain('Permission Gaps Flagged');
+    expect(engineSource).toContain('Write-Back Boundary Held');
+    expect(engineSource).toContain('No Microsoft 365 permission or destructive remediation action is executed');
+  });
+
   it('keeps workspace controls mobile-first', () => {
     expect(engineSource).toContain('overflow-x-hidden');
     expect(engineSource).toContain('sm:w-auto sm:px-10');

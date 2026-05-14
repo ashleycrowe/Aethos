@@ -152,7 +152,7 @@ See `docs/OPERATIONAL_INTELLIGENCE_DEVELOPMENT_QUEUE.md` for the detailed implem
 - [x] Add Workspace handoff packets with reason codes from Discovery, Operational Intelligence, owner risk, stale content, exposure, and metadata quality.
 - [x] Add workspace-scoped trust filters for source-of-truth, freshness, owner, external share, stale, and needs-review state.
 - [x] Add read-focused Team View for Knowledge Workers with fewer admin/remediation controls.
-- [ ] Add steward audit trail before Microsoft 365 write-back or destructive remediation actions.
+- [x] Add steward audit trail before Microsoft 365 write-back or destructive remediation actions.
 
 ---
 
