@@ -271,11 +271,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
     </div>
     <nav
       aria-label="Primary mobile navigation"
-      className={`fixed inset-x-3 bottom-3 z-[180] grid grid-cols-5 gap-1 rounded-2xl border p-1.5 shadow-2xl backdrop-blur-md md:hidden ${
+      className={`fixed inset-x-3 z-[180] grid grid-cols-5 gap-1 rounded-2xl border p-1.5 shadow-2xl backdrop-blur-md md:hidden ${
         isDaylight
           ? 'border-slate-200 bg-white/90 shadow-slate-300/40'
           : 'border-white/10 bg-[#0B0F19]/90 shadow-black/60'
       }`}
+      style={{ bottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
     >
       {mobileNavItems.map((item) => {
         const isActive = activeTab === item.id;
