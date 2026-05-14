@@ -112,6 +112,13 @@ INSERT INTO workspaces (
   color,
   tags,
   auto_sync_enabled,
+  steward_owner_email,
+  steward_owner_name,
+  review_status,
+  handoff_reason_codes,
+  source_of_truth_item_ids,
+  suggestion_decisions,
+  steward_notes,
   created_by
 )
 VALUES (
@@ -123,16 +130,50 @@ VALUES (
   '#00F0FF',
   ARRAY['finance', 'budget'],
   TRUE,
+  'steward@aethos.local',
+  'Context Steward',
+  'steward_review',
+  ARRAY['metadata-quality', 'stale-content', 'handoff'],
+  ARRAY['00000000-0000-0000-0000-000000000301']::uuid[],
+  '{
+    "handoffPacket": {
+      "source": "operational_intelligence",
+      "summary": "Seed workspace used to verify handoff, trust filters, and steward audit trail behavior.",
+      "reasonCodes": ["metadata-quality", "stale-content", "handoff"],
+      "suggestedAction": "Review source-of-truth budget files, resolve stale archive exposure, and mark the workspace team-ready only after steward review.",
+      "ownerReviewRequired": true
+    },
+    "seed-budget-q1": {
+      "status": "accepted",
+      "reason": "Trusted source-of-truth anchor for local V1 workspace testing."
+    }
+  }'::jsonb,
+  'Seed stewardship data intentionally exercises handoff packets, trust filters, permission gaps, and the visible audit trail.',
   '00000000-0000-0000-0000-000000000201'
 )
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+  steward_owner_email = EXCLUDED.steward_owner_email,
+  steward_owner_name = EXCLUDED.steward_owner_name,
+  review_status = EXCLUDED.review_status,
+  handoff_reason_codes = EXCLUDED.handoff_reason_codes,
+  source_of_truth_item_ids = EXCLUDED.source_of_truth_item_ids,
+  suggestion_decisions = EXCLUDED.suggestion_decisions,
+  steward_notes = EXCLUDED.steward_notes;
 
 INSERT INTO workspace_items (workspace_id, file_id, added_by, added_method, pinned)
-VALUES (
+VALUES
+(
   '00000000-0000-0000-0000-000000000401',
   '00000000-0000-0000-0000-000000000301',
   '00000000-0000-0000-0000-000000000201',
   'manual',
   TRUE
+),
+(
+  '00000000-0000-0000-0000-000000000401',
+  '00000000-0000-0000-0000-000000000302',
+  '00000000-0000-0000-0000-000000000201',
+  'handoff',
+  FALSE
 )
 ON CONFLICT (workspace_id, file_id) DO NOTHING;

@@ -5,6 +5,7 @@ const migrationSource = readFileSync(new URL('../../supabase/migrations/008_work
 const createSource = readFileSync(new URL('./create.ts', import.meta.url), 'utf8');
 const listSource = readFileSync(new URL('./list.ts', import.meta.url), 'utf8');
 const detailSource = readFileSync(new URL('./[id]/index.ts', import.meta.url), 'utf8');
+const seedSource = readFileSync(new URL('../../supabase/seed_v1_test.sql', import.meta.url), 'utf8');
 
 describe('workspace stewardship persistence contract', () => {
   it('adds stewardship metadata columns to workspaces', () => {
@@ -34,5 +35,15 @@ describe('workspace stewardship persistence contract', () => {
     expect(detailSource).toContain('has_external_share');
     expect(detailSource).toContain('external_user_count');
     expect(detailSource).not.toContain('grant');
+  });
+
+  it('keeps local seed fixtures aligned with stewardship and handoff UX', () => {
+    expect(seedSource).toContain('steward_owner_email');
+    expect(seedSource).toContain('handoff_reason_codes');
+    expect(seedSource).toContain('source_of_truth_item_ids');
+    expect(seedSource).toContain('"handoffPacket"');
+    expect(seedSource).toContain('Seed stewardship data intentionally exercises handoff packets');
+    expect(seedSource).toContain("'handoff'");
+    expect(seedSource).toContain('ON CONFLICT (id) DO UPDATE SET');
   });
 });
