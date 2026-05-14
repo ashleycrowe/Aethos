@@ -49,7 +49,7 @@ This file is the short-cycle engineering queue. Keep `IMPLEMENTATION_TASKS.md` a
 - [x] Add workspace list/detail endpoints if the frontend needs them.
 - [x] Gate non-V1 prototype modules behind feature flags or hide them from the default nav.
 - [x] Turn global demo mode into an explicit environment-controlled setting.
-- [ ] Enforce a strict Live Mode vs Demo Mode data boundary across V1 modules.
+- [x] Enforce a strict Live Mode vs Demo Mode data boundary across V1 modules.
 - [x] Replace Live Mode mock/simulation surfaces in Intelligence with real scan status, empty states, or setup CTAs.
 - [x] Replace Live Mode mock remediation queue with real candidates from indexed `files` metadata.
 - [x] Add Phase 1 first-run setup guidance after Microsoft sign-in.
@@ -76,6 +76,7 @@ This file is the short-cycle engineering queue. Keep `IMPLEMENTATION_TASKS.md` a
 
 Known follow-up from the latest audit:
 
+- [x] Add an explicit app-shell tab allow-list so Live Mode only opens live-backed V1 surfaces and demo-only reporting stays gated.
 - [x] Stop Metadata Intelligence from falling back to sample metrics when the Live Mode metrics API fails.
 - [x] Remove demo-only federated provider claims from Live Mode Oracle/Workspace copy.
 - [x] Finish a full pass on secondary Intelligence tabs for remaining prototype-only controls.

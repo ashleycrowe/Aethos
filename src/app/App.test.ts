@@ -18,3 +18,18 @@ describe('App shell mobile readiness contract', () => {
     expect(source).toContain('blur-[90px]');
   });
 });
+
+describe('App live/demo tab boundary contract', () => {
+  it('keeps Live Mode constrained to live-backed V1 surfaces', () => {
+    expect(source).toContain("export const LIVE_CORE_TABS = new Set(['oracle', 'insights', 'nexus', 'archival', 'admin']);");
+    expect(source).toContain("export const DEMO_ONLY_TABS = new Set(['reports']);");
+    expect(source).toContain('isTabAllowedForMode(activeTab, isDemoMode)');
+  });
+
+  it('keeps demo and prototype routes behind the coming-soon boundary unless explicitly allowed', () => {
+    expect(source).toContain('return <ComingSoonView tab={activeTab} />;');
+    expect(source).toContain("case 'lab':");
+    expect(source).toContain("case 'tag-demo':");
+    expect(source).toContain("case 'tag-flow-demo':");
+  });
+});

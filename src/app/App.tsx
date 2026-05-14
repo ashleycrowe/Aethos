@@ -59,8 +59,17 @@ const VoyagerWorkbench = lazy(() =>
 );
 const WorkspaceEngine = lazy(() => import('@/app/components/WorkspaceEngine').then((module) => ({ default: module.WorkspaceEngine })));
 
-const LIVE_CORE_TABS = new Set(['oracle', 'insights', 'nexus', 'archival', 'admin']);
-const DEMO_ONLY_TABS = new Set(['reports']);
+export const LIVE_CORE_TABS = new Set(['oracle', 'insights', 'nexus', 'archival', 'admin']);
+export const DEMO_ONLY_TABS = new Set(['reports']);
+
+export const getAllowedTabsForMode = (isDemoMode: boolean) =>
+  new Set([
+    ...Array.from(LIVE_CORE_TABS),
+    ...(isDemoMode ? Array.from(DEMO_ONLY_TABS) : []),
+  ]);
+
+export const isTabAllowedForMode = (tab: string, isDemoMode: boolean) =>
+  getAllowedTabsForMode(isDemoMode).has(tab);
 
 const COMING_SOON_LABELS: Record<string, string> = {
   admin: 'Admin Center',
@@ -251,12 +260,7 @@ const Layout: React.FC = () => {
   }, []);
 
   const renderContent = () => {
-    const allowedTabs = new Set([
-      ...Array.from(LIVE_CORE_TABS),
-      ...(isDemoMode ? Array.from(DEMO_ONLY_TABS) : []),
-    ]);
-
-    if (!allowedTabs.has(activeTab)) {
+    if (!isTabAllowedForMode(activeTab, isDemoMode)) {
       return <ComingSoonView tab={activeTab} />;
     }
 
