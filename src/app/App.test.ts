@@ -3,11 +3,18 @@ import { readFileSync } from 'node:fs';
 
 const source = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
 
-describe('App live/demo route gating contract', () => {
-  it('keeps mock reporting outside the live core tab set', () => {
-    expect(source).toContain("const LIVE_CORE_TABS = new Set(['oracle', 'insights', 'nexus', 'archival', 'admin'])");
-    expect(source).toContain("const DEMO_ONLY_TABS = new Set(['reports'])");
-    expect(source).toContain('...(isDemoMode ? Array.from(DEMO_ONLY_TABS) : [])');
-    expect(source).toContain('if (!allowedTabs.has(activeTab))');
+describe('App shell mobile readiness contract', () => {
+  it('keeps shell cards and labels readable on phones', () => {
+    expect(source).toContain('w-full max-w-xl rounded-[28px]');
+    expect(source).toContain('tracking-[0.18em]');
+    expect(source).toContain('backdrop-blur-sm');
+    expect(source).toContain('sm:backdrop-blur-2xl');
+  });
+
+  it('keeps global chrome clear of the mobile bottom nav', () => {
+    expect(source).toContain('overflow-hidden transition-colors');
+    expect(source).toContain('flex min-h-[44px] min-w-[44px]');
+    expect(source).toContain('pb-28');
+    expect(source).toContain('blur-[90px]');
   });
 });

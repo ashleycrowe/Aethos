@@ -237,6 +237,7 @@ Completed component passes:
 - [x] WorkspaceEngine: reduce tight label tracking, make workspace/lattice actions touch-sized on phones, and wrap resource titles/labels.
 - [x] ReportingCenter: stack report controls at mobile widths, reduce chart/card padding, wrap waste-file rows, and remove hard-coded dollar savings.
 - [x] PeopleCenter: stack directory/manager controls, wrap identity card labels, and make the profile modal phone-friendly.
+- [x] App shell and navigation: reduce mobile blur cost, tighten shell labels, touch-size header/sidebar controls, and add bottom-nav content clearance.
 - [x] RemediationCenter: stack filters/tabs/actions at mobile widths, make candidate cards wrap instead of truncate, and use a bottom-sheet confirmation dialog on phones.
 - [x] AdminCenter: stack header/setup/diagnostic controls at mobile widths, reduce tight tracking, wrap long status values, and reduce mobile backdrop cost.
 

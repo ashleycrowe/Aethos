@@ -77,11 +77,11 @@ const COMING_SOON_LABELS: Record<string, string> = {
 
 const ComingSoonView = ({ tab }: { tab: string }) => (
   <div className="flex min-h-[420px] items-center justify-center px-4 text-center">
-    <div className="max-w-xl rounded-[32px] border border-white/10 bg-[#0B0F19]/80 p-8 shadow-2xl backdrop-blur-2xl sm:p-10">
+    <div className="w-full max-w-xl rounded-[28px] border border-white/10 bg-[#0B0F19]/80 p-6 shadow-2xl backdrop-blur-sm sm:rounded-[32px] sm:p-10 sm:backdrop-blur-2xl">
       <div className="mx-auto mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-[#00F0FF]/20 bg-[#00F0FF]/10 text-[#00F0FF]">
         <Settings className="h-5 w-5" />
       </div>
-      <p className="mb-3 text-[10px] font-black uppercase tracking-[0.35em] text-[#00F0FF]">
+      <p className="mb-3 text-[10px] font-black uppercase tracking-[0.18em] text-[#00F0FF] sm:tracking-[0.35em]">
         Coming Soon
       </p>
       <h2 className="mb-4 text-2xl font-black uppercase tracking-tight text-white">
@@ -95,14 +95,14 @@ const ComingSoonView = ({ tab }: { tab: string }) => (
 );
 
 const ViewLoadingFallback = () => (
-  <div className="h-full min-h-[320px] flex flex-col items-center justify-center text-center">
+  <div className="flex h-full min-h-[320px] flex-col items-center justify-center px-4 text-center">
     <AethosLogo
       variant="icon"
       size="lg"
       className="mb-5 text-[#00F0FF] drop-shadow-[0_0_22px_rgba(0,240,255,0.45)]"
       animated
     />
-    <p className="text-[10px] font-black uppercase tracking-[0.35em] text-slate-500">
+    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 sm:tracking-[0.35em]">
       Loading Intelligence Layer
     </p>
   </div>
@@ -118,9 +118,9 @@ const isMicrosoftAuthPopupResponse = () => {
 
 const PopupAuthResponseFallback = () => (
   <div className="flex min-h-screen items-center justify-center bg-[#0B0F19] px-4 text-center text-white">
-    <section className="w-full max-w-sm rounded-[28px] border border-[#00F0FF]/20 bg-white/[0.06] p-8 shadow-2xl backdrop-blur-2xl">
+    <section className="w-full max-w-sm rounded-[28px] border border-[#00F0FF]/20 bg-white/[0.06] p-6 shadow-2xl backdrop-blur-sm sm:p-8 sm:backdrop-blur-2xl">
       <AethosLogo variant="icon" size="md" className="mx-auto mb-5 text-[#00F0FF]" />
-      <p className="mb-3 text-[10px] font-black uppercase tracking-[0.35em] text-[#00F0FF]">
+      <p className="mb-3 text-[10px] font-black uppercase tracking-[0.18em] text-[#00F0FF] sm:tracking-[0.35em]">
         Aethos Live
       </p>
       <h1 className="mb-3 text-2xl font-black tracking-tight text-white">
@@ -150,27 +150,27 @@ const LoginGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center overflow-hidden bg-[#0B0F19] px-4 text-white">
-      <div className="pointer-events-none fixed right-[-20%] top-[-20%] h-[520px] w-[520px] rounded-full bg-[#00F0FF]/10 blur-[150px]" />
-      <div className="pointer-events-none fixed bottom-[-20%] left-[-20%] h-[480px] w-[480px] rounded-full bg-[#FF5733]/10 blur-[150px]" />
+    <div className="flex min-h-screen items-center justify-center overflow-hidden bg-[#0B0F19] px-4 py-6 text-white sm:py-10">
+      <div className="pointer-events-none fixed right-[-30%] top-[-20%] h-[320px] w-[320px] rounded-full bg-[#00F0FF]/10 blur-[90px] sm:right-[-20%] sm:h-[520px] sm:w-[520px] sm:blur-[150px]" />
+      <div className="pointer-events-none fixed bottom-[-25%] left-[-30%] h-[300px] w-[300px] rounded-full bg-[#FF5733]/10 blur-[90px] sm:bottom-[-20%] sm:left-[-20%] sm:h-[480px] sm:w-[480px] sm:blur-[150px]" />
 
-      <section className="relative z-10 w-full max-w-md rounded-[32px] border border-white/10 bg-white/[0.06] p-8 shadow-2xl backdrop-blur-2xl sm:p-10">
+      <section className="relative z-10 w-full max-w-md rounded-[28px] border border-white/10 bg-white/[0.06] p-6 shadow-2xl backdrop-blur-sm sm:rounded-[32px] sm:p-10 sm:backdrop-blur-2xl">
         <AethosLogo
           variant="full"
           size="xl"
           className="mx-auto mb-8 text-[#00F0FF] drop-shadow-[0_0_24px_rgba(0,240,255,0.35)]"
         />
 
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-8 flex items-start justify-between gap-4">
           <div>
-            <p className="mb-2 text-[10px] font-black uppercase tracking-[0.35em] text-[#00F0FF]">
+            <p className="mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#00F0FF] sm:tracking-[0.35em]">
               Aethos Live
             </p>
-            <h1 className="text-3xl font-black tracking-tight text-white">
+            <h1 className="text-2xl font-black tracking-tight text-white sm:text-3xl">
               Sign in to continue
             </h1>
           </div>
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#00F0FF]/25 bg-[#00F0FF]/10 text-[#00F0FF]">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#00F0FF]/25 bg-[#00F0FF]/10 text-[#00F0FF]">
             <ShieldCheck className="h-6 w-6" />
           </div>
         </div>
@@ -315,7 +315,7 @@ const Layout: React.FC = () => {
   };
 
   return (
-    <div className={`flex h-screen w-full transition-colors duration-700 ${isDaylight ? 'bg-[#F8FAFC]' : 'bg-[#0B0F19]'}`}>
+    <div className={`flex h-screen w-full overflow-hidden transition-colors duration-700 ${isDaylight ? 'bg-[#F8FAFC]' : 'bg-[#0B0F19]'}`}>
       <Sidebar 
         activeTab={activeTab} 
         setActiveTab={(id) => setActiveTab(id)} 
@@ -326,8 +326,8 @@ const Layout: React.FC = () => {
       
       <main className="flex-1 flex flex-col min-w-0 relative overflow-hidden">
         {/* Header */}
-        <header className="h-16 md:h-20 flex items-center justify-between px-4 sm:px-6 lg:px-10 shrink-0">
-          <div className="flex items-center gap-6 flex-1 max-w-2xl">
+        <header className="flex h-16 shrink-0 items-center justify-between px-4 sm:px-6 md:h-20 lg:px-10">
+          <div className="flex min-w-0 flex-1 items-center gap-6 md:max-w-2xl">
              <div className="relative group w-full">
                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-hover:text-[#00F0FF] transition-colors" size={16} />
                <input 
@@ -343,9 +343,9 @@ const Layout: React.FC = () => {
              </div>
           </div>
 
-          <div className="flex items-center gap-3 sm:gap-6 ml-3 sm:ml-10">
+          <div className="ml-3 flex shrink-0 items-center gap-2 sm:ml-10 sm:gap-6">
             <RuntimeModeBadge />
-            <button className="p-2 text-slate-500 hover:text-[#00F0FF] transition-colors relative">
+            <button className="relative flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl p-2 text-slate-500 transition-colors hover:text-[#00F0FF]">
               <Bell size={20} />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#FF5733] rounded-full border border-[#0B0F19]" />
             </button>
@@ -360,15 +360,15 @@ const Layout: React.FC = () => {
         </header>
 
         {/* Dynamic Viewport */}
-        <div className="flex-1 p-4 sm:p-6 lg:p-10 pt-2 sm:pt-4 pb-24 md:pb-10 overflow-y-auto custom-scrollbar relative z-10">
+        <div className="relative z-10 flex-1 overflow-y-auto p-4 pb-28 pt-2 custom-scrollbar sm:p-6 sm:pb-28 sm:pt-4 md:pb-10 lg:p-10">
           <Suspense fallback={<ViewLoadingFallback />}>
             {renderContent()}
           </Suspense>
         </div>
 
         {/* Global Ambient Decorative Blur */}
-        <div className="fixed top-0 right-0 w-[800px] h-[800px] bg-[#00F0FF]/5 rounded-full blur-[160px] pointer-events-none -z-10 translate-x-1/3 -translate-y-1/3" />
-        <div className="fixed bottom-0 left-0 w-[600px] h-[600px] bg-[#FF5733]/3 rounded-full blur-[140px] pointer-events-none -z-10 -translate-x-1/3 translate-y-1/3" />
+        <div className="pointer-events-none fixed right-0 top-0 -z-10 h-[360px] w-[360px] translate-x-1/3 -translate-y-1/3 rounded-full bg-[#00F0FF]/5 blur-[90px] sm:h-[800px] sm:w-[800px] sm:blur-[160px]" />
+        <div className="pointer-events-none fixed bottom-0 left-0 -z-10 h-[320px] w-[320px] -translate-x-1/3 translate-y-1/3 rounded-full bg-[#FF5733]/3 blur-[90px] sm:h-[600px] sm:w-[600px] sm:blur-[140px]" />
       </main>
     </div>
   );

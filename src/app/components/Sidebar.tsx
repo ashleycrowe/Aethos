@@ -102,7 +102,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     return (
       <button
         onClick={() => setActiveTab(item.id)}
-        className={`w-full flex items-center transition-all duration-300 group relative h-12 rounded-xl mb-1 ${
+        className={`group relative mb-1 flex min-h-[48px] w-full items-center rounded-xl transition-all duration-300 ${
           isCollapsed ? 'justify-center px-0' : 'px-4 gap-4'
         } ${
           isActive 
@@ -113,7 +113,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <item.icon className={`shrink-0 transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-110'} ${isCollapsed ? 'w-5 h-5' : 'w-4.5 h-4.5'}`} />
         
         {!isCollapsed && (
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] whitespace-nowrap overflow-hidden">
+          <span className="overflow-hidden whitespace-nowrap text-[10px] font-black uppercase tracking-[0.16em]">
             {item.label}
           </span>
         )}
@@ -136,7 +136,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     <div
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      className={`hidden md:flex h-[calc(100vh-40px)] m-5 rounded-[32px] flex-col transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] relative border border-white/5 shadow-2xl overflow-visible backdrop-blur-3xl group/sidebar ${
+      className={`group/sidebar relative m-5 hidden h-[calc(100vh-40px)] flex-col overflow-visible rounded-[32px] border border-white/5 shadow-2xl backdrop-blur-xl transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] lg:backdrop-blur-3xl md:flex ${
         isDaylight ? 'bg-white/80 border-slate-200 shadow-slate-200' : 'bg-[#0B0F19]/80 shadow-black/50'
       } ${isCollapsed ? 'w-20' : 'w-64'}`}
     >
@@ -190,7 +190,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {!isCollapsed && group.collapsible && (
                 <button
                   onClick={() => setToolsExpanded(!toolsExpanded)}
-                  className="w-full flex items-center justify-between text-[8px] font-black text-slate-300 dark:text-slate-600 uppercase tracking-[0.4em] mb-4 px-4 hover:text-slate-400 dark:hover:text-slate-500 cursor-pointer transition-colors group/header"
+                  className="group/header mb-4 flex min-h-[44px] w-full cursor-pointer items-center justify-between px-4 text-[8px] font-black uppercase tracking-[0.22em] text-slate-300 transition-colors hover:text-slate-400 dark:text-slate-600 dark:hover:text-slate-500 lg:tracking-[0.4em]"
                 >
                   <div className="flex items-center gap-2">
                     <span>{group.label}</span>
@@ -210,7 +210,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </button>
               )}
               {!isCollapsed && !group.collapsible && (
-                <h3 className="text-[8px] font-black text-slate-300 dark:text-slate-600 uppercase tracking-[0.4em] mb-4 px-4">
+                <h3 className="mb-4 px-4 text-[8px] font-black uppercase tracking-[0.22em] text-slate-300 dark:text-slate-600 lg:tracking-[0.4em]">
                   {group.label}
                 </h3>
               )}
@@ -232,7 +232,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           <section>
             {!isCollapsed && (
-              <h3 className="text-[8px] font-black text-slate-300 dark:text-slate-600 uppercase tracking-[0.4em] mb-4 px-4">
+              <h3 className="mb-4 px-4 text-[8px] font-black uppercase tracking-[0.22em] text-slate-300 dark:text-slate-600 lg:tracking-[0.4em]">
                 Systems
               </h3>
             )}
@@ -261,7 +261,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
             <button 
               onClick={() => setActiveTab('admin')}
-              className={`p-2 rounded-lg transition-all ${activeTab === 'admin' ? 'bg-slate-900 text-white' : 'text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
+              className={`flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2 transition-all ${activeTab === 'admin' ? 'bg-slate-900 text-white' : 'text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
             >
               <Settings className="w-4 h-4" />
             </button>
