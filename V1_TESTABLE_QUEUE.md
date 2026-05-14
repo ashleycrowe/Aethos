@@ -69,10 +69,11 @@ This file is the short-cycle engineering queue. Keep `IMPLEMENTATION_TASKS.md` a
 - [x] Stop Oracle metadata search from silently falling back to demo results in Live Mode.
 - [x] Add a global visual status that distinguishes `Live: real tenant data` from `Demo: fixture data`.
 - [x] Lock `app.aethoswork.com` to Live Mode and `demo.aethoswork.com` to Demo Mode.
-- [ ] Audit all V1 screens for mock data in Live Mode.
+- [x] Audit all V1 screens for mock data in Live Mode.
 - [x] Add clear empty states for real tenants with little or no Microsoft content.
 - [ ] Preserve seeded Supabase/demo fixtures for Demo Mode.
 - [x] Document deployment surfaces and how to switch between Live Mode and Demo Mode for testing.
+- [x] Document the V1 Live/Demo boundary audit and preserved demo fixture sources.
 
 Known follow-up from the latest audit:
 

@@ -26,6 +26,24 @@ describe('App live/demo tab boundary contract', () => {
     expect(source).toContain('isTabAllowedForMode(activeTab, isDemoMode)');
   });
 
+  it('keeps demo/prototype/document modules outside the Live Mode allow-list', () => {
+    const liveAllowList = source.match(/LIVE_CORE_TABS = new Set\(\[(.*?)\]\);/s)?.[1] || '';
+    expect(liveAllowList).toContain("'oracle'");
+    expect(liveAllowList).toContain("'insights'");
+    expect(liveAllowList).toContain("'nexus'");
+    expect(liveAllowList).toContain("'archival'");
+    expect(liveAllowList).toContain("'admin'");
+    expect(liveAllowList).not.toContain("'reports'");
+    expect(liveAllowList).not.toContain("'documents'");
+    expect(liveAllowList).not.toContain("'lab'");
+    expect(liveAllowList).not.toContain("'tag-demo'");
+    expect(liveAllowList).not.toContain("'tag-flow-demo'");
+    expect(liveAllowList).not.toContain("'design'");
+    expect(liveAllowList).not.toContain("'voyager'");
+    expect(liveAllowList).not.toContain("'pulse'");
+    expect(liveAllowList).not.toContain("'people'");
+  });
+
   it('keeps demo and prototype routes behind the coming-soon boundary unless explicitly allowed', () => {
     expect(source).toContain('return <ComingSoonView tab={activeTab} />;');
     expect(source).toContain("case 'lab':");
