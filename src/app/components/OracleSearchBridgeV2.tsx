@@ -714,62 +714,91 @@ export const OracleSearchBridgeV2 = () => {
 
                   {/* Intelligence Score */}
                   <div className="space-y-3">
-                    <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Intelligence Score</label>
+                    <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">
+                      {globalDemoMode ? 'Intelligence Score' : 'Metadata Score'}
+                    </label>
                     <div className="flex items-center gap-4">
                       <span className="text-xs text-slate-500">0</span>
                       <div className="flex-1 h-1 bg-white/5 rounded-full">
-                        <div className="h-full bg-[#00F0FF] rounded-full" style={{ width: '75%' }} />
+                        <div
+                          className="h-full bg-[#00F0FF] rounded-full"
+                          style={{ width: globalDemoMode ? '75%' : '0%' }}
+                        />
                       </div>
                       <span className="text-xs text-slate-500">100</span>
                     </div>
+                    {!globalDemoMode && (
+                      <p className="text-[10px] leading-5 text-slate-500">
+                        Live score filtering will activate after indexed files have Aethos metadata scores.
+                      </p>
+                    )}
                   </div>
 
                   {/* Tags */}
                   <div className="space-y-3">
                     <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Tags</label>
-                    <div className="flex flex-wrap gap-2">
-                      {['Budget', 'Q1-2026', 'Marketing', 'Security'].map(tag => (
-                        <div
-                          key={tag}
-                          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#00F0FF]/10 border border-[#00F0FF]/20 text-[9px] font-black uppercase tracking-wider text-[#00F0FF]"
-                        >
-                          <Tag className="w-3 h-3" />
-                          {tag}
-                        </div>
-                      ))}
-                    </div>
+                    {globalDemoMode ? (
+                      <div className="flex flex-wrap gap-2">
+                        {['Budget', 'Q1-2026', 'Marketing', 'Security'].map(tag => (
+                          <div
+                            key={tag}
+                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#00F0FF]/10 border border-[#00F0FF]/20 text-[9px] font-black uppercase tracking-wider text-[#00F0FF]"
+                          >
+                            <Tag className="w-3 h-3" />
+                            {tag}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 text-[10px] leading-5 text-slate-500">
+                        Live tag filters populate from accepted metadata suggestions and indexed Microsoft tags.
+                        Use the search field for free-text metadata queries until tags are available.
+                      </div>
+                    )}
                   </div>
 
                   <button className="w-full py-3 rounded-xl bg-[#00F0FF] text-black text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all">
-                    Apply Filters
+                    {globalDemoMode ? 'Apply Filters' : 'Search With Current Filters'}
                   </button>
                 </GlassCard>
 
-                {/* Predictive Intelligence */}
-                <GlassCard className="p-6 space-y-6">
-                  <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 flex items-center justify-between">
-                    Predictive Anchors
-                    <Sparkles className="w-4 h-4 text-[#00F0FF]" />
-                  </h3>
-                  <div className="space-y-4">
-                    {predictiveItems.slice(0, 3).map(item => (
-                      <div key={item.id} className="p-5 rounded-2xl bg-white/5 border border-white/5 hover:border-white/20 transition-all space-y-3 group cursor-pointer">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="p-2.5 rounded-xl bg-[#00F0FF]/10 text-[#00F0FF]">
-                              {item.type === 'word' ? <FileText className="w-4 h-4" /> : <BarChart3 className="w-4 h-4" />}
+                {globalDemoMode ? (
+                  <GlassCard className="p-6 space-y-6">
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 flex items-center justify-between">
+                      Predictive Anchors
+                      <Sparkles className="w-4 h-4 text-[#00F0FF]" />
+                    </h3>
+                    <div className="space-y-4">
+                      {predictiveItems.slice(0, 3).map(item => (
+                        <div key={item.id} className="p-5 rounded-2xl bg-white/5 border border-white/5 hover:border-white/20 transition-all space-y-3 group cursor-pointer">
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className="p-2.5 rounded-xl bg-[#00F0FF]/10 text-[#00F0FF]">
+                                {item.type === 'word' ? <FileText className="w-4 h-4" /> : <BarChart3 className="w-4 h-4" />}
+                              </div>
+                              <div>
+                                <p className="text-[10px] font-black text-white uppercase tracking-tight">{item.title}</p>
+                                <p className="text-[8px] font-black text-[#00F0FF] uppercase tracking-widest mt-1">{item.reason}</p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="text-[10px] font-black text-white uppercase tracking-tight">{item.title}</p>
-                              <p className="text-[8px] font-black text-[#00F0FF] uppercase tracking-widest mt-1">{item.reason}</p>
-                            </div>
+                            <ExternalLink className="w-3.5 h-3.5 text-slate-600 group-hover:text-[#00F0FF] transition-colors" />
                           </div>
-                          <ExternalLink className="w-3.5 h-3.5 text-slate-600 group-hover:text-[#00F0FF] transition-colors" />
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                </GlassCard>
+                      ))}
+                    </div>
+                  </GlassCard>
+                ) : (
+                  <GlassCard className="p-6 space-y-6">
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 flex items-center justify-between">
+                      Live Search Boundary
+                      <Database className="w-4 h-4 text-[#00F0FF]" />
+                    </h3>
+                    <p className="text-sm leading-6 text-slate-400">
+                      Predictive demo anchors are hidden in Live Mode. Oracle Search only shows results returned
+                      from the signed-in tenant's indexed Microsoft metadata.
+                    </p>
+                  </GlassCard>
+                )}
               </div>
             </Motion.div>
           )}

@@ -19,4 +19,12 @@ describe('WorkspaceEngine smoke contract', () => {
     expect(wizardSource).toContain('Preview unavailable');
     expect(wizardSource).toContain('onPreviewMatches');
   });
+
+  it('keeps purge simulations out of live workspaces', () => {
+    expect(engineSource).toContain("label: isDemoMode ? 'Purge Ops' : 'Review Handoff'");
+    expect(engineSource).toContain("activeTab === 'forensic' && isDemoMode");
+    expect(engineSource).toContain("activeTab === 'forensic' && !isDemoMode");
+    expect(engineSource).toContain('Live Mode does not simulate retention timers or cleanup results');
+    expect(engineSource).toContain('Open Remediation Dry Runs');
+  });
 });

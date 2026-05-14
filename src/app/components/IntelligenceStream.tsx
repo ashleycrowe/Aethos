@@ -1,4 +1,4 @@
-import React, { useEffect, useState, forwardRef } from 'react';
+import React, { useCallback, useEffect, useState, forwardRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Sparkles, 
@@ -203,6 +203,25 @@ export const IntelligenceStream = () => {
   const [isLoadingLive, setIsLoadingLive] = useState(false);
   const [liveError, setLiveError] = useState<string | null>(null);
 
+  const loadLiveSignals = useCallback(async () => {
+    if (isDemoMode) {
+      setLiveSummary(null);
+      setLiveError(null);
+      return;
+    }
+
+    try {
+      setIsLoadingLive(true);
+      setLiveError(null);
+      const response = await getReportSummary({ accessToken: await getAccessToken() });
+      setLiveSummary(response.summary);
+    } catch (error) {
+      setLiveError(error instanceof Error ? error.message : 'Unable to load live signal queue');
+    } finally {
+      setIsLoadingLive(false);
+    }
+  }, [getAccessToken, isDemoMode]);
+
   useEffect(() => {
     if (isDemoMode) {
       setLiveSummary(null);
@@ -211,7 +230,7 @@ export const IntelligenceStream = () => {
     }
 
     let cancelled = false;
-    const loadLiveSignals = async () => {
+    const loadInitialLiveSignals = async () => {
       try {
         setIsLoadingLive(true);
         setLiveError(null);
@@ -224,7 +243,7 @@ export const IntelligenceStream = () => {
       }
     };
 
-    void loadLiveSignals();
+    void loadInitialLiveSignals();
     return () => {
       cancelled = true;
     };
@@ -267,14 +286,28 @@ export const IntelligenceStream = () => {
                 Data source: {isDemoMode ? 'Demo fixtures' : 'Live tenant'}
               </span>
               <div className="w-px h-10 bg-white/10" />
-              <button 
-                onClick={() => setIsStoryMode(!isStoryMode)}
-                disabled={!isDemoMode}
-                className={`flex items-center gap-3 px-6 py-3 rounded-2xl border transition-all ${isStoryMode ? 'bg-[#00F0FF] border-[#00F0FF] text-black shadow-[0_0_20px_rgba(0,240,255,0.3)]' : 'bg-white/5 border-white/10 text-slate-500 hover:text-white'}`}
-              >
-                <Cpu size={14} className={isStoryMode ? 'animate-pulse' : ''} />
-                <span className="text-[9px] font-black uppercase tracking-widest">{isStoryMode ? 'Story Mode Active' : 'Enable Story Mode'}</span>
-              </button>
+              {isDemoMode ? (
+                <button
+                  type="button"
+                  onClick={() => setIsStoryMode(!isStoryMode)}
+                  className={`flex min-h-11 items-center gap-3 rounded-2xl border px-6 py-3 transition-all ${isStoryMode ? 'bg-[#00F0FF] border-[#00F0FF] text-black shadow-[0_0_20px_rgba(0,240,255,0.3)]' : 'bg-white/5 border-white/10 text-slate-500 hover:text-white'}`}
+                >
+                  <Cpu size={14} className={isStoryMode ? 'animate-pulse' : ''} />
+                  <span className="text-[9px] font-black uppercase tracking-widest">{isStoryMode ? 'Story Mode Active' : 'Enable Story Mode'}</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => void loadLiveSignals()}
+                  disabled={isLoadingLive}
+                  className="flex min-h-11 items-center gap-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-6 py-3 text-emerald-400 transition-all hover:border-[#00F0FF]/40 hover:text-[#00F0FF] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isLoadingLive ? <Loader2 size={14} className="animate-spin" /> : <Database size={14} />}
+                  <span className="text-[9px] font-black uppercase tracking-widest">
+                    {isLoadingLive ? 'Refreshing Signals' : 'Refresh Live Signals'}
+                  </span>
+                </button>
+              )}
             </div>
           </div>
 
@@ -349,11 +382,11 @@ export const IntelligenceStream = () => {
                   <div className="flex flex-col items-center justify-center py-10 text-center">
                     <Sparkles className="mb-5 h-10 w-10 text-[#00F0FF]" />
                     <h3 className={`mb-3 text-xl font-black uppercase tracking-tight ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
-                      No Live Intelligence Signals Yet
+                      No Demo Insights Match This Filter
                     </h3>
                     <p className="max-w-xl text-sm leading-6 text-slate-500">
-                      Run Microsoft Discovery from Admin, then use Search and Metadata enrichment to generate
-                      real tenant-specific operational signals. Demo-only recommendations are hidden in Live Mode.
+                      Try All or switch to a different demo insight type. Live tenant recommendations stay hidden
+                      until Live Mode is active.
                     </p>
                   </div>
                 </GlassCard>

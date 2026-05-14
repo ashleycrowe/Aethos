@@ -8,7 +8,7 @@
  * V2 DEMO: Add Slack, Google Workspace
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion as Motion, AnimatePresence } from 'motion/react';
 import { 
   Play, 
@@ -17,7 +17,6 @@ import {
   Database,
   FileText,
   Users,
-  Folder,
   AlertTriangle,
   TrendingUp,
   X
@@ -59,7 +58,7 @@ export const DiscoveryScanSimulation: React.FC = () => {
     { step: 'sharepoint', label: 'Scanning SharePoint Sites', found: 0, progress: 0 },
     { step: 'onedrive', label: 'Scanning OneDrive Storage', found: 0, progress: 0 },
     { step: 'teams', label: 'Scanning Teams Files', found: 0, progress: 0 },
-    { step: 'analyzing', label: 'Analyzing Metadata', found: 0, progress: 0 },
+    { step: 'analyzing', label: 'Scoring Metadata Quality', found: 0, progress: 0 },
     { step: 'done', label: 'Scan Complete', found: 0, progress: 100 },
   ];
 
@@ -161,8 +160,8 @@ export const DiscoveryScanSimulation: React.FC = () => {
               Microsoft 365 Live Scan
             </h2>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
-              Live Mode uses your signed-in Microsoft tenant. If your OneDrive or SharePoint has little
-              content, Aethos should show little or no content too.
+              Live Mode uses your signed-in Microsoft tenant and indexes metadata only. It does not read
+              document bodies, generate embeddings, or summarize content during the V1 trial scan.
             </p>
           </div>
 
@@ -278,7 +277,7 @@ export const DiscoveryScanSimulation: React.FC = () => {
                     {currentStep === 'sharepoint' && 'Indexing SharePoint sites and document libraries...'}
                     {currentStep === 'onedrive' && 'Scanning OneDrive personal storage...'}
                     {currentStep === 'teams' && 'Discovering Teams channels and shared files...'}
-                    {currentStep === 'analyzing' && 'Applying AI metadata enrichment...'}
+                    {currentStep === 'analyzing' && 'Scoring metadata completeness and review readiness...'}
                   </p>
                   <p className="text-[10px] text-slate-500 uppercase tracking-widest font-black mt-1">
                     {foundItems.files.toLocaleString()} files discovered
@@ -353,7 +352,7 @@ export const DiscoveryScanSimulation: React.FC = () => {
                   </h3>
                   <p className="text-sm text-slate-500 max-w-md">
                     Successfully scanned your {version === 'V1' || version === 'V1.5' ? 'Microsoft 365' : 'multi-provider'} tenant. 
-                    Metadata enrichment and intelligence scoring complete.
+                    Metadata discovery and quality scoring complete.
                   </p>
                 </div>
               </div>
@@ -441,10 +440,12 @@ export const DiscoveryScanSimulation: React.FC = () => {
                     </div>
                     <div>
                       <p className={`text-sm font-bold ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
-                        {Math.round(foundItems.files * 0.23)} files ready for AI enrichment
+                        {Math.round(foundItems.files * 0.23)} files ready for metadata review
                       </p>
                       <p className="text-xs text-slate-500">
-                        {version === 'V1' ? 'Upgrade to V1.5 for AI+ metadata tagging.' : 'Run AI enrichment to improve metadata quality.'}
+                        {version === 'V1'
+                          ? 'Use reviewed tags and categories to improve workspace automation.'
+                          : 'AI+ content suggestions stay opt-in and require content scanning.'}
                       </p>
                     </div>
                   </div>
@@ -466,9 +467,9 @@ export const DiscoveryScanSimulation: React.FC = () => {
               </h3>
               <p className="text-sm text-slate-500 max-w-md mx-auto mb-6">
                 Run a discovery scan to index your {version === 'V1' || version === 'V1.5' ? 'Microsoft 365' : 'multi-provider'} tenant. 
-                This simulates what Aethos would discover in a real deployment.
+                This demo simulates metadata discovery without reading file bodies.
               </p>
-              <div className="flex items-center justify-center gap-6 text-xs text-slate-500">
+              <div className="flex flex-col items-center justify-center gap-3 text-xs text-slate-500 sm:flex-row sm:gap-6">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                   <span>Metadata-only (no content read)</span>
@@ -479,7 +480,7 @@ export const DiscoveryScanSimulation: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                  <span>AI enrichment included</span>
+                  <span>Content scanning stays opt-in</span>
                 </div>
               </div>
             </Motion.div>

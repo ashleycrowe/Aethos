@@ -1,3 +1,10 @@
+# Aethos Work
+
+![Aethos Work Logo](./public/logo-192x192.png)
+
+**Aethos Work** - The Anti-Intranet for Microsoft 365 Intelligence
+
+---
 
 # 👋 START HERE - Aethos v1 Documentation Guide
 

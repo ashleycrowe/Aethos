@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 
 const dashboardSource = readFileSync(new URL('./IntelligenceDashboard.tsx', import.meta.url), 'utf8');
 const streamSource = readFileSync(new URL('./IntelligenceStream.tsx', import.meta.url), 'utf8');
+const discoverySource = readFileSync(new URL('./DiscoveryScanSimulation.tsx', import.meta.url), 'utf8');
 
 describe('IntelligenceDashboard live/demo smoke contract', () => {
   it('keeps the prototype Identity tab demo-only', () => {
@@ -24,5 +25,14 @@ describe('IntelligenceDashboard live/demo smoke contract', () => {
     expect(streamSource).toContain("Data source: {isDemoMode ? 'Demo fixtures' : 'Live tenant'}");
     expect(streamSource).toContain("title: 'Run first Microsoft Discovery'");
     expect(streamSource).toContain("summary.lastScan.status === 'none'");
+    expect(streamSource).toContain('Refresh Live Signals');
+    expect(streamSource).toContain('No Demo Insights Match This Filter');
+  });
+
+  it('keeps discovery scan copy metadata-only for V1 trial scans', () => {
+    expect(discoverySource).toContain('indexes metadata only');
+    expect(discoverySource).toContain('does not read');
+    expect(discoverySource).toContain('Content scanning stays opt-in');
+    expect(discoverySource).not.toContain('AI enrichment included');
   });
 });

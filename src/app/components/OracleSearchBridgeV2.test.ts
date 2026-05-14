@@ -10,4 +10,11 @@ describe('OracleSearchBridgeV2 smoke contract', () => {
     expect(source).toContain('demoSearchResults');
     expect(source).toContain('isDemoModeEnabled()');
   });
+
+  it('keeps demo-only predictive filters out of Live Mode', () => {
+    expect(source).toContain("globalDemoMode ? 'Intelligence Score' : 'Metadata Score'");
+    expect(source).toContain('Live tag filters populate from accepted metadata suggestions');
+    expect(source).toContain('Predictive demo anchors are hidden in Live Mode');
+    expect(source).toContain("globalDemoMode ? 'Apply Filters' : 'Search With Current Filters'");
+  });
 });

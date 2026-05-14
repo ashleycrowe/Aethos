@@ -166,6 +166,13 @@ function toPreviewAsset(file: WorkspacePreviewFile): Asset {
   };
 }
 
+function openRemediation(issue?: string) {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent('aethos:navigate', {
+    detail: { tab: 'archival', issue },
+  }));
+}
+
 export const WorkspaceEngine = () => {
   const { state: { workspaces }, unpinFromWorkspace, updateWorkspace, validatePointers, addWorkspace } = useAethos();
   const { isDaylight } = useTheme();
@@ -455,6 +462,16 @@ export const WorkspaceEngine = () => {
 
   const criticalItems = selectedWorkspace?.pinnedItems.filter(item => item.category === 'critical') || [];
   const otherItems = selectedWorkspace?.pinnedItems.filter(item => item.category !== 'critical') || [];
+  const workspaceTabs = [
+    { id: 'pulse', label: 'Signal Feed', icon: Activity },
+    { id: 'lattice', label: 'Lattice Resources', icon: Database },
+    { id: 'forensic', label: isDemoMode ? 'Purge Ops' : 'Review Handoff', icon: ShieldCheck },
+  ] as const;
+  const liveWorkspaceCoverage = selectedWorkspace
+    ? selectedWorkspace.pinnedItems.length > 0
+      ? `${Math.min(100, 55 + selectedWorkspace.pinnedItems.length * 10)}/100`
+      : 'Pending'
+    : 'Pending';
 
   return (
     <Motion.div
@@ -536,9 +553,11 @@ export const WorkspaceEngine = () => {
                       )}
                     </div>
                     <div className="flex flex-wrap items-center gap-3 mt-2">
-                       <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Operational Lattice Live</span>
-                       <div className="w-1.5 h-1.5 rounded-full bg-[#00F0FF] animate-pulse shadow-[0_0_10px_#00F0FF]" />
-                    </div>
+                       <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                         {isDemoMode ? 'Demo Lattice' : 'Live Tenant Workspace'}
+                       </span>
+                        <div className="w-1.5 h-1.5 rounded-full bg-[#00F0FF] animate-pulse shadow-[0_0_10px_#00F0FF]" />
+                     </div>
                   </div>
                 </div>
                 <p className="text-sm text-slate-500 dark:text-slate-400 max-w-full md:max-w-2xl font-medium leading-relaxed italic">
@@ -548,11 +567,7 @@ export const WorkspaceEngine = () => {
               
               <div className={`grid grid-cols-1 sm:flex sm:flex-wrap sm:items-center gap-2 sm:gap-3 p-2.5 sm:p-1.5 rounded-2xl border w-full md:w-auto ${isDaylight ? 'bg-white border-slate-200 shadow-sm' : 'bg-white/5 border-white/5 backdrop-blur-sm md:backdrop-blur-xl'}`}>
 
-                {[
-                  { id: 'pulse', label: 'Signal Feed', icon: Activity },
-                  { id: 'lattice', label: 'Lattice Resources', icon: Database },
-                  { id: 'forensic', label: 'Purge Ops', icon: ShieldCheck }
-                ].map(t => (
+                {workspaceTabs.map(t => (
                   <button 
                     key={t.id}
                     onClick={() => setActiveTab(t.id as any)}
@@ -592,9 +607,15 @@ export const WorkspaceEngine = () => {
                        <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mt-2 italic">Operational Fidelity</p>
                     </div>
                     <div className={`p-5 md:p-8 rounded-[28px] md:rounded-[36px] border ${isDaylight ? 'bg-white border-slate-100 shadow-sm' : 'bg-white/[0.03] border-white/5'}`}>
-                       <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 block mb-4">Sync Velocity</span>
-                       <div className="text-4xl font-black text-emerald-500">92/100</div>
-                       <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mt-2 italic">Real-time Pulse</p>
+                       <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 block mb-4">
+                         {isDemoMode ? 'Sync Velocity' : 'Workspace Coverage'}
+                       </span>
+                       <div className="text-4xl font-black text-emerald-500">
+                         {isDemoMode ? '92/100' : liveWorkspaceCoverage}
+                       </div>
+                       <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mt-2 italic">
+                         {isDemoMode ? 'Real-time Pulse' : 'Indexed anchors'}
+                       </p>
                     </div>
                   </div>
 
@@ -782,7 +803,7 @@ export const WorkspaceEngine = () => {
                 </Motion.div>
               )}
 
-              {activeTab === 'forensic' && (
+              {activeTab === 'forensic' && isDemoMode && (
                 <Motion.div 
                   key="forensic" 
                   initial={{ opacity: 0, y: 10 }} 
@@ -874,6 +895,73 @@ export const WorkspaceEngine = () => {
                          {isDemoMode ? 'Simulate Global Cleanup Protocol' : 'Run Remediation Dry Run'}
                       </button>
                    </div>
+                 </Motion.div>
+               )}
+
+              {activeTab === 'forensic' && !isDemoMode && (
+                <Motion.div
+                  key="live-review-handoff"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="space-y-8 md:space-y-10"
+                >
+                  <div className="rounded-[32px] border border-[#00F0FF]/20 bg-[#00F0FF]/[0.03] p-6 shadow-xl md:rounded-[48px] md:p-10">
+                    <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex items-start gap-4">
+                        <div className="rounded-[20px] bg-[#00F0FF]/10 p-4 text-[#00F0FF]">
+                          <ShieldCheck className="h-7 w-7" />
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-black uppercase tracking-tight text-white md:text-2xl">
+                            Review-First Workspace Handoff
+                          </h3>
+                          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
+                            Live Mode does not simulate retention timers or cleanup results. Use Remediation to run
+                            tenant-backed dry runs against indexed Microsoft metadata.
+                          </p>
+                        </div>
+                      </div>
+                      <span className="w-fit rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[9px] font-black uppercase tracking-widest text-emerald-400">
+                        Data source: Live tenant
+                      </span>
+                    </div>
+
+                    <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                      <div className="rounded-3xl border border-white/5 bg-white/[0.02] p-5 md:p-8">
+                        <span className="mb-4 block text-[9px] font-black uppercase tracking-widest text-slate-500">
+                          Anchored Files
+                        </span>
+                        <div className="text-3xl font-black text-[#00F0FF] md:text-4xl">
+                          {selectedWorkspace.pinnedItems.length}
+                        </div>
+                      </div>
+                      <div className="rounded-3xl border border-white/5 bg-white/[0.02] p-5 md:p-8">
+                        <span className="mb-4 block text-[9px] font-black uppercase tracking-widest text-slate-500">
+                          Critical Anchors
+                        </span>
+                        <div className="text-3xl font-black text-white md:text-4xl">
+                          {criticalItems.length}
+                        </div>
+                      </div>
+                      <div className="rounded-3xl border border-white/5 bg-white/[0.02] p-5 md:p-8">
+                        <span className="mb-4 block text-[9px] font-black uppercase tracking-widest text-slate-500">
+                          Review State
+                        </span>
+                        <div className="text-3xl font-black text-emerald-500 md:text-4xl">
+                          Ready
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => openRemediation()}
+                      className="w-full min-h-[44px] rounded-2xl border border-[#00F0FF]/30 bg-[#00F0FF] px-4 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-[#0B0F19] shadow-xl shadow-[#00F0FF]/10 transition-all hover:bg-white md:py-6 md:text-[11px] md:tracking-[0.3em]"
+                    >
+                      Open Remediation Dry Runs
+                    </button>
+                  </div>
                 </Motion.div>
               )}
             </AnimatePresence>

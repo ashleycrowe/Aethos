@@ -17,6 +17,7 @@ import { Toaster } from 'sonner';
 import { Sidebar } from '@/app/components/Sidebar';
 import { VersionToggle } from '@/app/components/VersionToggle';
 import { RuntimeModeBadge } from '@/app/components/RuntimeModeBadge';
+import { AethosLogo } from '@/app/components/branding/AethosLogo';
 import { Search, Bell, Settings, LogIn, ShieldCheck } from 'lucide-react';
 
 const AdminCenter = lazy(() => import('@/app/components/AdminCenter').then((module) => ({ default: module.AdminCenter })));
@@ -95,7 +96,12 @@ const ComingSoonView = ({ tab }: { tab: string }) => (
 
 const ViewLoadingFallback = () => (
   <div className="h-full min-h-[320px] flex flex-col items-center justify-center text-center">
-    <div className="w-10 h-10 border-2 border-[#00F0FF] border-t-transparent rounded-full animate-spin mb-5" />
+    <AethosLogo
+      variant="icon"
+      size="lg"
+      className="mb-5 text-[#00F0FF] drop-shadow-[0_0_22px_rgba(0,240,255,0.45)]"
+      animated
+    />
     <p className="text-[10px] font-black uppercase tracking-[0.35em] text-slate-500">
       Loading Intelligence Layer
     </p>
@@ -113,6 +119,7 @@ const isMicrosoftAuthPopupResponse = () => {
 const PopupAuthResponseFallback = () => (
   <div className="flex min-h-screen items-center justify-center bg-[#0B0F19] px-4 text-center text-white">
     <section className="w-full max-w-sm rounded-[28px] border border-[#00F0FF]/20 bg-white/[0.06] p-8 shadow-2xl backdrop-blur-2xl">
+      <AethosLogo variant="icon" size="md" className="mx-auto mb-5 text-[#00F0FF]" />
       <p className="mb-3 text-[10px] font-black uppercase tracking-[0.35em] text-[#00F0FF]">
         Aethos Live
       </p>
@@ -148,6 +155,12 @@ const LoginGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       <div className="pointer-events-none fixed bottom-[-20%] left-[-20%] h-[480px] w-[480px] rounded-full bg-[#FF5733]/10 blur-[150px]" />
 
       <section className="relative z-10 w-full max-w-md rounded-[32px] border border-white/10 bg-white/[0.06] p-8 shadow-2xl backdrop-blur-2xl sm:p-10">
+        <AethosLogo
+          variant="full"
+          size="xl"
+          className="mx-auto mb-8 text-[#00F0FF] drop-shadow-[0_0_24px_rgba(0,240,255,0.35)]"
+        />
+
         <div className="mb-8 flex items-center justify-between">
           <div>
             <p className="mb-2 text-[10px] font-black uppercase tracking-[0.35em] text-[#00F0FF]">

@@ -28,6 +28,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useTheme } from '@/app/context/ThemeContext';
 import { useUser } from '@/app/context/UserContext';
 import { useVersion } from '@/app/context/VersionContext';
+import { AethosLogo } from '@/app/components/branding/AethosLogo';
 
 interface SidebarProps {
   activeTab: string;
@@ -158,29 +159,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       <div className="flex-1 flex flex-col overflow-hidden w-full">
         {/* Brand Header */}
-        <div className={`pt-8 mb-6 transition-all duration-500 relative ${isCollapsed ? 'px-0 flex flex-col items-center' : 'px-6'}`}>
-          <div className={`flex items-center gap-3 ${isCollapsed ? 'mb-4' : 'mb-6'}`}>
-            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-lg group cursor-pointer relative ${isDaylight ? 'bg-slate-900' : 'bg-white'}`}>
-               <img 
-                 src="figma:asset/859f06bc073a2b7fea02cba7e30b0f6f6794d27a.png" 
-                 alt="Brand Logo" 
-                 className={`w-5 h-5 object-contain ${isDaylight ? 'invert-0' : 'invert'}`}
-               />
-               {isCollapsed && <div className="absolute -right-1 -top-1 w-2.5 h-2.5 bg-[#00F0FF] rounded-full border-2 border-[#0B0F19] animate-pulse" />}
-            </div>
-            <AnimatePresence>
-              {!isCollapsed && (
-                <motion.div
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -10 }}
-                  className="transition-all"
-                >
-                  <h2 className="font-black text-sm uppercase tracking-tighter leading-none text-slate-900 dark:text-white">AETHOS</h2>
-                  <p className="text-[7px] font-black text-slate-400 uppercase tracking-[0.3em] mt-1 leading-none text-[#00F0FF]">Operational Clarity</p>
-                </motion.div>
-              )}
-            </AnimatePresence>
+        <div className={`pt-8 pb-6 mb-6 border-b border-white/10 transition-all duration-500 relative ${isCollapsed ? 'px-0 flex flex-col items-center' : 'px-6'}`}>
+          <div className={`relative flex items-center ${isCollapsed ? 'justify-center mb-4' : 'mb-6'}`}>
+            <AethosLogo
+              variant={isCollapsed ? 'icon' : 'full'}
+              size="sm"
+              className="text-[#00F0FF] drop-shadow-[0_0_16px_rgba(0,240,255,0.35)]"
+            />
+            {isCollapsed && (
+              <div className="absolute right-5 top-1 h-2.5 w-2.5 animate-pulse rounded-full border-2 border-[#0B0F19] bg-[#00F0FF]" />
+            )}
           </div>
           
           {!isCollapsed && (
