@@ -114,6 +114,7 @@ These changes make the persona loop real instead of just narrative:
 - **Permission Bridge:** steward assignment must be compared against actual source visibility so Aethos can expose blind-steward gaps without replacing Microsoft 365 permissioning.
 - **Team View mode:** workspace needs a read-focused view with trusted files, freshness, owner, source link, and workspace-scoped search.
 - **Handoff packets:** Admin-generated workspace opportunities should carry reason codes such as external share, stale file, missing owner, inactive owner, repeated path, repeated tag, or metadata quality issue.
+- **Handoff packet lifecycle:** Operational Intelligence should generate packet context, Workspaces should retain the reason codes and suggested steward action, and copy/export should make the handoff usable outside Aethos without modifying Microsoft 365 permissions.
 - **Workspace-scoped trust filters:** users should be able to filter to source-of-truth, recently modified, owned, stale, externally shared, and needs-review files.
 - **Audit trail:** steward decisions should be recorded before any future write-back to Microsoft 365 or destructive remediation action.
 

@@ -149,7 +149,7 @@ See `docs/OPERATIONAL_INTELLIGENCE_DEVELOPMENT_QUEUE.md` for the detailed implem
 - [x] Add a post-discovery CTA: `Create a workspace from these results`.
 - [x] Persist workspace stewardship metadata: steward owner, review status, source-of-truth pins, and suggestion decisions.
 - [x] Add Permission Bridge scaffolding: steward visibility state, access-gap flag, copy outreach packet, and source deep-link posture without source permission mutation.
-- [ ] Add Workspace handoff packets with reason codes from Discovery, Operational Intelligence, owner risk, stale content, exposure, and metadata quality.
+- [x] Add Workspace handoff packets with reason codes from Discovery, Operational Intelligence, owner risk, stale content, exposure, and metadata quality.
 - [ ] Add workspace-scoped trust filters for source-of-truth, freshness, owner, external share, stale, and needs-review state.
 - [ ] Add read-focused Team View for Knowledge Workers with fewer admin/remediation controls.
 - [ ] Add steward audit trail before Microsoft 365 write-back or destructive remediation actions.

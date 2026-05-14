@@ -261,6 +261,14 @@ export interface ReportSummaryResponse {
       reason: string;
       fileCount: number;
       suggestedTags: string[];
+      reasonCodes: string[];
+      handoffPacket: {
+        source: 'discovery' | 'operational_intelligence' | 'owner_risk' | 'stale_content' | 'exposure' | 'metadata_quality';
+        summary: string;
+        reasonCodes: string[];
+        suggestedAction: string;
+        ownerReviewRequired: boolean;
+      };
     }>;
     topicClusters: Array<{
       label: string;
@@ -418,6 +426,13 @@ export interface CreateWorkspaceRequest {
   stewardOwnerName?: string | null;
   reviewStatus?: 'admin_review' | 'steward_review' | 'team_ready' | 'archived';
   handoffReasonCodes?: string[];
+  handoffPacket?: {
+    source: 'discovery' | 'operational_intelligence' | 'owner_risk' | 'stale_content' | 'exposure' | 'metadata_quality';
+    summary: string;
+    reasonCodes: string[];
+    suggestedAction: string;
+    ownerReviewRequired: boolean;
+  } | null;
   sourceOfTruthItemIds?: string[];
   suggestionDecisions?: Record<string, unknown>;
   stewardNotes?: string | null;
@@ -439,6 +454,7 @@ export interface WorkspaceListResponse {
     stewardOwnerName?: string | null;
     reviewStatus?: 'admin_review' | 'steward_review' | 'team_ready' | 'archived';
     handoffReasonCodes?: string[];
+    handoffPacket?: CreateWorkspaceRequest['handoffPacket'];
     sourceOfTruthItemIds?: string[];
     suggestionDecisions?: Record<string, unknown>;
     stewardNotes?: string | null;
@@ -464,6 +480,7 @@ export interface WorkspaceDetailResponse {
     stewardOwnerName?: string | null;
     reviewStatus?: 'admin_review' | 'steward_review' | 'team_ready' | 'archived';
     handoffReasonCodes?: string[];
+    handoffPacket?: CreateWorkspaceRequest['handoffPacket'];
     sourceOfTruthItemIds?: string[];
     suggestionDecisions?: Record<string, unknown>;
     stewardNotes?: string | null;

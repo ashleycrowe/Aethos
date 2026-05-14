@@ -44,7 +44,7 @@ import { createWorkspace, getWorkspaceDetail, listWorkspaces, searchFiles } from
 import { isDemoModeEnabled } from '@/app/config/demoMode';
 import { useAethos } from '@/app/context/AethosContext';
 import { useAuth } from '@/app/context/AuthContext';
-import { Asset, PinnedArtifact, SyncRule, Workspace } from '@/app/types/aethos.types';
+import { Asset, PinnedArtifact, SyncRule, Workspace, WorkspaceHandoffPacket } from '@/app/types/aethos.types';
 import { WorkspaceCreationWizard } from './WorkspaceCreationWizard';
 import { WorkspaceSyncManager } from './WorkspaceSyncManager';
 import { ArtifactWizard } from './ArtifactWizard';
@@ -117,6 +117,35 @@ const WORKSPACE_REVIEW_STATUS_LABELS: Record<NonNullable<Workspace['stewardship'
   team_ready: 'Team Ready',
   archived: 'Archived',
 };
+
+function getStoredHandoffPacket(row: any): WorkspaceHandoffPacket | null {
+  const packet = row.handoffPacket || row.handoff_packet || row.suggestionDecisions?.handoffPacket || row.suggestion_decisions?.handoffPacket;
+  if (!packet || typeof packet !== 'object') return null;
+
+  return {
+    source: packet.source || 'operational_intelligence',
+    summary: packet.summary || 'Workspace created for review.',
+    reasonCodes: Array.isArray(packet.reasonCodes) ? packet.reasonCodes : [],
+    suggestedAction: packet.suggestedAction || 'Assign a steward, review source-of-truth items, and confirm team readiness.',
+    ownerReviewRequired: Boolean(packet.ownerReviewRequired),
+  };
+}
+
+function buildFallbackHandoffPacket(workspace: Workspace): WorkspaceHandoffPacket {
+  const reasonCodes = workspace.stewardship?.handoffReasonCodes?.length
+    ? workspace.stewardship.handoffReasonCodes
+    : ['manual-review'];
+
+  return {
+    source: 'operational_intelligence',
+    summary: workspace.description || 'Workspace created for review.',
+    reasonCodes,
+    suggestedAction: 'Assign a steward, review source-of-truth items, resolve access gaps, and mark this workspace team-ready when curated.',
+    ownerReviewRequired: reasonCodes.some((reason) =>
+      ['owner-risk', 'missing-owner', 'inactive-owner', 'external-share'].includes(reason)
+    ),
+  };
+}
 
 function getPermissionBridgeState(file: Record<string, any>, stewardship?: Workspace['stewardship']): PinnedArtifact['permissionBridge'] {
   const stewardEmail = stewardship?.stewardOwnerEmail?.toLowerCase();
@@ -195,6 +224,7 @@ function toWorkspace(row: any): Workspace {
     stewardOwnerName: row.stewardOwnerName || row.steward_owner_name || null,
     reviewStatus: row.reviewStatus || row.review_status || 'admin_review',
     handoffReasonCodes: row.handoffReasonCodes || row.handoff_reason_codes || [],
+    handoffPacket: getStoredHandoffPacket(row),
     sourceOfTruthItemIds: row.sourceOfTruthItemIds || row.source_of_truth_item_ids || [],
     suggestionDecisions: row.suggestionDecisions || row.suggestion_decisions || {},
     stewardNotes: row.stewardNotes || row.steward_notes || null,
@@ -615,6 +645,9 @@ export const WorkspaceEngine = () => {
   const stewardVisibilityPercent = selectedWorkspace && selectedWorkspace.pinnedItems.length > 0
     ? Math.round((stewardVisibleItems.length / selectedWorkspace.pinnedItems.length) * 100)
     : null;
+  const selectedHandoffPacket = selectedWorkspace
+    ? selectedWorkspace.stewardship?.handoffPacket || buildFallbackHandoffPacket(selectedWorkspace)
+    : null;
   const workspaceTabs = [
     { id: 'pulse', label: 'Signal Feed', icon: Activity },
     { id: 'lattice', label: 'Lattice Resources', icon: Database },
@@ -671,6 +704,33 @@ export const WorkspaceEngine = () => {
     void navigator.clipboard?.writeText(packet);
     toast.success('Permission request packet copied', {
       description: 'Send it to the owner or IT for source-system access review.',
+    });
+  };
+
+  const copyWorkspaceHandoffPacket = () => {
+    if (!selectedWorkspace || !selectedHandoffPacket) return;
+
+    const packet = [
+      `Workspace Handoff Packet: ${selectedWorkspace.name}`,
+      '',
+      `Source: ${selectedHandoffPacket.source.replace(/_/g, ' ')}`,
+      `Review state: ${WORKSPACE_REVIEW_STATUS_LABELS[selectedWorkspace.stewardship?.reviewStatus || 'admin_review']}`,
+      `Reason codes: ${selectedHandoffPacket.reasonCodes.join(', ') || 'manual-review'}`,
+      `Items anchored: ${selectedWorkspace.pinnedItems.length}`,
+      `Steward visibility: ${stewardVisibilityPercent === null ? 'No files yet' : `${stewardVisibilityPercent}% visible`}`,
+      '',
+      `Summary: ${selectedHandoffPacket.summary}`,
+      `Suggested action: ${selectedHandoffPacket.suggestedAction}`,
+      selectedHandoffPacket.ownerReviewRequired
+        ? 'Owner review: required before cleanup, team-ready status, or source permission changes.'
+        : 'Owner review: optional unless the steward finds access or source-of-truth gaps.',
+      '',
+      'Aethos keeps this packet as governance context. Microsoft 365 remains the source of truth for file permissions.',
+    ].join('\n');
+
+    void navigator.clipboard?.writeText(packet);
+    toast.success('Workspace handoff packet copied', {
+      description: 'Send it to the steward or owner before curation work starts.',
     });
   };
 
@@ -1316,6 +1376,35 @@ export const WorkspaceEngine = () => {
                     ))}
                   </div>
                 </div>
+                {selectedHandoffPacket && (
+                  <div className="rounded-2xl border border-[#00F0FF]/15 bg-[#00F0FF]/[0.04] p-4">
+                    <div className="mb-3 flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-[9px] font-black uppercase tracking-[0.12em] text-[#00F0FF] sm:tracking-widest">
+                          Handoff Packet
+                        </p>
+                        <p className="mt-1 text-xs leading-5 text-slate-500">
+                          {selectedHandoffPacket.summary}
+                        </p>
+                      </div>
+                      {selectedHandoffPacket.ownerReviewRequired && (
+                        <span className="shrink-0 rounded-full border border-amber-300/25 bg-amber-300/10 px-2 py-1 text-[8px] font-black uppercase tracking-[0.1em] text-amber-200">
+                          Owner Review
+                        </span>
+                      )}
+                    </div>
+                    <p className="mb-4 text-xs leading-5 text-slate-500">
+                      {selectedHandoffPacket.suggestedAction}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={copyWorkspaceHandoffPacket}
+                      className="min-h-[44px] w-full rounded-xl border border-[#00F0FF]/25 bg-[#00F0FF]/10 px-4 py-3 text-[10px] font-black uppercase tracking-[0.12em] text-[#00F0FF] transition-all hover:bg-[#00F0FF] hover:text-black sm:tracking-widest"
+                    >
+                      Copy Handoff Packet
+                    </button>
+                  </div>
+                )}
                 <div>
                   <p className="text-[9px] font-black uppercase tracking-[0.12em] text-slate-500 sm:tracking-widest">
                     Steward Visibility

@@ -73,6 +73,22 @@ export interface PinnedArtifact {
   sourceMetadata?: Record<string, any>;
 }
 
+export type WorkspaceHandoffSource =
+  | 'discovery'
+  | 'operational_intelligence'
+  | 'owner_risk'
+  | 'stale_content'
+  | 'exposure'
+  | 'metadata_quality';
+
+export interface WorkspaceHandoffPacket {
+  source: WorkspaceHandoffSource;
+  summary: string;
+  reasonCodes: string[];
+  suggestedAction: string;
+  ownerReviewRequired: boolean;
+}
+
 export type PulseAction = 
   | 'comment' | 'edit' | 'upload' | 'pin' | 'share'
   | 'meeting-start' | 'loop-sync' | 'viva-post' | 'slack-thread' | 'huddle-start'
@@ -157,6 +173,7 @@ export interface Workspace {
     stewardOwnerName?: string | null;
     reviewStatus: 'admin_review' | 'steward_review' | 'team_ready' | 'archived';
     handoffReasonCodes: string[];
+    handoffPacket?: WorkspaceHandoffPacket | null;
     sourceOfTruthItemIds: string[];
     suggestionDecisions: Record<string, unknown>;
     stewardNotes?: string | null;

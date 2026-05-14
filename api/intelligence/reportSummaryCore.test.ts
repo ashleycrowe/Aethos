@@ -181,6 +181,11 @@ describe('buildReportSummary', () => {
         expect.objectContaining({
           label: 'Alex Handoff Review',
           suggestedTags: expect.arrayContaining(['owner-risk', 'handoff']),
+          reasonCodes: expect.arrayContaining(['owner-risk', 'handoff']),
+          handoffPacket: expect.objectContaining({
+            source: 'owner_risk',
+            ownerReviewRequired: true,
+          }),
         }),
       ])
     );
@@ -301,6 +306,7 @@ describe('buildReportSummary', () => {
           label: 'Budget Tags Workspace',
           fileCount: 5,
           suggestedTags: expect.arrayContaining(['approved-metadata', 'tag', 'accepted']),
+          reasonCodes: expect.arrayContaining(['metadata-quality', 'approved-metadata']),
         }),
       ])
     );

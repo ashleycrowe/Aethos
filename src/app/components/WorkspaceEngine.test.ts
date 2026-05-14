@@ -46,6 +46,9 @@ describe('WorkspaceEngine smoke contract', () => {
     expect(engineSource).toContain('WORKSPACE_REVIEW_STATUS_LABELS');
     expect(engineSource).toContain('stewardOwnerEmail');
     expect(engineSource).toContain('handoffReasonCodes');
+    expect(engineSource).toContain('handoffPacket');
+    expect(engineSource).toContain('buildFallbackHandoffPacket');
+    expect(engineSource).toContain('Copy Handoff Packet');
     expect(engineSource).toContain('sourceOfTruthItemIds');
     expect(engineSource).toContain('Handoff State');
     expect(engineSource).toContain('Context Steward');

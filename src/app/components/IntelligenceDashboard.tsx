@@ -101,6 +101,30 @@ function openAppTab(tab: string) {
   }));
 }
 
+function copyWorkspaceOpportunityHandoff(opportunity: ReportSummaryResponse['summary']['workspaceOpportunities'][number]) {
+  const packet = [
+    `Workspace Opportunity Handoff: ${opportunity.label}`,
+    '',
+    `Files matched: ${opportunity.fileCount}`,
+    `Reason codes: ${opportunity.reasonCodes.join(', ')}`,
+    `Source: ${opportunity.handoffPacket.source.replace(/_/g, ' ')}`,
+    '',
+    `Summary: ${opportunity.handoffPacket.summary}`,
+    `Suggested action: ${opportunity.handoffPacket.suggestedAction}`,
+    opportunity.handoffPacket.ownerReviewRequired
+      ? 'Owner review: required before cleanup, team-ready status, or source permission changes.'
+      : 'Owner review: optional unless the steward finds access or source-of-truth gaps.',
+    '',
+    `Suggested tags: ${opportunity.suggestedTags.join(', ')}`,
+    'Aethos tracks this as governance context. Microsoft 365 remains the source of truth for source permissions.',
+  ].join('\n');
+
+  void navigator.clipboard?.writeText(packet);
+  toast.success('Workspace opportunity packet copied', {
+    description: 'Open Workspaces to create the review context for a steward.',
+  });
+}
+
 const DataSourceBadge = ({ mode }: { mode: 'live' | 'demo' }) => (
   <span className={`w-fit rounded-full border px-3 py-1 text-[9px] font-black uppercase tracking-[0.12em] sm:tracking-widest ${
     mode === 'live'
@@ -1167,9 +1191,8 @@ const OverviewDashboard = ({
           {reportSummary.workspaceOpportunities.length > 0 ? (
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
               {reportSummary.workspaceOpportunities.slice(0, 3).map((opportunity) => (
-                <button
+                <div
                   key={opportunity.label}
-                  onClick={() => openAppTab('nexus')}
                   className={`min-h-[180px] rounded-xl border p-5 text-left transition hover:border-[#00F0FF]/40 ${
                     isDaylight ? 'border-slate-200 bg-slate-50' : 'border-white/10 bg-white/[0.03]'
                   }`}
@@ -1196,7 +1219,36 @@ const OverviewDashboard = ({
                       </span>
                     ))}
                   </div>
-                </button>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {opportunity.reasonCodes.slice(0, 4).map((reason) => (
+                      <span
+                        key={reason}
+                        className="rounded-full border border-[#00F0FF]/15 bg-[#00F0FF]/10 px-2 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-[#00F0FF] sm:tracking-widest"
+                      >
+                        {reason.replace(/[-_]/g, ' ')}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+                    <span className="flex min-h-[36px] items-center rounded-xl border border-white/10 px-3 py-2 text-[9px] font-black uppercase tracking-[0.12em] text-slate-500 sm:tracking-widest">
+                      {opportunity.handoffPacket.ownerReviewRequired ? 'Owner Review Required' : 'Steward Review'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => openAppTab('nexus')}
+                      className="min-h-[36px] rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-[9px] font-black uppercase tracking-[0.12em] text-slate-300 transition hover:border-white/30 hover:text-white sm:tracking-widest"
+                    >
+                      Open Workspaces
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => copyWorkspaceOpportunityHandoff(opportunity)}
+                      className="min-h-[36px] rounded-xl border border-[#00F0FF]/20 bg-[#00F0FF]/10 px-3 py-2 text-[9px] font-black uppercase tracking-[0.12em] text-[#00F0FF] transition hover:bg-[#00F0FF] hover:text-black sm:tracking-widest"
+                    >
+                      Copy Handoff
+                    </button>
+                  </div>
+                </div>
               ))}
             </div>
           ) : (

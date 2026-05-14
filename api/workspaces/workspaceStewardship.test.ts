@@ -20,6 +20,7 @@ describe('workspace stewardship persistence contract', () => {
       expect(source).toContain('steward_owner_email');
       expect(source).toContain('review_status');
       expect(source).toContain('handoff_reason_codes');
+      expect(source).toContain('handoffPacket');
       expect(source).toContain('source_of_truth_item_ids');
       expect(source).toContain('suggestion_decisions');
       expect(source).toContain('steward_notes');

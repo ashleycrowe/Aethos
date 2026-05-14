@@ -30,6 +30,7 @@ export default async function handler(
     stewardOwnerName = null,
     reviewStatus = 'admin_review',
     handoffReasonCodes = [],
+    handoffPacket = null,
     sourceOfTruthItemIds = [],
     suggestionDecisions = {},
     stewardNotes = null,
@@ -67,7 +68,9 @@ export default async function handler(
         review_status: reviewStatus,
         handoff_reason_codes: handoffReasonCodes,
         source_of_truth_item_ids: sourceOfTruthItemIds,
-        suggestion_decisions: suggestionDecisions,
+        suggestion_decisions: handoffPacket
+          ? { ...suggestionDecisions, handoffPacket }
+          : suggestionDecisions,
         steward_notes: stewardNotes,
         created_by: userId,
       })

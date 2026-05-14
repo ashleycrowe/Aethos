@@ -101,6 +101,14 @@ export type TopicCluster = {
   suggestedTags: string[];
 };
 
+export type WorkspaceHandoffPacket = {
+  source: 'discovery' | 'operational_intelligence' | 'owner_risk' | 'stale_content' | 'exposure' | 'metadata_quality';
+  summary: string;
+  reasonCodes: string[];
+  suggestedAction: string;
+  ownerReviewRequired: boolean;
+};
+
 export type OwnerStatusReviewItem = {
   ownerEmail: string;
   ownerName: string | null;
@@ -230,6 +238,8 @@ export type ReportSummary = {
     reason: string;
     fileCount: number;
     suggestedTags: string[];
+    reasonCodes: string[];
+    handoffPacket: WorkspaceHandoffPacket;
   }>;
   topicClusters: TopicCluster[];
   riskDrivers: RiskDriver[];
@@ -468,6 +478,20 @@ function shouldReviewOwnerStatus(status?: ReportOwnerStatusRow): boolean {
   return status?.status === 'disabled' || status?.status === 'not_found';
 }
 
+function createWorkspaceOpportunity(
+  opportunity: Omit<ReportSummary['workspaceOpportunities'][number], 'handoffPacket'>
+    & { handoffPacket: Omit<WorkspaceHandoffPacket, 'summary' | 'reasonCodes'> }
+): ReportSummary['workspaceOpportunities'][number] {
+  return {
+    ...opportunity,
+    handoffPacket: {
+      ...opportunity.handoffPacket,
+      summary: opportunity.reason,
+      reasonCodes: opportunity.reasonCodes,
+    },
+  };
+}
+
 function buildWorkspaceOpportunities(
   files: ReportFileRow[],
   ownerStatuses: ReportOwnerStatusRow[] = [],
@@ -514,39 +538,63 @@ function buildWorkspaceOpportunities(
 
   const riskOpportunities = [
     externalFiles.length > 0
-      ? {
+      ? createWorkspaceOpportunity({
           label: 'External Sharing Review',
           reason: 'Group externally shared files for owner review and safe remediation.',
           fileCount: externalFiles.length,
           suggestedTags: ['external-share', 'review'],
-        }
+          reasonCodes: ['exposure', 'external-share', 'remediation-review'],
+          handoffPacket: {
+            source: 'exposure',
+            suggestedAction: 'Review external sharing with file owners before revoking links or changing source permissions.',
+            ownerReviewRequired: true,
+          },
+        })
       : null,
     staleFiles.length > 0
-      ? {
+      ? createWorkspaceOpportunity({
           label: 'Stale Content Cleanup',
           reason: 'Create an archive review workspace before taking cleanup actions.',
           fileCount: staleFiles.length,
           suggestedTags: ['stale', 'archive-review'],
-        }
+          reasonCodes: ['stale-content', 'archive-review', 'dry-run-first'],
+          handoffPacket: {
+            source: 'stale_content',
+            suggestedAction: 'Assign a steward to verify business value before archive or retention dry runs.',
+            ownerReviewRequired: false,
+          },
+        })
       : null,
     unknownOwnerFiles.length > 0
-      ? {
+      ? createWorkspaceOpportunity({
           label: 'Ownership Handoff',
           reason: 'Collect unowned files so a steward can be assigned.',
           fileCount: unknownOwnerFiles.length,
           suggestedTags: ['missing-owner', 'handoff'],
-        }
+          reasonCodes: ['owner-risk', 'missing-owner', 'steward-assignment'],
+          handoffPacket: {
+            source: 'owner_risk',
+            suggestedAction: 'Assign a context steward or source owner before cleanup, search promotion, or AI readiness claims.',
+            ownerReviewRequired: true,
+          },
+        })
       : null,
     topOwnerRiskGroup
-      ? {
+      ? createWorkspaceOpportunity({
           label: `${topOwnerRiskGroup.ownerLabel} Handoff Review`,
           reason: 'Create an owner-focused workspace before cleanup, offboarding, or stewardship changes.',
           fileCount: topOwnerRiskGroup.fileCount,
           suggestedTags: ['owner-risk', 'handoff', topOwnerRiskGroup.ownerLabel.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')],
-        }
+          reasonCodes: ['owner-risk', 'handoff', 'operational-intelligence'],
+          handoffPacket: {
+            source: 'owner_risk',
+            suggestedAction: 'Route this packet to the owner or steward for source-of-truth confirmation and access-gap review.',
+            ownerReviewRequired: true,
+          },
+        })
       : null,
     ownerStatusReviewGroup
-      ? {
+      ? createWorkspaceOpportunity({
           label: `${ownerStatusReviewGroup.ownerLabel} Status Handoff`,
           reason: 'Create a handoff workspace for files owned by a disabled or not-found Entra account.',
           fileCount: ownerStatusReviewGroup.fileCount,
@@ -556,7 +604,13 @@ function buildWorkspaceOpportunities(
             ownerStatusReviewGroup.status,
             slugify(ownerStatusReviewGroup.ownerLabel),
           ],
-        }
+          reasonCodes: ['owner-risk', 'inactive-owner', ownerStatusReviewGroup.status],
+          handoffPacket: {
+            source: 'owner_risk',
+            suggestedAction: 'Review ownership with IT before treating these files as abandoned or team-ready.',
+            ownerReviewRequired: true,
+          },
+        })
       : null,
   ].filter(Boolean) as ReportSummary['workspaceOpportunities'];
 
@@ -582,7 +636,7 @@ function buildAcceptedMetadataWorkspaceOpportunities(
         ? 'Approved Tag Review'
         : 'Approved Category Review';
 
-      return {
+      return createWorkspaceOpportunity({
         label: `${label} Workspace`,
         reason: 'Approved Aethos-side metadata can now seed workspace review without Microsoft 365 writeback.',
         fileCount: decision.affected_count || 0,
@@ -592,7 +646,13 @@ function buildAcceptedMetadataWorkspaceOpportunities(
           decision.decision_status,
           slugify(decision.suggestion_id),
         ],
-      };
+        reasonCodes: ['metadata-quality', 'approved-metadata', decision.suggestion_type, decision.decision_status],
+        handoffPacket: {
+          source: 'metadata_quality',
+          suggestedAction: 'Let a steward review accepted metadata before using it as workspace structure or future Microsoft 365 writeback.',
+          ownerReviewRequired: false,
+        },
+      });
     });
 }
 
@@ -639,11 +699,17 @@ function buildMetadataWorkspaceClusters(files: ReportFileRow[]): ReportSummary['
   return (['path', 'category', 'tag'] as const)
     .map((kind) => eligibleClusters.find((cluster) => cluster.kind === kind))
     .filter(Boolean)
-    .map((cluster) => ({
+    .map((cluster) => createWorkspaceOpportunity({
       label: cluster!.label,
       reason: cluster!.reason,
       fileCount: cluster!.files.length,
       suggestedTags: cluster!.suggestedTags,
+      reasonCodes: ['metadata-quality', `repeated-${cluster!.kind}`, 'workspace-candidate'],
+      handoffPacket: {
+        source: 'metadata_quality',
+        suggestedAction: 'Review the repeated metadata pattern, confirm source-of-truth files, and decide whether it should become a team workspace.',
+        ownerReviewRequired: false,
+      },
     }));
 }
 

@@ -83,6 +83,7 @@ export default async function handler(
       stewardOwnerName: workspace.steward_owner_name,
       reviewStatus: workspace.review_status,
       handoffReasonCodes: workspace.handoff_reason_codes || [],
+      handoffPacket: workspace.suggestion_decisions?.handoffPacket || null,
       sourceOfTruthItemIds: workspace.source_of_truth_item_ids || [],
       suggestionDecisions: workspace.suggestion_decisions || {},
       stewardNotes: workspace.steward_notes,

@@ -20,6 +20,14 @@ describe('IntelligenceDashboard live/demo smoke contract', () => {
     expect(dashboardSource).toContain('Ownership & Offboarding Risk');
   });
 
+  it('surfaces workspace opportunity handoff packets from live reports', () => {
+    expect(dashboardSource).toContain('copyWorkspaceOpportunityHandoff');
+    expect(dashboardSource).toContain('reasonCodes');
+    expect(dashboardSource).toContain('Copy Handoff');
+    expect(dashboardSource).toContain('Owner Review Required');
+    expect(dashboardSource).toContain('Microsoft 365 remains the source of truth');
+  });
+
   it('keeps demo stream fixtures out of Live Mode signal queue', () => {
     expect(streamSource).toContain('const sourceInsights = isDemoMode ? insights : []');
     expect(streamSource).toContain("Data source: {isDemoMode ? 'Demo fixtures' : 'Live tenant'}");
