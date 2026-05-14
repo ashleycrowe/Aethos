@@ -24,4 +24,12 @@ describe('OracleSearchBridgeV2 smoke contract', () => {
     expect(source).toContain('V1 search indexes Microsoft file metadata as Document results');
     expect(source).toContain('classes stay deferred until their ingestion boundaries are live-backed');
   });
+
+  it('keeps Oracle search mobile-first', () => {
+    expect(source).toContain('overflow-x-hidden');
+    expect(source).toContain("animate={{ width: 'auto', opacity: 1 }}");
+    expect(source).toContain('grid w-full grid-cols-1 gap-2 sm:w-auto');
+    expect(source).toContain('break-words rounded-3xl');
+    expect(source).toContain('min-h-[44px] min-w-[44px]');
+  });
 });

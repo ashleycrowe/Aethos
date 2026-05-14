@@ -256,12 +256,12 @@ export const OracleSearchBridgeV2 = () => {
   const universalCommands = globalDemoMode ? demoUniversalCommands : liveUniversalCommands;
 
   return (
-    <div className="flex flex-col h-full max-w-[1800px] mx-auto px-2 sm:px-4">
+    <div className="mx-auto flex h-full max-w-[1800px] min-w-0 flex-col overflow-x-hidden px-2 sm:px-4">
       {/* Compact Header */}
       <div className="flex-shrink-0 pb-4">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           {/* Left: Title */}
-          <div className="flex items-center gap-4">
+          <div className="flex min-w-0 items-center gap-4">
             <div className="p-2 rounded-xl bg-[#00F0FF]/10 text-[#00F0FF] shadow-[0_0_15px_rgba(0,240,255,0.2)]">
               <Cpu className="w-5 h-5" />
             </div>
@@ -269,16 +269,16 @@ export const OracleSearchBridgeV2 = () => {
               <h1 className={`text-2xl font-black uppercase tracking-tight ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
                 Oracle <span className="text-[#00F0FF]">Search</span>
               </h1>
-              <p className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-500 mt-0.5">
+              <p className="mt-0.5 text-[9px] font-black uppercase tracking-[0.18em] text-slate-500 sm:tracking-[0.3em]">
                 Intelligence Engine v4.2
               </p>
             </div>
           </div>
 
           {/* Right: Status + Filter Button */}
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="grid w-full grid-cols-1 gap-2 sm:w-auto sm:grid-cols-[1fr_auto] md:flex md:flex-wrap md:items-center md:gap-3">
             {isDemoMode && (
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#F39C12]/30 bg-[#F39C12]/10 text-[#F39C12] text-[9px] font-black uppercase tracking-widest">
+              <div className="flex min-h-[36px] items-center justify-center gap-2 rounded-full border border-[#F39C12]/30 bg-[#F39C12]/10 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-[#F39C12]">
                 <Info className="w-3.5 h-3.5" />
                 Demo Mode
               </div>
@@ -286,7 +286,7 @@ export const OracleSearchBridgeV2 = () => {
             {/* Federation Status Badges */}
             {Object.entries(federationStatus).map(([provider, state]) => (
               state !== 'none' && (
-                <div key={provider} className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-[9px] font-black uppercase tracking-widest transition-all ${
+                <div key={provider} className={`flex min-h-[36px] items-center justify-center gap-2 rounded-full border px-3 py-1.5 text-[9px] font-black uppercase tracking-widest transition-all ${
                   state === 'complete' 
                     ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' 
                     : 'bg-yellow-500/10 border-yellow-500/20 text-yellow-500 animate-pulse'
@@ -300,7 +300,7 @@ export const OracleSearchBridgeV2 = () => {
             {/* Filter Toggle Button */}
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className={`p-2.5 rounded-xl border transition-all ${
+              className={`flex min-h-[44px] items-center justify-center rounded-xl border p-2.5 transition-all ${
                 showFilters 
                   ? 'bg-[#00F0FF]/10 border-[#00F0FF] text-[#00F0FF]'
                   : isDaylight
@@ -316,9 +316,9 @@ export const OracleSearchBridgeV2 = () => {
       </div>
 
       {/* Main Content Area - Full Width Chat */}
-      <div className="flex-1 flex flex-col lg:flex-row gap-4 lg:gap-6 min-h-0">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row lg:gap-6">
         {/* Primary Conversation Interface */}
-        <div className={`flex flex-col min-h-0 transition-all ${showFilters ? 'flex-[2]' : 'flex-1'}`}>
+        <div className={`flex min-h-0 min-w-0 flex-col transition-all ${showFilters ? 'flex-[2]' : 'flex-1'}`}>
           <GlassCard className="flex-1 flex flex-col p-0 overflow-hidden bg-[#0B0F19]/60 border-white/10 relative">
             {/* Scrollable Conversation Feed */}
             <div
@@ -326,13 +326,13 @@ export const OracleSearchBridgeV2 = () => {
               className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-8 custom-scrollbar scroll-smooth"
             >
               {history.length === 0 && !results && (
-                <div className="h-full flex flex-col items-center justify-center text-center space-y-8 py-20">
+                <div className="flex h-full flex-col items-center justify-center space-y-8 py-14 text-center sm:py-20">
                   <div className="relative">
                     <div className="absolute inset-0 bg-[#00F0FF]/20 blur-[60px] rounded-full animate-pulse" />
                     <Sparkles className="w-16 h-16 text-[#00F0FF] relative z-10" />
                   </div>
                   <div className="max-w-xl space-y-4">
-                    <h3 className="text-2xl font-black text-white uppercase tracking-tight">System Ready for Synthesis</h3>
+                    <h3 className="text-xl font-black uppercase tracking-tight text-white sm:text-2xl">System Ready for Synthesis</h3>
                     <p className="text-xs text-slate-500 leading-relaxed">
                       {globalDemoMode
                         ? 'I am federated across demo Microsoft 365, Slack, Box, and Local anchors. Ask me to audit waste, track budgets, analyze identity risks, or discover content patterns.'
@@ -347,7 +347,7 @@ export const OracleSearchBridgeV2 = () => {
                       <button
                         key={action.id}
                         onClick={() => executeCommand(action.label)}
-                        className="p-6 rounded-2xl bg-white/5 border border-white/5 text-left group hover:bg-[#00F0FF]/5 hover:border-[#00F0FF]/30 transition-all"
+                        className="min-h-[112px] rounded-2xl border border-white/5 bg-white/5 p-5 text-left transition-all hover:border-[#00F0FF]/30 hover:bg-[#00F0FF]/5 sm:p-6"
                       >
                         <div className="flex items-center gap-3 mb-3">
                           <action.icon className="w-5 h-5 text-[#00F0FF]" />
@@ -363,7 +363,7 @@ export const OracleSearchBridgeV2 = () => {
                   {/* Universal Commands Preview */}
                   <button
                     onClick={() => setShowQuickActions(!showQuickActions)}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-[#00F0FF] hover:border-[#00F0FF]/30 transition-all"
+                    className="flex min-h-[44px] items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-400 transition-all hover:border-[#00F0FF]/30 hover:text-[#00F0FF]"
                   >
                     <Command className="w-3.5 h-3.5" />
                     Universal Commands
@@ -376,13 +376,13 @@ export const OracleSearchBridgeV2 = () => {
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
-                    className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-2xl overflow-hidden"
+                        className="grid w-full max-w-2xl grid-cols-1 gap-3 overflow-hidden sm:grid-cols-2"
                       >
                         {universalCommands.map(cmd => (
                           <button 
                             key={cmd.id}
                             onClick={() => executeCommand(cmd.label)}
-                            className="p-4 rounded-xl bg-[#00F0FF]/5 border border-[#00F0FF]/20 text-left group hover:bg-[#00F0FF]/10 transition-all"
+                            className="min-h-[88px] rounded-xl border border-[#00F0FF]/20 bg-[#00F0FF]/5 p-4 text-left transition-all hover:bg-[#00F0FF]/10"
                           >
                             <div className="flex items-center gap-2 mb-2">
                               <cmd.icon className="w-4 h-4 text-[#00F0FF]" />
@@ -414,8 +414,8 @@ export const OracleSearchBridgeV2 = () => {
                       {msg.role === 'assistant' ? <Sparkles className="w-5 h-5" /> : <Target className="w-5 h-5" />}
                     </div>
                     
-                    <div className={`flex-1 space-y-4 ${msg.role === 'assistant' ? '' : 'text-right'}`}>
-                      <div className={`inline-block p-4 sm:p-6 rounded-3xl text-sm leading-relaxed max-w-[92%] sm:max-w-[85%] ${
+                    <div className={`min-w-0 flex-1 space-y-4 ${msg.role === 'assistant' ? '' : 'text-right'}`}>
+                      <div className={`inline-block max-w-[92%] break-words rounded-3xl p-4 text-sm leading-relaxed sm:max-w-[85%] sm:p-6 ${
                         msg.role === 'assistant' 
                           ? 'bg-white/5 border border-white/10 text-slate-200' 
                           : 'bg-[#00F0FF] text-black font-bold shadow-xl shadow-[#00F0FF]/10'
@@ -424,7 +424,7 @@ export const OracleSearchBridgeV2 = () => {
                       </div>
 
                       {msg.role === 'assistant' && msg.intent && (
-                        <div className="flex items-center gap-3 px-4 py-2 rounded-xl bg-[#00F0FF]/5 border border-[#00F0FF]/10 w-fit">
+                        <div className="flex w-fit max-w-full items-center gap-3 rounded-xl border border-[#00F0FF]/10 bg-[#00F0FF]/5 px-4 py-2">
                           <div className="w-1.5 h-1.5 rounded-full bg-[#00F0FF]" />
                           <span className="text-[9px] font-black text-[#00F0FF] uppercase tracking-widest">Intent: {msg.intent}</span>
                         </div>
@@ -434,13 +434,13 @@ export const OracleSearchBridgeV2 = () => {
                       {msg.role === 'assistant' && msg.sources && msg.sources.length > 0 && (
                         <div className="flex flex-wrap gap-2">
                           {msg.sources.map((source, idx) => (
-                            <div key={source.id} className="flex items-center gap-3 px-4 py-2 rounded-xl bg-white/5 border border-white/5 hover:border-white/20 transition-all cursor-help group/source relative">
+                            <div key={source.id} className="group/source relative flex max-w-full cursor-help items-center gap-3 rounded-xl border border-white/5 bg-white/5 px-4 py-2 transition-all hover:border-white/20">
                               {getSourceIcon(source.type)}
-                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight truncate max-w-[200px]">{source.title}</span>
+                              <span className="max-w-[11rem] truncate text-[10px] font-bold uppercase tracking-tight text-slate-400 sm:max-w-[200px]">{source.title}</span>
                               <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">[{idx + 1}]</span>
                               
                               {/* Source Popover */}
-                              <div className="absolute bottom-full left-0 mb-4 w-80 p-6 rounded-[24px] bg-[#0B0F19] border border-[#00F0FF]/30 opacity-0 pointer-events-none group-hover/source:opacity-100 transition-all z-50 shadow-2xl backdrop-blur-3xl">
+                              <div className="pointer-events-none absolute bottom-full left-0 z-50 mb-4 hidden w-80 rounded-[24px] border border-[#00F0FF]/30 bg-[#0B0F19] p-6 opacity-0 shadow-2xl transition-all group-hover/source:opacity-100 sm:block lg:backdrop-blur-3xl">
                                 <div className="flex items-center justify-between mb-4">
                                   <div className="flex items-center gap-2">
                                     <Globe className="w-3 h-3 text-[#00F0FF]" />
@@ -468,7 +468,7 @@ export const OracleSearchBridgeV2 = () => {
                             <button 
                               key={action.id}
                               onClick={() => toast.success(`Action Executed: ${action.label}`)}
-                              className="px-6 py-3 rounded-2xl bg-[#00F0FF] text-black text-[10px] font-black uppercase tracking-widest flex items-center gap-2.5 hover:scale-105 transition-all shadow-xl shadow-[#00F0FF]/10"
+                              className="flex min-h-[44px] items-center gap-2.5 rounded-2xl bg-[#00F0FF] px-5 py-3 text-[10px] font-black uppercase tracking-widest text-black shadow-xl shadow-[#00F0FF]/10 transition-all hover:scale-105 sm:px-6"
                             >
                               {action.label} <ArrowRight className="w-3.5 h-3.5" />
                             </button>
@@ -484,13 +484,13 @@ export const OracleSearchBridgeV2 = () => {
                   <Motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="flex gap-6"
+                    className="flex gap-4 sm:gap-6"
                   >
                     <div className="w-10 h-10 rounded-xl bg-[#00F0FF]/10 border border-[#00F0FF]/20 text-[#00F0FF] flex items-center justify-center animate-pulse">
                       <Sparkles className="w-5 h-5" />
                     </div>
-                    <div className="flex-1 space-y-4">
-                      <div className="p-6 rounded-3xl bg-white/5 border border-white/10 text-slate-200 text-sm leading-relaxed max-w-[85%]">
+                    <div className="min-w-0 flex-1 space-y-4">
+                      <div className="max-w-[92%] break-words rounded-3xl border border-white/10 bg-white/5 p-4 text-sm leading-relaxed text-slate-200 sm:max-w-[85%] sm:p-6">
                         {results.answer}
                         <span className="inline-block w-1.5 h-4 bg-[#00F0FF] ml-1 animate-pulse" />
                       </div>
@@ -503,7 +503,7 @@ export const OracleSearchBridgeV2 = () => {
                 <div className="space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div>
-                      <h3 className="text-[10px] font-black uppercase tracking-[0.35em] text-slate-500">
+                      <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 sm:tracking-[0.35em]">
                         Indexed Metadata Results
                       </h3>
                       {searchError && (
@@ -538,7 +538,7 @@ export const OracleSearchBridgeV2 = () => {
                             {getSourceIcon(item.mime_type || item.provider_type || 'file')}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <div className="flex items-start justify-between gap-3">
+                            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
                               <h4 className="line-clamp-2 text-sm font-black uppercase tracking-tight text-white">
                                 {item.name}
                               </h4>
@@ -546,7 +546,7 @@ export const OracleSearchBridgeV2 = () => {
                                 {item.intelligence_score ?? 0}
                               </span>
                             </div>
-                            <p className="mt-2 truncate text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                            <p className="mt-2 break-words text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 sm:tracking-widest">
                               {item.provider || 'microsoft'} / {item.path || 'Indexed file'}
                             </p>
                             <div className="mt-4 flex flex-wrap gap-2">
@@ -580,8 +580,8 @@ export const OracleSearchBridgeV2 = () => {
             <div className="p-4 sm:p-6 lg:p-8 border-t border-white/5 bg-[#0B0F19]/80 backdrop-blur-sm md:backdrop-blur-xl">
               {/* V1.5+ FEATURE: AI Search Mode Toggle */}
               {hasAISearch && (
-                <div className="mb-6 flex items-center justify-between p-4 rounded-2xl bg-gradient-to-r from-[#00F0FF]/10 to-purple-500/10 border border-[#00F0FF]/20">
-                  <div className="flex items-center gap-3">
+                <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-[#00F0FF]/20 bg-gradient-to-r from-[#00F0FF]/10 to-purple-500/10 p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex min-w-0 items-center gap-3">
                     <Sparkles className="w-5 h-5 text-[#00F0FF]" />
                     <div>
                       <p className="text-xs font-black uppercase tracking-tight text-white">
@@ -601,7 +601,7 @@ export const OracleSearchBridgeV2 = () => {
                         { duration: 2000 }
                       );
                     }}
-                    className={`relative w-14 h-7 rounded-full transition-all ${
+                    className={`relative h-7 w-14 shrink-0 rounded-full transition-all ${
                       aiSearchMode 
                         ? 'bg-[#00F0FF]' 
                         : 'bg-white/10'
@@ -618,21 +618,21 @@ export const OracleSearchBridgeV2 = () => {
                 </div>
               )}
               
-              <form onSubmit={handleSearch} className="relative group">
+              <form onSubmit={handleSearch} className="group relative">
                 <div className={`absolute -inset-1 rounded-3xl blur transition-all duration-500 opacity-0 group-focus-within:opacity-30 ${status === 'idle' ? 'bg-[#00F0FF]' : 'bg-yellow-500'}`} />
-                <div className="relative flex items-center gap-3 sm:gap-4 bg-[#0B0F19] border border-white/10 rounded-2xl p-2 pl-4 sm:pl-6 focus-within:border-[#00F0FF]/50 transition-all">
-                  <Command className={`w-5 h-5 ${status === 'idle' ? 'text-slate-500' : 'text-[#00F0FF] animate-spin'}`} />
+                <div className="relative flex items-center gap-2 rounded-2xl border border-white/10 bg-[#0B0F19] p-2 pl-3 transition-all focus-within:border-[#00F0FF]/50 sm:gap-4 sm:pl-6">
+                  <Command className={`hidden h-5 w-5 shrink-0 sm:block ${status === 'idle' ? 'text-slate-500' : 'text-[#00F0FF] animate-spin'}`} />
                   <input 
                     value={localQuery}
                     onChange={(e) => setLocalQuery(e.target.value)}
                     placeholder={status === 'idle' ? "Ask a question or use /command..." : `Synthesizing Intelligence...`}
-                    className="flex-1 bg-transparent border-none outline-none text-white text-base py-4 placeholder-slate-600"
+                    className="min-w-0 flex-1 border-none bg-transparent py-4 text-sm text-white outline-none placeholder-slate-600 sm:text-base"
                     disabled={status !== 'idle'}
                   />
                   <button 
                     type="submit"
                     disabled={status !== 'idle' || !localQuery.trim()}
-                    className="p-3.5 rounded-xl bg-[#00F0FF] text-black hover:scale-105 transition-all disabled:opacity-50 disabled:scale-100 disabled:grayscale"
+                    className="min-h-[44px] min-w-[44px] rounded-xl bg-[#00F0FF] p-3 text-black transition-all hover:scale-105 disabled:scale-100 disabled:opacity-50 disabled:grayscale sm:p-3.5"
                   >
                     <Send className="w-5 h-5" />
                   </button>
@@ -643,21 +643,21 @@ export const OracleSearchBridgeV2 = () => {
                 <div className="flex flex-wrap items-center gap-4 sm:gap-6">
                   <button 
                     onClick={clearHistory}
-                    className="text-[9px] font-black text-slate-500 hover:text-[#FF5733] uppercase tracking-widest flex items-center gap-2 transition-colors"
+                    className="flex min-h-[44px] items-center gap-2 text-[9px] font-black uppercase tracking-widest text-slate-500 transition-colors hover:text-[#FF5733]"
                   >
                     <RotateCcw className="w-3.5 h-3.5" /> Clear History
                   </button>
-                  <div className="w-px h-3 bg-white/5" />
+                  <div className="hidden h-3 w-px bg-white/5 sm:block" />
                   <div className="flex items-center gap-3">
                     <Layers className="w-3.5 h-3.5 text-slate-600" />
-                  <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">
+                  <span className="text-[9px] font-black uppercase tracking-[0.12em] text-slate-600 sm:tracking-widest">
                     {globalDemoMode ? 'Federated Anchors: 4 Active' : 'Live Source: Microsoft 365 Metadata'}
                   </span>
                   </div>
                 </div>
                 
                 <div className="flex items-center gap-4">
-                  <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Lattice Security</span>
+                  <span className="text-[9px] font-black uppercase tracking-[0.12em] text-slate-500 sm:tracking-widest">Lattice Security</span>
                   <div className="flex gap-1">
                     {[1,2,3,4].map(i => (
                       <div key={i} className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)]" />
@@ -674,18 +674,18 @@ export const OracleSearchBridgeV2 = () => {
           {showFilters && (
             <Motion.div
               initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 360, opacity: 1 }}
+              animate={{ width: 'auto', opacity: 1 }}
               exit={{ width: 0, opacity: 0 }}
               transition={{ duration: 0.3, ease: 'easeInOut' }}
-              className="overflow-hidden w-full lg:w-auto"
+              className="w-full min-w-0 overflow-hidden lg:w-auto"
             >
-              <div className="w-full lg:w-[360px] space-y-6 h-full overflow-y-auto custom-scrollbar lg:pr-2">
-                <GlassCard className="p-6 space-y-6">
+              <div className="h-full w-full space-y-6 overflow-y-auto custom-scrollbar lg:w-[360px] lg:pr-2">
+                <GlassCard className="space-y-6 p-5 sm:p-6">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">Advanced Filters</h3>
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500 sm:tracking-[0.4em]">Advanced Filters</h3>
                     <button
                       onClick={() => setShowFilters(false)}
-                      className="p-1.5 rounded-lg hover:bg-white/5 text-slate-500 hover:text-white transition-all"
+                      className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-slate-500 transition-all hover:bg-white/5 hover:text-white"
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -734,7 +734,7 @@ export const OracleSearchBridgeV2 = () => {
                   {/* Date Range */}
                   <div className="space-y-3">
                     <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Date Modified</label>
-                    <select className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white outline-none focus:border-[#00F0FF]/50 transition-all">
+                    <select className="min-h-[44px] w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition-all focus:border-[#00F0FF]/50">
                       <option>Last 7 days</option>
                       <option>Last 30 days</option>
                       <option>Last 90 days</option>
@@ -787,7 +787,7 @@ export const OracleSearchBridgeV2 = () => {
                     )}
                   </div>
 
-                  <button className="w-full py-3 rounded-xl bg-[#00F0FF] text-black text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all">
+                  <button className="min-h-[44px] w-full rounded-xl bg-[#00F0FF] py-3 text-[10px] font-black uppercase tracking-widest text-black transition-all hover:scale-105">
                     {globalDemoMode ? 'Apply Filters' : 'Search With Current Filters'}
                   </button>
                 </GlassCard>
