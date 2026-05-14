@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-05-12  
 **Owner:** V1/V1.5 product and engineering queue  
-**Related:** `docs/DATA_DISCOVERY_SELLABILITY_AUDIT.md`, `docs/METADATA_CLASSIFICATION_AUDIT.md`, `V1_TESTABLE_QUEUE.md`
+**Related:** `docs/DATA_DISCOVERY_SELLABILITY_AUDIT.md`, `docs/METADATA_CLASSIFICATION_AUDIT.md`, `docs/WORKSPACE_PERSONAS.md`, `V1_TESTABLE_QUEUE.md`
 
 ---
 
@@ -18,6 +18,8 @@ Make the Operational Intelligence tab the place where an IT/admin buyer can answ
 - How does this improve Microsoft 365 and future AI readiness?
 
 The V1 surface must be honest in Live Mode and impressive in Demo Mode. Demo can tell the full story with fixtures; Live must only show tenant-backed data, empty states, or setup CTAs.
+
+Workspace opportunity work should follow the persona loop in `docs/WORKSPACE_PERSONAS.md`: Systems Admin generates handoff candidates, Context Steward curates them, and Knowledge Worker consumes the trusted working context.
 
 ---
 

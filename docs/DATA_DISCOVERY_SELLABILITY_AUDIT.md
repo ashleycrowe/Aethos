@@ -1,7 +1,8 @@
 # Data Discovery Sellability Audit
 
 **Last Updated:** 2026-05-12  
-**Scope:** V1 discovery, reports, remediation, identity/offboarding relevance, and sales story by customer data maturity.
+**Scope:** V1 discovery, reports, remediation, identity/offboarding relevance, and sales story by customer data maturity.  
+**Related:** `docs/WORKSPACE_PERSONAS.md`
 
 ---
 
@@ -14,6 +15,8 @@ The current Identity prototype should not be promoted wholesale into V1. However
 > Who owns this content, what is tied to people who left or are leaving, and what shared/exposed content needs review before knowledge walks out the door?
 
 That is much more sellable than generic identity analytics, especially in an environment where employee turnover is high.
+
+Workspace sellability depends on three personas working as a loop: Systems Admins generate handoff candidates, Context Stewards curate source-of-truth context, and Knowledge Workers consume the cleaned workspace as a trusted playlist of documents.
 
 ---
 

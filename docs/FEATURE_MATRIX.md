@@ -4,6 +4,14 @@
 
 This document serves as the **single source of truth** for which features are available in which product versions. Use this when developing version-gated components.
 
+Runtime promotion is now separate from product version:
+
+- `live`: safe for tenant-backed production walkthroughs.
+- `demo`: visible on demo/local surfaces to tell the future story with fixtures.
+- `pre-release`: internal pre-release/local only until data contracts and privacy boundaries are validated.
+
+Implementation source of truth: `FEATURE_PROMOTION_STAGES` in `src/app/context/VersionContext.tsx`. Version flags say what a release intends to include; promotion flags decide whether that feature can appear on the current runtime surface.
+
 ---
 
 ## Quick Reference

@@ -137,6 +137,7 @@ See `docs/OPERATIONAL_INTELLIGENCE_DEVELOPMENT_QUEUE.md` for the detailed implem
 
 ## Active Workstream - Workspace V1
 
+- [x] Capture Workspace personas: Systems Admin generates, Context Steward curates, Knowledge Worker consumes.
 - [x] Rename or clarify `Nexus` as the Workspace area in V1 navigation/copy.
 - [x] Add a primary `Create Workspace` button to the Workspace header.
 - [x] Show real empty state when the live tenant has zero workspaces.
@@ -208,7 +209,7 @@ See `docs/OPERATIONAL_INTELLIGENCE_DEVELOPMENT_QUEUE.md` for the detailed implem
 - [ ] Observability/logging pass with structured logs.
 - [ ] AppSource preparation docs, privacy policy, support docs, and demo video checklist.
 - [ ] Advanced bundle tuning after first lazy-loading pass.
-- [ ] Add formal feature promotion flags for `pre-release -> demo -> live` rollout.
+- [x] Add formal feature promotion flags for `pre-release -> demo -> live` rollout.
 
 ---
 

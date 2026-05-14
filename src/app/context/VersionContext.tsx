@@ -14,8 +14,10 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import {
   DEMO_MODE_STORAGE_KEY,
+  getRuntimeSurface,
   isDemoModeEnabled,
   isDemoOverrideAllowed,
+  type RuntimeSurface,
 } from '@/app/config/demoMode';
 
 // ============================================================================
@@ -23,6 +25,7 @@ import {
 // ============================================================================
 
 export type Version = 'V1' | 'V1.5' | 'V2' | 'V3' | 'V4';
+export type FeaturePromotionStage = 'pre-release' | 'demo' | 'live';
 
 export interface VersionFeatures {
   // ========== V1 CORE FEATURES (Always Available) ==========
@@ -80,6 +83,81 @@ export interface VersionFeatures {
   knowledgeGraph: boolean;               // Entity relationship visualization
   multiLanguage: boolean;                // Search/summarize in 10+ languages
   customLLMFineTuning: boolean;          // Tenant-specific AI training
+}
+
+export const FEATURE_PROMOTION_STAGES: Record<keyof VersionFeatures, FeaturePromotionStage> = {
+  discovery: 'live',
+  workspaces: 'live',
+  basicSearch: 'live',
+  tagBasedSync: 'live',
+  storageIntelligence: 'live',
+  exposureVisibility: 'live',
+  basicRemediation: 'live',
+  aiMetadataEnrichment: 'live',
+  weeklyReports: 'live',
+
+  aiContentSearch: 'pre-release',
+  semanticSearch: 'pre-release',
+  summarization: 'pre-release',
+  piiDetection: 'pre-release',
+  contentChunkRetrieval: 'pre-release',
+  conversationalOracle: 'pre-release',
+  topicClustering: 'pre-release',
+  entityExtraction: 'pre-release',
+
+  slackIntegration: 'demo',
+  googleWorkspaceShadow: 'demo',
+  crossPlatformWorkspaces: 'demo',
+  universalSearch: 'demo',
+  slackWasteDetection: 'demo',
+  multiProviderTagSync: 'demo',
+  boxShadowDiscovery: 'demo',
+
+  complianceAutomation: 'demo',
+  retentionPolicies: 'demo',
+  auditTrails: 'demo',
+  policyTemplates: 'demo',
+  predictiveAnalytics: 'demo',
+  anomalyDetection: 'demo',
+  driftDetection: 'demo',
+  budgetForecasting: 'demo',
+  executiveDashboard: 'demo',
+  advancedRemediation: 'demo',
+  simulationMode: 'demo',
+
+  multiTenantFederation: 'demo',
+  crossTenantSearch: 'demo',
+  tenantBenchmarking: 'demo',
+  apiMarketplace: 'demo',
+  webhooks: 'demo',
+  whiteLabel: 'demo',
+  enterpriseSSO: 'demo',
+  advancedRBAC: 'demo',
+  knowledgeGraph: 'demo',
+  multiLanguage: 'demo',
+  customLLMFineTuning: 'demo',
+};
+
+export function isFeaturePromotedForSurface(
+  feature: keyof VersionFeatures,
+  surface: RuntimeSurface = getRuntimeSurface()
+) {
+  const stage = FEATURE_PROMOTION_STAGES[feature];
+  if (stage === 'live') return true;
+  if (stage === 'demo') return surface === 'demo' || surface === 'pre-release' || surface === 'local';
+  return surface === 'pre-release' || surface === 'local';
+}
+
+export function applyFeaturePromotionGates(
+  features: VersionFeatures,
+  surface: RuntimeSurface = getRuntimeSurface()
+): VersionFeatures {
+  return Object.fromEntries(
+    Object.entries(features).map(([key, enabled]) => [
+      key,
+      Boolean(enabled && isFeaturePromotedForSurface(key as keyof VersionFeatures, surface)),
+    ])
+  ) as VersionFeatures;
 }
 
 // ============================================================================
@@ -477,7 +555,7 @@ export const VersionProvider: React.FC<VersionProviderProps> = ({
   const value: VersionContextValue = {
     version,
     setVersion,
-    features: VERSION_FEATURES[version],
+    features: applyFeaturePromotionGates(VERSION_FEATURES[version]),
     metadata: VERSION_METADATA[version],
     isDemoMode,
     setDemoMode,
