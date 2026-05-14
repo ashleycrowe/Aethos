@@ -237,6 +237,7 @@ Completed component passes:
 - [x] IntelligenceDashboard: remove mobile overflow pressure from scan strips and owner/report cards, reduce tight tracking, and wrap long owner/file labels.
 - [x] OracleSearch: make filter panel full-width on mobile, stack status controls, wrap chat/result text, and keep core search controls touch-sized.
 - [x] WorkspaceEngine: reduce tight label tracking, make workspace/lattice actions touch-sized on phones, and wrap resource titles/labels.
+- [x] Mobile contract coverage: add a V1 cross-screen smoke test for overflow containment, touch targets, progressive grids, blur reduction, and long-label wrapping.
 - [x] ReportingCenter: stack report controls at mobile widths, reduce chart/card padding, wrap waste-file rows, and remove hard-coded dollar savings.
 - [x] PeopleCenter: stack directory/manager controls, wrap identity card labels, and make the profile modal phone-friendly.
 - [x] App shell and navigation: reduce mobile blur cost, tighten shell labels, touch-size header/sidebar controls, and add bottom-nav content clearance.
