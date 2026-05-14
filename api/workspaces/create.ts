@@ -26,6 +26,13 @@ export default async function handler(
     tags = [],
     autoSyncEnabled = true,
     syncRules = {},
+    stewardOwnerEmail = null,
+    stewardOwnerName = null,
+    reviewStatus = 'admin_review',
+    handoffReasonCodes = [],
+    sourceOfTruthItemIds = [],
+    suggestionDecisions = {},
+    stewardNotes = null,
   } = req.body;
   const { tenantId, userId } = context;
 
@@ -55,6 +62,13 @@ export default async function handler(
           min_intelligence_score: 0,
           ...syncRules,
         },
+        steward_owner_email: stewardOwnerEmail,
+        steward_owner_name: stewardOwnerName,
+        review_status: reviewStatus,
+        handoff_reason_codes: handoffReasonCodes,
+        source_of_truth_item_ids: sourceOfTruthItemIds,
+        suggestion_decisions: suggestionDecisions,
+        steward_notes: stewardNotes,
         created_by: userId,
       })
       .select()

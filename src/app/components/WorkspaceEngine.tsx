@@ -111,6 +111,13 @@ const WORKSPACE_PERSONA_MODES = [
 
 type WorkspacePersonaModeId = typeof WORKSPACE_PERSONA_MODES[number]['id'];
 
+const WORKSPACE_REVIEW_STATUS_LABELS: Record<NonNullable<Workspace['stewardship']>['reviewStatus'], string> = {
+  admin_review: 'Admin Review',
+  steward_review: 'Steward Review',
+  team_ready: 'Team Ready',
+  archived: 'Archived',
+};
+
 function fileTypeFromMime(mimeType?: string): PinnedArtifact['type'] {
   if (!mimeType) return 'document';
   if (mimeType.includes('spreadsheet') || mimeType.includes('excel')) return 'spreadsheet';
@@ -157,6 +164,15 @@ function toWorkspace(row: any): Workspace {
     updatedAt: row.updatedAt || row.updated_at || new Date().toISOString(),
     intelligenceScore: Math.round(row.stats?.avgIntelligenceScore || 0),
     syncRules: [],
+    stewardship: {
+      stewardOwnerEmail: row.stewardOwnerEmail || row.steward_owner_email || null,
+      stewardOwnerName: row.stewardOwnerName || row.steward_owner_name || null,
+      reviewStatus: row.reviewStatus || row.review_status || 'admin_review',
+      handoffReasonCodes: row.handoffReasonCodes || row.handoff_reason_codes || [],
+      sourceOfTruthItemIds: row.sourceOfTruthItemIds || row.source_of_truth_item_ids || [],
+      suggestionDecisions: row.suggestionDecisions || row.suggestion_decisions || {},
+      stewardNotes: row.stewardNotes || row.steward_notes || null,
+    },
   };
 }
 
@@ -1117,6 +1133,58 @@ export const WorkspaceEngine = () => {
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+
+            {/* Stewardship State */}
+            <div className={`rounded-[32px] border p-6 sm:p-8 ${isDaylight ? 'border-slate-100 bg-white shadow-xl' : 'border-white/10 bg-white/[0.02]'}`}>
+              <div className="flex items-center gap-4">
+                <ShieldCheck className="h-5 w-5 text-[#00F0FF]" />
+                <h3 className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 sm:tracking-[0.35em]">
+                  Handoff State
+                </h3>
+              </div>
+              <div className="mt-6 space-y-4">
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-[0.12em] text-slate-500 sm:tracking-widest">
+                    Review Status
+                  </p>
+                  <p className={`mt-1 text-sm font-black uppercase tracking-tight ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
+                    {WORKSPACE_REVIEW_STATUS_LABELS[selectedWorkspace.stewardship?.reviewStatus || 'admin_review']}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-[0.12em] text-slate-500 sm:tracking-widest">
+                    Context Steward
+                  </p>
+                  <p className={`mt-1 break-words text-sm font-black tracking-tight ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
+                    {selectedWorkspace.stewardship?.stewardOwnerName || selectedWorkspace.stewardship?.stewardOwnerEmail || 'Unassigned'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-[0.12em] text-slate-500 sm:tracking-widest">
+                    Handoff Reasons
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {(selectedWorkspace.stewardship?.handoffReasonCodes?.length
+                      ? selectedWorkspace.stewardship.handoffReasonCodes
+                      : ['manual-review']
+                    ).map((reason) => (
+                      <span
+                        key={reason}
+                        className="rounded-full border border-[#00F0FF]/20 bg-[#00F0FF]/10 px-3 py-1 text-[9px] font-black uppercase tracking-[0.1em] text-[#00F0FF]"
+                      >
+                        {reason.replace(/[-_]/g, ' ')}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-white/5 bg-black/20 p-4">
+                  <p className="text-xs leading-5 text-slate-500">
+                    {selectedWorkspace.stewardship?.stewardNotes ||
+                      'This workspace can carry a handoff packet from discovery into steward curation before the team consumes it.'}
+                  </p>
+                </div>
               </div>
             </div>
 

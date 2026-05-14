@@ -414,6 +414,13 @@ export interface CreateWorkspaceRequest {
   tags?: string[];
   autoSyncEnabled?: boolean;
   syncRules?: Record<string, unknown>;
+  stewardOwnerEmail?: string | null;
+  stewardOwnerName?: string | null;
+  reviewStatus?: 'admin_review' | 'steward_review' | 'team_ready' | 'archived';
+  handoffReasonCodes?: string[];
+  sourceOfTruthItemIds?: string[];
+  suggestionDecisions?: Record<string, unknown>;
+  stewardNotes?: string | null;
   accessToken?: string | null;
 }
 
@@ -428,6 +435,13 @@ export interface WorkspaceListResponse {
     tags: string[];
     autoSyncEnabled: boolean;
     syncRules?: any;
+    stewardOwnerEmail?: string | null;
+    stewardOwnerName?: string | null;
+    reviewStatus?: 'admin_review' | 'steward_review' | 'team_ready' | 'archived';
+    handoffReasonCodes?: string[];
+    sourceOfTruthItemIds?: string[];
+    suggestionDecisions?: Record<string, unknown>;
+    stewardNotes?: string | null;
     itemCount: number;
     createdAt: string;
     updatedAt: string;
@@ -446,6 +460,13 @@ export interface WorkspaceDetailResponse {
     tags: string[];
     autoSyncEnabled: boolean;
     syncRules?: any;
+    stewardOwnerEmail?: string | null;
+    stewardOwnerName?: string | null;
+    reviewStatus?: 'admin_review' | 'steward_review' | 'team_ready' | 'archived';
+    handoffReasonCodes?: string[];
+    sourceOfTruthItemIds?: string[];
+    suggestionDecisions?: Record<string, unknown>;
+    stewardNotes?: string | null;
     items: Array<{
       id: string;
       fileId: string;
@@ -478,6 +499,13 @@ export interface CreateWorkspaceResponse {
     tags?: string[];
     auto_sync_enabled?: boolean;
     sync_rules?: Record<string, unknown>;
+    steward_owner_email?: string | null;
+    steward_owner_name?: string | null;
+    review_status?: 'admin_review' | 'steward_review' | 'team_ready' | 'archived';
+    handoff_reason_codes?: string[];
+    source_of_truth_item_ids?: string[];
+    suggestion_decisions?: Record<string, unknown>;
+    steward_notes?: string | null;
     created_at?: string;
     updated_at?: string;
     last_sync_at?: string;

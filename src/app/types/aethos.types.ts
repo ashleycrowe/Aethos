@@ -144,6 +144,15 @@ export interface Workspace {
   updatedAt: string;
   intelligenceScore: number; // 0-100
   syncRules?: SyncRule[]; // Tag-based auto-sync rules
+  stewardship?: {
+    stewardOwnerEmail?: string | null;
+    stewardOwnerName?: string | null;
+    reviewStatus: 'admin_review' | 'steward_review' | 'team_ready' | 'archived';
+    handoffReasonCodes: string[];
+    sourceOfTruthItemIds: string[];
+    suggestionDecisions: Record<string, unknown>;
+    stewardNotes?: string | null;
+  };
 }
 
 // Asset (File, Channel, Page) - for Discovery and Workspaces

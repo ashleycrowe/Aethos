@@ -147,7 +147,7 @@ See `docs/OPERATIONAL_INTELLIGENCE_DEVELOPMENT_QUEUE.md` for the detailed implem
 - [x] Allow manual workspace creation without requiring discovered files.
 - [x] Make API failure state distinct from Demo Mode fallback.
 - [x] Add a post-discovery CTA: `Create a workspace from these results`.
-- [ ] Persist workspace stewardship metadata: steward owner, review status, source-of-truth pins, and suggestion decisions.
+- [x] Persist workspace stewardship metadata: steward owner, review status, source-of-truth pins, and suggestion decisions.
 - [ ] Add Workspace handoff packets with reason codes from Discovery, Operational Intelligence, owner risk, stale content, exposure, and metadata quality.
 - [ ] Add workspace-scoped trust filters for source-of-truth, freshness, owner, external share, stale, and needs-review state.
 - [ ] Add read-focused Team View for Knowledge Workers with fewer admin/remediation controls.

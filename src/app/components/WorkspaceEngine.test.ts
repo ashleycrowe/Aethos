@@ -42,6 +42,15 @@ describe('WorkspaceEngine smoke contract', () => {
     expect(engineSource).toContain('trusted working context that an admin can hand off');
   });
 
+  it('surfaces persisted stewardship handoff metadata', () => {
+    expect(engineSource).toContain('WORKSPACE_REVIEW_STATUS_LABELS');
+    expect(engineSource).toContain('stewardOwnerEmail');
+    expect(engineSource).toContain('handoffReasonCodes');
+    expect(engineSource).toContain('sourceOfTruthItemIds');
+    expect(engineSource).toContain('Handoff State');
+    expect(engineSource).toContain('Context Steward');
+  });
+
   it('keeps workspace controls mobile-first', () => {
     expect(engineSource).toContain('overflow-x-hidden');
     expect(engineSource).toContain('sm:w-auto sm:px-10');
