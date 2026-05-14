@@ -27,4 +27,13 @@ describe('WorkspaceEngine smoke contract', () => {
     expect(engineSource).toContain('Live Mode does not simulate retention timers or cleanup results');
     expect(engineSource).toContain('Open Remediation Dry Runs');
   });
+
+  it('keeps V1 workspace personas visible in the product surface', () => {
+    expect(engineSource).toContain('const WORKSPACE_PERSONA_LOOP');
+    expect(engineSource).toContain('Systems Admin');
+    expect(engineSource).toContain('Context Steward');
+    expect(engineSource).toContain('Knowledge Worker');
+    expect(engineSource).toContain('Workspace Loop');
+    expect(engineSource).toContain('trusted working context that an admin can hand off');
+  });
 });

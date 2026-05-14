@@ -61,6 +61,24 @@ import { syncEngineService } from '../services/syncEngine.service';
 
 const TEST_TENANT_ID = '00000000-0000-0000-0000-000000000101';
 
+const WORKSPACE_PERSONA_LOOP = [
+  {
+    role: 'Systems Admin',
+    label: 'Generate handoff',
+    detail: 'Bundle risky, stale, scattered, or unowned files from Discovery.',
+  },
+  {
+    role: 'Context Steward',
+    label: 'Curate context',
+    detail: 'Pin source-of-truth files, approve suggestions, and route dry-runs.',
+  },
+  {
+    role: 'Knowledge Worker',
+    label: 'Consume playlist',
+    detail: 'Search trusted working context without hunting across Microsoft 365.',
+  },
+];
+
 function fileTypeFromMime(mimeType?: string): PinnedArtifact['type'] {
   if (!mimeType) return 'document';
   if (mimeType.includes('spreadsheet') || mimeType.includes('excel')) return 'spreadsheet';
@@ -442,8 +460,20 @@ export const WorkspaceEngine = () => {
             ? `Live workspace data could not load: ${workspaceError}`
             : isDemoMode
               ? 'Create an operational workspace to synthesize cross-cloud resources into a unified lattice.'
-              : 'No live workspaces exist for this tenant yet. You can create one now, even before discovery has found files.'}
+              : 'No live workspaces exist for this tenant yet. Create a trusted working context that an admin can hand off, a steward can curate, and a team can actually use.'}
         </p>
+        <div className="mb-10 grid w-full max-w-4xl grid-cols-1 gap-3 px-4 sm:grid-cols-3">
+          {WORKSPACE_PERSONA_LOOP.map((persona) => (
+            <div
+              key={persona.role}
+              className="rounded-2xl border border-slate-200 bg-white/70 p-4 text-left shadow-sm dark:border-white/10 dark:bg-white/[0.03]"
+            >
+              <p className="text-[9px] font-black uppercase tracking-widest text-[#00F0FF]">{persona.role}</p>
+              <p className="mt-2 text-sm font-black uppercase tracking-tight text-slate-900 dark:text-white">{persona.label}</p>
+              <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">{persona.detail}</p>
+            </div>
+          ))}
+        </div>
         <button 
           onClick={handleOpenWizard}
           className="px-10 py-4 bg-slate-900 dark:bg-white text-white dark:text-black rounded-2xl font-black text-[11px] uppercase tracking-[0.3em] shadow-xl hover:scale-105 active:scale-95 transition-all"
@@ -597,14 +627,22 @@ export const WorkspaceEngine = () => {
                   {/* Top Stats Strip */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
                     <div className={`p-5 md:p-8 rounded-[28px] md:rounded-[36px] border ${isDaylight ? 'bg-white border-slate-100 shadow-sm' : 'bg-white/[0.03] border-white/5'}`}>
-                       <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 block mb-4">Lattice Density</span>
+                       <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 block mb-4">
+                         {isDemoMode ? 'Lattice Density' : 'Trusted Files'}
+                       </span>
                        <div className="text-4xl font-black text-[#00F0FF]">{selectedWorkspace.pinnedItems.length}</div>
-                       <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mt-2 italic">Active Pointers</p>
+                       <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mt-2 italic">
+                         {isDemoMode ? 'Active Pointers' : 'Playlist anchors'}
+                       </p>
                     </div>
                     <div className={`p-5 md:p-8 rounded-[28px] md:rounded-[36px] border ${isDaylight ? 'bg-white border-slate-100 shadow-sm' : 'bg-white/[0.03] border-white/5'}`}>
-                       <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 block mb-4">Integrity Score</span>
+                       <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 block mb-4">
+                         {isDemoMode ? 'Integrity Score' : 'Trust Score'}
+                       </span>
                        <div className="text-4xl font-black text-white">{selectedWorkspace.intelligenceScore}%</div>
-                       <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mt-2 italic">Operational Fidelity</p>
+                       <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mt-2 italic">
+                         {isDemoMode ? 'Operational Fidelity' : 'Owner and freshness signal'}
+                       </p>
                     </div>
                     <div className={`p-5 md:p-8 rounded-[28px] md:rounded-[36px] border ${isDaylight ? 'bg-white border-slate-100 shadow-sm' : 'bg-white/[0.03] border-white/5'}`}>
                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 block mb-4">
@@ -969,6 +1007,35 @@ export const WorkspaceEngine = () => {
 
           {/* Context Sidebar Column */}
           <div className="lg:col-span-4 space-y-8 md:space-y-10 min-w-0">
+            {/* Persona Loop */}
+            <div className={`p-6 sm:p-8 rounded-[32px] border ${isDaylight ? 'bg-white border-slate-100 shadow-xl' : 'bg-white/[0.02] border-white/10'}`}>
+              <div className="flex items-center gap-4">
+                <Users className="h-5 w-5 text-[#00F0FF]" />
+                <h3 className="text-[10px] font-black uppercase tracking-[0.35em] text-slate-500">
+                  Workspace Loop
+                </h3>
+              </div>
+              <div className="mt-6 space-y-4">
+                {WORKSPACE_PERSONA_LOOP.map((persona, index) => (
+                  <div key={persona.role} className="flex gap-4">
+                    <div className="flex flex-col items-center">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-full border border-[#00F0FF]/25 bg-[#00F0FF]/10 text-[10px] font-black text-[#00F0FF]">
+                        {index + 1}
+                      </div>
+                      {index < WORKSPACE_PERSONA_LOOP.length - 1 && (
+                        <div className="mt-2 h-full min-h-6 w-px bg-white/10" />
+                      )}
+                    </div>
+                    <div className="pb-2">
+                      <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">{persona.role}</p>
+                      <p className={`mt-1 text-sm font-black uppercase tracking-tight ${isDaylight ? 'text-slate-900' : 'text-white'}`}>{persona.label}</p>
+                      <p className="mt-1 text-xs leading-5 text-slate-500">{persona.detail}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             {/* AI Strategic Synthesis */}
             <div className={`p-6 sm:p-8 md:p-10 rounded-[32px] md:rounded-[48px] border relative overflow-hidden flex flex-col space-y-8 md:space-y-10 ${isDaylight ? 'bg-white border-slate-100 shadow-xl' : 'bg-gradient-to-br from-[#0B0F19] to-[#0D121F] border-white/10 shadow-2xl'}`}>
                <div className="absolute -top-10 -right-10 w-32 h-32 sm:w-40 sm:h-40 bg-[#00F0FF]/5 blur-[60px] sm:blur-[80px] rounded-full" />

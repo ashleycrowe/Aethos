@@ -138,6 +138,7 @@ See `docs/OPERATIONAL_INTELLIGENCE_DEVELOPMENT_QUEUE.md` for the detailed implem
 ## Active Workstream - Workspace V1
 
 - [x] Capture Workspace personas: Systems Admin generates, Context Steward curates, Knowledge Worker consumes.
+- [x] Surface Workspace personas in the live Workspace empty state and context sidebar.
 - [x] Rename or clarify `Nexus` as the Workspace area in V1 navigation/copy.
 - [x] Add a primary `Create Workspace` button to the Workspace header.
 - [x] Show real empty state when the live tenant has zero workspaces.
