@@ -32,7 +32,7 @@ export const PersonCard: React.FC<{ person: AethosIdentity; onOpen: (p: AethosId
     <motion.div 
       layout
       whileHover={{ y: -4, scale: 1.01 }}
-      className="group relative bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 rounded-2xl p-5 hover:border-[#00F0FF]/40 transition-all cursor-pointer overflow-hidden"
+      className="group relative overflow-hidden rounded-2xl border border-white/10 bg-[#0B0F19]/60 p-5 backdrop-blur-xl transition-all hover:border-[#00F0FF]/40 sm:cursor-pointer"
       onClick={() => onOpen(person)}
     >
       <div className="flex gap-4 items-start">
@@ -47,7 +47,7 @@ export const PersonCard: React.FC<{ person: AethosIdentity; onOpen: (p: AethosId
         
         <div className="flex-1 min-w-0">
           <div className="flex justify-between items-start">
-            <h3 className="text-sm font-bold text-white truncate group-hover:text-[#00F0FF] transition-colors">{person.name}</h3>
+            <h3 className="break-words text-sm font-bold text-white transition-colors group-hover:text-[#00F0FF]">{person.name}</h3>
           </div>
           <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider mt-0.5">{person.role}</p>
           <div className="flex gap-1 mt-2">
@@ -60,12 +60,12 @@ export const PersonCard: React.FC<{ person: AethosIdentity; onOpen: (p: AethosId
         </div>
       </div>
 
-      <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
+      <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-4">
         <div className="flex gap-2">
-          <button className="p-2 rounded-lg bg-white/5 text-slate-400 hover:text-[#00F0FF] hover:bg-[#00F0FF]/10 transition-all">
+          <button className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg bg-white/5 p-2 text-slate-400 transition-all hover:bg-[#00F0FF]/10 hover:text-[#00F0FF]">
             <Mail size={14} />
           </button>
-          <button className="p-2 rounded-lg bg-white/5 text-slate-400 hover:text-[#E01E5A] hover:bg-[#E01E5A]/10 transition-all">
+          <button className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg bg-white/5 p-2 text-slate-400 transition-all hover:bg-[#E01E5A]/10 hover:text-[#E01E5A]">
             <Slack size={14} />
           </button>
         </div>
@@ -93,18 +93,18 @@ export const PersonDetailModal: React.FC<{ person: AethosIdentity | null; isOpen
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0B0F19]/90 backdrop-blur-md p-4 sm:p-6"
+          className="fixed inset-0 z-[100] flex items-end justify-center bg-[#0B0F19]/90 p-0 backdrop-blur-sm sm:items-center sm:p-6 sm:backdrop-blur-md"
         >
           <motion.div 
             initial={{ scale: 0.95, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
-            className="w-full max-w-4xl bg-[#0B0F19] border border-white/10 rounded-[32px] overflow-hidden shadow-2xl flex flex-col max-h-[95vh]"
+            className="flex max-h-[94vh] w-full max-w-4xl flex-col overflow-hidden rounded-t-[28px] border border-white/10 bg-[#0B0F19] shadow-2xl sm:max-h-[95vh] sm:rounded-[32px]"
           >
             {/* Header / Banner */}
             <div className="h-40 bg-gradient-to-br from-[#00F0FF]/20 via-[#0B0F19] to-transparent relative">
               <button 
                 onClick={onClose}
-                className="absolute top-6 right-6 p-3 rounded-full bg-black/40 text-white hover:bg-black/60 transition-all z-10"
+                className="absolute right-4 top-4 z-10 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full bg-black/40 p-3 text-white transition-all hover:bg-black/60 sm:right-6 sm:top-6"
               >
                 <MoreVertical size={20} />
               </button>
@@ -116,7 +116,7 @@ export const PersonDetailModal: React.FC<{ person: AethosIdentity | null; isOpen
               </div>
             </div>
 
-            <div className="px-6 sm:px-12 pb-12 relative flex-1 overflow-y-auto no-scrollbar">
+            <div className="relative flex-1 overflow-y-auto px-5 pb-8 no-scrollbar sm:px-12 sm:pb-12">
               {/* Profile Pic Floating */}
               <div className="absolute -top-16 left-6 sm:left-12">
                 <div className="w-32 h-32 rounded-3xl border-8 border-[#0B0F19] overflow-hidden bg-slate-800 shadow-2xl">
@@ -124,17 +124,21 @@ export const PersonDetailModal: React.FC<{ person: AethosIdentity | null; isOpen
                 </div>
               </div>
 
-              <div className="pt-20 flex flex-col sm:flex-row justify-between items-start gap-6">
-                <div>
-                  <h2 className="text-3xl font-black text-white uppercase tracking-tighter flex items-center gap-4">
+              <div className="flex flex-col items-start justify-between gap-6 pt-20 sm:flex-row">
+                <div className="min-w-0">
+                  <h2 className="flex flex-wrap items-center gap-3 break-words text-2xl font-black uppercase tracking-tight text-white sm:text-3xl">
                     {person.name}
-                    <div className="px-3 py-1 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/30 text-[10px] text-[#00F0FF] font-black uppercase tracking-widest">
+                    <div className="rounded-full border border-[#00F0FF]/30 bg-[#00F0FF]/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-[#00F0FF] sm:tracking-widest">
                       Verified Identity
                     </div>
                   </h2>
-                  <p className="text-slate-400 font-bold uppercase tracking-widest text-sm mt-1">{person.role} • {person.metadata.source} Sync</p>
+                  <p className="mt-1 flex flex-wrap items-center gap-2 text-sm font-bold uppercase tracking-[0.12em] text-slate-400 sm:tracking-widest">
+                    <span>{person.role}</span>
+                    <span className="hidden sm:inline">-</span>
+                    <span>{person.metadata.source} Sync</span>
+                  </p>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
                    <div className="flex bg-white/5 rounded-2xl border border-white/10 p-1">
                       {person.anchors?.map((anchor, idx) => (
                         <div key={idx} className="p-2.5 rounded-xl flex items-center justify-center relative group/anchor" title={`${anchor.provider} linked`}>
@@ -148,7 +152,7 @@ export const PersonDetailModal: React.FC<{ person: AethosIdentity | null; isOpen
                         </div>
                       ))}
                    </div>
-                   <button className="px-6 py-3 rounded-2xl bg-[#00F0FF] text-[#0B0F19] text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-[#00F0FF]/20">
+                   <button className="flex min-h-[44px] items-center justify-center gap-2 rounded-2xl bg-[#00F0FF] px-6 py-3 text-[10px] font-black uppercase tracking-[0.12em] text-[#0B0F19] shadow-lg shadow-[#00F0FF]/20 transition-all hover:scale-105 active:scale-95 sm:tracking-widest">
                      <MessageSquare size={14} /> Transmit Blast
                    </button>
                 </div>
@@ -162,11 +166,11 @@ export const PersonDetailModal: React.FC<{ person: AethosIdentity | null; isOpen
               </div>
 
               {/* Tiered Content Grid */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 mt-10">
+              <div className="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-10">
                 {/* Left: Career Milestones & Experience */}
                 <div className="lg:col-span-7 space-y-10">
                    <div>
-                     <h3 className="text-[10px] uppercase tracking-[0.4em] text-slate-500 font-black mb-6 flex items-center gap-3">
+                     <h3 className="mb-6 flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 sm:tracking-[0.4em]">
                        <History size={14} /> Career Trajectory
                      </h3>
                      <div className="space-y-6 relative ml-2">
@@ -190,12 +194,12 @@ export const PersonDetailModal: React.FC<{ person: AethosIdentity | null; isOpen
                    </div>
 
                    <div>
-                     <h3 className="text-[10px] uppercase tracking-[0.4em] text-slate-500 font-black mb-6 flex items-center gap-3">
+                     <h3 className="mb-6 flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 sm:tracking-[0.4em]">
                        <Zap size={14} /> Synthesized Expertise
                      </h3>
                      <div className="flex flex-wrap gap-2">
                         {(person.skills || []).map((skill, idx) => (
-                          <div key={idx} className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-[10px] font-bold text-slate-300 uppercase tracking-widest">
+                          <div key={idx} className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-300 sm:tracking-widest">
                             {skill}
                           </div>
                         ))}
@@ -205,15 +209,15 @@ export const PersonDetailModal: React.FC<{ person: AethosIdentity | null; isOpen
 
                 {/* Right: Operational Merit & Engagement */}
                 <div className="lg:col-span-5 space-y-10">
-                   <div className="p-8 rounded-[40px] bg-white/[0.03] border border-white/10 relative overflow-hidden group">
-                     <h3 className="text-[10px] uppercase tracking-[0.4em] text-slate-500 font-black mb-6">Operational Merit</h3>
+                   <div className="group relative overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.03] p-5 sm:rounded-[40px] sm:p-8">
+                     <h3 className="mb-6 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 sm:tracking-[0.4em]">Operational Merit</h3>
                      <div className="space-y-4">
                         {(person.badges || []).map((badge, idx) => (
                           <div key={idx} className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-[#00F0FF]/50 transition-all cursor-default">
                              <div className="p-2.5 rounded-xl bg-[#00F0FF]/10 text-[#00F0FF]">
                                <Award size={18} />
                              </div>
-                             <span className="text-xs font-black text-white uppercase tracking-widest">{badge}</span>
+                             <span className="break-words text-xs font-black uppercase tracking-[0.12em] text-white sm:tracking-widest">{badge}</span>
                           </div>
                         ))}
                         {(!person.badges || person.badges.length === 0) && (
@@ -224,12 +228,12 @@ export const PersonDetailModal: React.FC<{ person: AethosIdentity | null; isOpen
                      <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-[#00F0FF]/5 rounded-full blur-[60px] group-hover:bg-[#00F0FF]/10 transition-all" />
                    </div>
 
-                   <div className="p-8 rounded-[40px] border border-white/5 space-y-6">
-                      <h3 className="text-[10px] uppercase tracking-[0.4em] text-slate-500 font-black">Identity Analytics</h3>
+                   <div className="space-y-6 rounded-[28px] border border-white/5 p-5 sm:rounded-[40px] sm:p-8">
+                      <h3 className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 sm:tracking-[0.4em]">Identity Analytics</h3>
                       <div className="space-y-6">
                          <div className="space-y-3">
                             <div className="flex justify-between items-end">
-                               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Velocity Score</span>
+                               <span className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400 sm:tracking-widest">Velocity Score</span>
                                <span className="text-xl font-black text-white font-mono">{(person.accessCount / 15).toFixed(1)}%</span>
                             </div>
                             <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
@@ -238,7 +242,7 @@ export const PersonDetailModal: React.FC<{ person: AethosIdentity | null; isOpen
                          </div>
                          <div className="space-y-3">
                             <div className="flex justify-between items-end">
-                               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Risk Integrity</span>
+                               <span className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400 sm:tracking-widest">Risk Integrity</span>
                                <span className="text-xl font-black text-[#FF5733] font-mono">{100 - person.riskFactor}%</span>
                             </div>
                             <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
@@ -252,18 +256,18 @@ export const PersonDetailModal: React.FC<{ person: AethosIdentity | null; isOpen
             </div>
 
             {/* Footer Status Bar */}
-            <div className="mt-auto px-12 py-5 border-t border-white/5 bg-white/[0.02] flex flex-col sm:flex-row justify-between items-center gap-4">
-              <div className="flex gap-6">
-                <button className="text-slate-500 hover:text-white transition-colors flex items-center gap-2 text-[10px] font-black uppercase tracking-widest">
+            <div className="mt-auto flex flex-col items-stretch justify-between gap-4 border-t border-white/5 bg-white/[0.02] px-5 py-5 sm:flex-row sm:items-center sm:px-12">
+              <div className="grid grid-cols-2 gap-3 sm:flex sm:gap-6">
+                <button className="flex min-h-[44px] items-center justify-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500 transition-colors hover:text-white sm:tracking-widest">
                   <Linkedin size={14} /> Profile
                 </button>
-                <button className="text-slate-500 hover:text-white transition-colors flex items-center gap-2 text-[10px] font-black uppercase tracking-widest">
+                <button className="flex min-h-[44px] items-center justify-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500 transition-colors hover:text-white sm:tracking-widest">
                   <ExternalLink size={14} /> Portfolio
                 </button>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center gap-3 sm:justify-start">
                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                 <span className="text-[9px] font-mono text-slate-600 uppercase tracking-tighter">SOURCE_LINKAGE_SYNC_ACTIVE: {person.metadata.source}</span>
+                 <span className="break-words text-[9px] font-mono uppercase tracking-tight text-slate-600">SOURCE_LINKAGE_SYNC_ACTIVE: {person.metadata.source}</span>
               </div>
             </div>
           </motion.div>

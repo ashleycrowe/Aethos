@@ -30,11 +30,11 @@ export const PeopleCenter: React.FC = () => {
   const [view, setView] = useState<'directory' | 'manager'>('directory');
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="flex justify-end mb-4">
+    <div className="flex h-full min-w-0 flex-col overflow-x-hidden">
+      <div className="mb-4 flex justify-end">
         <button 
           onClick={() => setView(view === 'directory' ? 'manager' : 'directory')}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-[#00F0FF] hover:border-[#00F0FF]/30 transition-all group"
+          className="group flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-slate-400 transition-all hover:border-[#00F0FF]/30 hover:text-[#00F0FF] sm:w-auto sm:tracking-widest"
         >
           <Settings size={12} className="group-hover:rotate-90 transition-transform" />
           {view === 'directory' ? 'Enter Manager Mode' : 'Exit Manager Mode'}
@@ -63,11 +63,11 @@ const DirectoryView: React.FC = () => {
   );
 
   return (
-    <div className="h-full flex flex-col gap-6">
+    <div className="flex h-full min-w-0 flex-col gap-6">
       {/* Directory Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
         <div>
-          <h1 className="text-2xl font-black text-white uppercase tracking-tighter flex items-center gap-3">
+          <h1 className="flex flex-wrap items-center gap-3 text-2xl font-black uppercase tracking-tight text-white">
             People Center
             <div className="px-2 py-0.5 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/30 text-[10px] text-[#00F0FF]">
               TENANT DIRECTORY
@@ -76,22 +76,22 @@ const DirectoryView: React.FC = () => {
           <p className="text-sm text-slate-400 mt-1">Explore the organizational architecture through the story of its people.</p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
            <div className="flex bg-white/5 rounded-xl border border-white/10 p-1">
              <button 
                onClick={() => setViewMode('grid')}
-               className={cn("p-2 rounded-lg transition-all", viewMode === 'grid' ? "bg-[#00F0FF] text-[#0B0F19]" : "text-slate-400 hover:text-white")}
+               className={cn("min-h-[44px] min-w-[44px] rounded-lg p-2 transition-all", viewMode === 'grid' ? "bg-[#00F0FF] text-[#0B0F19]" : "text-slate-400 hover:text-white")}
              >
                <Grid size={16} />
              </button>
              <button 
                onClick={() => setViewMode('list')}
-               className={cn("p-2 rounded-lg transition-all", viewMode === 'list' ? "bg-[#00F0FF] text-[#0B0F19]" : "text-slate-400 hover:text-white")}
+               className={cn("min-h-[44px] min-w-[44px] rounded-lg p-2 transition-all", viewMode === 'list' ? "bg-[#00F0FF] text-[#0B0F19]" : "text-slate-400 hover:text-white")}
              >
                <List size={16} />
              </button>
            </div>
-           <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-white hover:bg-white/10 transition-all">
+           <button className="flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-white transition-all hover:bg-white/10">
              <Filter size={14} /> Filters
            </button>
         </div>
@@ -154,10 +154,10 @@ export const DirectoryManager: React.FC = () => {
   });
 
   return (
-    <div className="h-full flex flex-col gap-6">
-       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div className="flex h-full min-w-0 flex-col gap-6">
+       <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
           <div>
-            <h1 className="text-2xl font-black text-white uppercase tracking-tighter flex items-center gap-3">
+            <h1 className="flex flex-wrap items-center gap-3 text-2xl font-black uppercase tracking-tight text-white">
               Directory Architecture
               <div className="px-2 py-0.5 rounded-full bg-[#FF5733]/10 border border-[#FF5733]/30 text-[10px] text-[#FF5733]">
                 MANAGER MODE
@@ -166,16 +166,16 @@ export const DirectoryManager: React.FC = () => {
             <p className="text-sm text-slate-400 mt-1">Configure user-facing directory metadata and highlight cultural milestones.</p>
           </div>
 
-          <div className="flex bg-white/5 rounded-xl border border-white/10 p-1">
+          <div className="grid w-full grid-cols-2 rounded-xl border border-white/10 bg-white/5 p-1 sm:w-auto">
             <button 
               onClick={() => setActiveTab('config')}
-              className={cn("px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all", activeTab === 'config' ? "bg-[#00F0FF] text-[#0B0F19]" : "text-slate-400 hover:text-white")}
+              className={cn("min-h-[44px] rounded-lg px-4 py-2 text-[10px] font-black uppercase tracking-[0.12em] transition-all sm:tracking-widest", activeTab === 'config' ? "bg-[#00F0FF] text-[#0B0F19]" : "text-slate-400 hover:text-white")}
             >
               Config
             </button>
             <button 
               onClick={() => setActiveTab('merit')}
-              className={cn("px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all", activeTab === 'merit' ? "bg-[#00F0FF] text-[#0B0F19]" : "text-slate-400 hover:text-white")}
+              className={cn("min-h-[44px] rounded-lg px-4 py-2 text-[10px] font-black uppercase tracking-[0.12em] transition-all sm:tracking-widest", activeTab === 'merit' ? "bg-[#00F0FF] text-[#0B0F19]" : "text-slate-400 hover:text-white")}
             >
               Merit
             </button>
@@ -183,11 +183,11 @@ export const DirectoryManager: React.FC = () => {
         </div>
 
         {activeTab === 'config' ? (
-          <div className="grid grid-cols-12 gap-6 flex-1 overflow-y-auto no-scrollbar pb-10">
+          <div className="grid flex-1 grid-cols-1 gap-6 overflow-y-auto pb-10 no-scrollbar lg:grid-cols-12">
             {/* Settings Side */}
             <div className="col-span-12 lg:col-span-4 space-y-6">
               <div className="p-6 rounded-2xl bg-white/5 border border-white/10 space-y-6">
-                <h3 className="text-xs font-bold text-white uppercase tracking-widest flex items-center gap-2">
+                <h3 className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-white sm:tracking-widest">
                   <Settings size={14} className="text-[#00F0FF]" />
                   Card Customization
                 </h3>
@@ -199,7 +199,7 @@ export const DirectoryManager: React.FC = () => {
                     { id: 'showMilestones', label: 'Career Trajectory', sub: 'Show historical milestones' },
                     { id: 'showSocial', label: 'Social Activity Summaries', sub: 'Enable Pulse Feed highlights (Premium)' },
                   ].map((item) => (
-                    <div key={item.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition-all group">
+                    <div key={item.id} className="group flex items-center justify-between gap-4 rounded-xl p-3 transition-all hover:bg-white/5">
                       <div>
                         <p className="text-xs font-bold text-slate-200">{item.label}</p>
                         <p className="text-[10px] text-slate-500">{item.sub}</p>
@@ -247,7 +247,7 @@ export const DirectoryManager: React.FC = () => {
                    <span className="text-xs font-bold text-white uppercase tracking-wider">Automated Synthesis</span>
                  </div>
                  <p className="text-xs text-slate-300 mb-4">Identity Engine can automatically suggest bio updates and milestones based on cross-cloud activity.</p>
-                 <button className="w-full py-3 rounded-xl bg-[#00F0FF] text-[#0B0F19] font-black text-[10px] uppercase tracking-widest shadow-lg">
+                 <button className="min-h-[44px] w-full rounded-xl bg-[#00F0FF] py-3 text-[10px] font-black uppercase tracking-[0.12em] text-[#0B0F19] shadow-lg sm:tracking-widest">
                    Enable Auto-Synthesis
                  </button>
               </div>
@@ -256,12 +256,12 @@ export const DirectoryManager: React.FC = () => {
             {/* Sync Integrity Side */}
             <div className="col-span-12 lg:col-span-8 flex flex-col gap-6">
               <div className="p-6 rounded-2xl bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 flex-1">
-                <div className="flex justify-between items-center mb-8">
+                <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-3">
                     <RefreshCcw size={18} className="text-[#00F0FF]" />
-                    <h3 className="text-sm font-bold text-white uppercase tracking-wider">Universal Sync Integrity</h3>
+                    <h3 className="text-sm font-bold uppercase tracking-wide text-white">Universal Sync Integrity</h3>
                   </div>
-                  <button className="text-[10px] font-bold text-[#00F0FF] hover:underline flex items-center gap-1">
+                  <button className="flex min-h-[44px] items-center gap-1 text-left text-[10px] font-bold text-[#00F0FF] hover:underline">
                     Re-initialize Tier 2 Synthesis <RefreshCcw size={10} />
                   </button>
                 </div>
@@ -273,27 +273,27 @@ export const DirectoryManager: React.FC = () => {
                     { source: 'Google Workspace', status: 'Incomplete', type: 'Tier 2', users: 42, latency: '850ms', warning: '14 Orphaned Nodes' },
                     { source: 'Box Storage', status: 'Healthy', type: 'Tier 2', users: 310, latency: '110ms' },
                   ].map((sync, idx) => (
-                    <div key={idx} className="p-4 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between group hover:border-white/20 transition-all">
-                      <div className="flex items-center gap-4">
+                    <div key={idx} className="group flex flex-col gap-4 rounded-xl border border-white/10 bg-white/5 p-4 transition-all hover:border-white/20 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex min-w-0 items-center gap-4">
                         <div className={cn(
                           "w-2 h-2 rounded-full",
                           sync.status === 'Healthy' ? "bg-[#00F0FF] shadow-[0_0_8px_rgba(0,240,255,0.5)]" : "bg-[#FF5733] shadow-[0_0_8px_rgba(255,87,51,0.5)]"
                         )} />
                         <div>
-                          <div className="flex items-center gap-2">
-                             <span className="text-sm font-bold text-white">{sync.source}</span>
+                          <div className="flex flex-wrap items-center gap-2">
+                             <span className="break-words text-sm font-bold text-white">{sync.source}</span>
                              <span className="text-[8px] px-1.5 py-0.5 rounded bg-white/5 text-slate-500 font-mono uppercase">{sync.type}</span>
                           </div>
                           {sync.warning && <p className="text-[10px] text-[#FF5733] flex items-center gap-1 mt-0.5"><AlertTriangle size={10} /> {sync.warning}</p>}
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-8">
+                      <div className="grid grid-cols-3 items-center gap-3 sm:flex sm:gap-8">
                          <div className="text-right">
                            <span className="block text-[8px] text-slate-500 uppercase font-bold">Latency</span>
                            <span className="text-xs font-mono text-white">{sync.latency}</span>
                          </div>
-                         <div className="text-right min-w-[80px]">
+                         <div className="text-right">
                            <span className="block text-[8px] text-slate-500 uppercase font-bold">Identities</span>
                            <span className="text-xs font-mono text-white">{sync.users}</span>
                          </div>
