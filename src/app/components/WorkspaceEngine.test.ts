@@ -51,6 +51,16 @@ describe('WorkspaceEngine smoke contract', () => {
     expect(engineSource).toContain('Context Steward');
   });
 
+  it('keeps steward permission workflow visibility-first', () => {
+    expect(engineSource).toContain('getPermissionBridgeState');
+    expect(engineSource).toContain('access_missing');
+    expect(engineSource).toContain('owner_review_required');
+    expect(engineSource).toContain('Copy Access Packet');
+    expect(engineSource).toContain('Request Access');
+    expect(engineSource).toContain('does not grant source access');
+    expect(engineSource).not.toContain('Grant Access');
+  });
+
   it('keeps workspace controls mobile-first', () => {
     expect(engineSource).toContain('overflow-x-hidden');
     expect(engineSource).toContain('sm:w-auto sm:px-10');

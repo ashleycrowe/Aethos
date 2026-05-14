@@ -118,6 +118,69 @@ const WORKSPACE_REVIEW_STATUS_LABELS: Record<NonNullable<Workspace['stewardship'
   archived: 'Archived',
 };
 
+function getPermissionBridgeState(file: Record<string, any>, stewardship?: Workspace['stewardship']): PinnedArtifact['permissionBridge'] {
+  const stewardEmail = stewardship?.stewardOwnerEmail?.toLowerCase();
+  const ownerEmail = file.ownerEmail || file.owner_email || null;
+  const ownerName = file.ownerName || file.owner_name || null;
+  const externalUserCount = file.externalUserCount || file.external_user_count || 0;
+  const sourceUrl = file.url || file.webUrl || file.web_url || null;
+
+  if (!stewardEmail) {
+    return {
+      stewardAccess: 'unknown',
+      reason: 'Assign a steward to run permission parity.',
+      ownerEmail,
+      ownerName,
+      externalUserCount,
+      sourceUrl,
+    };
+  }
+
+  if (!ownerEmail) {
+    return {
+      stewardAccess: 'owner_review_required',
+      reason: 'Owner metadata is missing, so access must be reviewed by IT or the source system owner.',
+      ownerEmail,
+      ownerName,
+      externalUserCount,
+      sourceUrl,
+    };
+  }
+
+  if (ownerEmail.toLowerCase() === stewardEmail) {
+    return {
+      stewardAccess: 'can_access',
+      reason: 'Steward appears to be the recorded owner.',
+      ownerEmail,
+      ownerName,
+      externalUserCount,
+      sourceUrl,
+    };
+  }
+
+  return {
+    stewardAccess: 'access_missing',
+    reason: 'Stewardship does not grant source access. Request access through the file owner or Microsoft 365.',
+    ownerEmail,
+    ownerName,
+    externalUserCount,
+    sourceUrl,
+  };
+}
+
+const getPermissionBridgeLabel = (state?: PinnedArtifact['permissionBridge']) => {
+  switch (state?.stewardAccess) {
+    case 'can_access':
+      return 'Steward Visible';
+    case 'access_missing':
+      return 'Access Gap';
+    case 'owner_review_required':
+      return 'Owner Review';
+    default:
+      return 'Access Unknown';
+  }
+};
+
 function fileTypeFromMime(mimeType?: string): PinnedArtifact['type'] {
   if (!mimeType) return 'document';
   if (mimeType.includes('spreadsheet') || mimeType.includes('excel')) return 'spreadsheet';
@@ -127,6 +190,15 @@ function fileTypeFromMime(mimeType?: string): PinnedArtifact['type'] {
 
 function toWorkspace(row: any): Workspace {
   const detailItems = row.items || [];
+  const stewardship: NonNullable<Workspace['stewardship']> = {
+    stewardOwnerEmail: row.stewardOwnerEmail || row.steward_owner_email || null,
+    stewardOwnerName: row.stewardOwnerName || row.steward_owner_name || null,
+    reviewStatus: row.reviewStatus || row.review_status || 'admin_review',
+    handoffReasonCodes: row.handoffReasonCodes || row.handoff_reason_codes || [],
+    sourceOfTruthItemIds: row.sourceOfTruthItemIds || row.source_of_truth_item_ids || [],
+    suggestionDecisions: row.suggestionDecisions || row.suggestion_decisions || {},
+    stewardNotes: row.stewardNotes || row.steward_notes || null,
+  };
   const pinnedItems: PinnedArtifact[] = detailItems.map((item: any) => {
     const file = item.file || {};
     return {
@@ -139,6 +211,7 @@ function toWorkspace(row: any): Workspace {
       category: item.pinned ? 'critical' : 'reference',
       syncStatus: 'synced',
       pinnedAt: item.addedAt || row.createdAt || new Date().toISOString(),
+      permissionBridge: getPermissionBridgeState(file, stewardship),
       sourceMetadata: file,
     };
   });
@@ -164,15 +237,7 @@ function toWorkspace(row: any): Workspace {
     updatedAt: row.updatedAt || row.updated_at || new Date().toISOString(),
     intelligenceScore: Math.round(row.stats?.avgIntelligenceScore || 0),
     syncRules: [],
-    stewardship: {
-      stewardOwnerEmail: row.stewardOwnerEmail || row.steward_owner_email || null,
-      stewardOwnerName: row.stewardOwnerName || row.steward_owner_name || null,
-      reviewStatus: row.reviewStatus || row.review_status || 'admin_review',
-      handoffReasonCodes: row.handoffReasonCodes || row.handoff_reason_codes || [],
-      sourceOfTruthItemIds: row.sourceOfTruthItemIds || row.source_of_truth_item_ids || [],
-      suggestionDecisions: row.suggestionDecisions || row.suggestion_decisions || {},
-      stewardNotes: row.stewardNotes || row.steward_notes || null,
-    },
+    stewardship,
   };
 }
 
@@ -541,6 +606,15 @@ export const WorkspaceEngine = () => {
 
   const criticalItems = selectedWorkspace?.pinnedItems.filter(item => item.category === 'critical') || [];
   const otherItems = selectedWorkspace?.pinnedItems.filter(item => item.category !== 'critical') || [];
+  const accessGapItems = selectedWorkspace?.pinnedItems.filter((item) =>
+    ['access_missing', 'owner_review_required', 'unknown'].includes(item.permissionBridge?.stewardAccess || 'unknown')
+  ) || [];
+  const stewardVisibleItems = selectedWorkspace?.pinnedItems.filter((item) =>
+    item.permissionBridge?.stewardAccess === 'can_access'
+  ) || [];
+  const stewardVisibilityPercent = selectedWorkspace && selectedWorkspace.pinnedItems.length > 0
+    ? Math.round((stewardVisibleItems.length / selectedWorkspace.pinnedItems.length) * 100)
+    : null;
   const workspaceTabs = [
     { id: 'pulse', label: 'Signal Feed', icon: Activity },
     { id: 'lattice', label: 'Lattice Resources', icon: Database },
@@ -575,6 +649,29 @@ export const WorkspaceEngine = () => {
 
     setOracleOpen(true);
     oracleSearch(activePersonaMode.prompt(selectedWorkspace.name));
+  };
+
+  const copyPermissionRequestPacket = (item: PinnedArtifact) => {
+    const owner = item.permissionBridge?.ownerEmail || item.permissionBridge?.ownerName || 'the current file owner';
+    const steward = selectedWorkspace?.stewardship?.stewardOwnerEmail || selectedWorkspace?.stewardship?.stewardOwnerName || 'the assigned workspace steward';
+    const sourceUrl = item.permissionBridge?.sourceUrl || item.url;
+    const packet = [
+      `Permission Bridge Request: ${selectedWorkspace?.name}`,
+      '',
+      `${steward} is assigned to curate this Aethos workspace but may not have source access to:`,
+      item.title,
+      '',
+      `Current owner: ${owner}`,
+      `Reason: ${item.permissionBridge?.reason || 'Steward access needs source-system review.'}`,
+      sourceUrl && sourceUrl !== '#' ? `Source link: ${sourceUrl}` : 'Source link: unavailable',
+      '',
+      'Please review access in Microsoft 365. Aethos tracks this visibility gap but does not grant source permissions automatically.',
+    ].join('\n');
+
+    void navigator.clipboard?.writeText(packet);
+    toast.success('Permission request packet copied', {
+      description: 'Send it to the owner or IT for source-system access review.',
+    });
   };
 
   return (
@@ -826,6 +923,32 @@ export const WorkspaceEngine = () => {
                       </Motion.div>
                     )}
 
+                    {!isDemoMode && accessGapItems.length > 0 && (
+                      <Motion.div
+                        initial={{ opacity: 0, scale: 0.98 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="flex flex-col justify-between gap-5 rounded-[28px] border border-amber-400/30 bg-amber-400/5 p-5 md:flex-row md:items-center md:gap-6 md:p-6"
+                      >
+                        <div className="flex items-start gap-4 sm:items-center">
+                          <div className="rounded-2xl bg-amber-400/15 p-3 text-amber-300">
+                            <Lock className="h-6 w-6" />
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-black uppercase tracking-tight text-white">Permission Bridge Gaps</h4>
+                            <p className="mt-1 text-[10px] font-black uppercase tracking-[0.12em] text-amber-200 italic sm:tracking-widest">
+                              {accessGapItems.length} workspace item{accessGapItems.length === 1 ? '' : 's'} need steward visibility review.
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => copyPermissionRequestPacket(accessGapItems[0])}
+                          className="min-h-[44px] w-full rounded-xl border border-amber-300/30 bg-amber-300/10 px-6 py-3 text-[10px] font-black uppercase tracking-[0.12em] text-amber-100 transition-all hover:bg-amber-300 hover:text-black sm:tracking-widest md:w-auto"
+                        >
+                          Copy Access Packet
+                        </button>
+                      </Motion.div>
+                    )}
+
                     {/* Key Resources Section */}
                    <div className="space-y-8">
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pl-0 sm:pl-4">
@@ -845,6 +968,11 @@ export const WorkspaceEngine = () => {
                                     {item.provider === 'slack' ? <Slack className="w-6 h-6" /> : <FileText className="w-6 h-6" />}
                                  </div>
                                  <div className="flex gap-2">
+                                    {item.permissionBridge?.stewardAccess && item.permissionBridge.stewardAccess !== 'can_access' && (
+                                      <div className="flex items-center gap-2 rounded-xl border border-amber-300/20 bg-amber-300/10 px-3 py-1.5 text-[8px] font-black uppercase tracking-[0.12em] text-amber-200 sm:tracking-widest">
+                                        {getPermissionBridgeLabel(item.permissionBridge)}
+                                      </div>
+                                    )}
                                     {item.syncStatus === 'broken' && (
                                       <div className="flex items-center gap-2 rounded-xl border border-[#FF5733]/20 bg-[#FF5733]/10 px-3 py-1.5 text-[8px] font-black uppercase tracking-[0.12em] text-[#FF5733] sm:tracking-widest">
                                          Source Drift
@@ -871,6 +999,15 @@ export const WorkspaceEngine = () => {
                                      <a href={item.url} target="_blank" rel="noopener noreferrer" className="p-3 rounded-full bg-white/5 hover:bg-[#00F0FF] hover:text-black transition-all">
                                         <ExternalLink className="w-4 h-4" />
                                      </a>
+                                   )}
+                                   {item.permissionBridge?.stewardAccess && item.permissionBridge.stewardAccess !== 'can_access' && (
+                                     <button
+                                       type="button"
+                                       onClick={() => copyPermissionRequestPacket(item)}
+                                       className="min-h-[44px] rounded-xl border border-amber-300/20 bg-amber-300/10 px-4 py-2 text-[9px] font-black uppercase tracking-[0.12em] text-amber-200 transition-all hover:bg-amber-300 hover:text-black sm:tracking-widest"
+                                     >
+                                       Request Access
+                                     </button>
                                    )}
                                  </div>
                               </div>
@@ -1178,6 +1315,19 @@ export const WorkspaceEngine = () => {
                       </span>
                     ))}
                   </div>
+                </div>
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-[0.12em] text-slate-500 sm:tracking-widest">
+                    Steward Visibility
+                  </p>
+                  <p className={`mt-1 text-sm font-black uppercase tracking-tight ${accessGapItems.length > 0 ? 'text-amber-200' : isDaylight ? 'text-slate-900' : 'text-white'}`}>
+                    {stewardVisibilityPercent === null
+                      ? 'No Files Yet'
+                      : `${stewardVisibilityPercent}% Visible`}
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                    Stewardship is accountability, not source access. Aethos highlights permission gaps and routes requests back to Microsoft 365.
+                  </p>
                 </div>
                 <div className="rounded-2xl border border-white/5 bg-black/20 p-4">
                   <p className="text-xs leading-5 text-slate-500">

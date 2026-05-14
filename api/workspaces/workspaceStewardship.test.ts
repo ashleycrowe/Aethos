@@ -25,4 +25,13 @@ describe('workspace stewardship persistence contract', () => {
       expect(source).toContain('steward_notes');
     });
   });
+
+  it('returns source permission signals without making Aethos permission-authoritative', () => {
+    expect(detailSource).toContain('url');
+    expect(detailSource).toContain('owner_email');
+    expect(detailSource).toContain('owner_name');
+    expect(detailSource).toContain('has_external_share');
+    expect(detailSource).toContain('external_user_count');
+    expect(detailSource).not.toContain('grant');
+  });
 });

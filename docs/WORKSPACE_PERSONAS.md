@@ -56,6 +56,24 @@ If V1 only serves the Systems Admin, Aethos risks becoming another compliance da
 
 > When people leave, Aethos helps you find what knowledge, files, and exposure they leave behind.
 
+### Permission Bridge
+
+Stewardship is an accountability layer, not a SharePoint or OneDrive security group.
+
+- Assigning a steward in Aethos does not grant source-system access.
+- Aethos should show whether a steward can likely see the files they are responsible for curating.
+- Permission gaps should create request packets and source deep links, not silent permission changes.
+- Microsoft 365 and future provider systems remain the source of truth for grants, revokes, inheritance, and policy enforcement.
+
+V1 should be **permission-aware, not permission-authoritative**:
+
+- Show steward visibility coverage for each workspace.
+- Flag `steward-access-missing`, `owner-review-required`, and `access-unknown` states.
+- Let users copy an outreach packet to the owner or IT.
+- Deep-link to the source file or provider permission surface when available.
+
+V1.5/V2 can add IT ticketing or reviewed Graph write-back, but only behind explicit approval, audit trail, and dry-run-style confirmation.
+
 ---
 
 ## Persona 3: Knowledge Worker
@@ -93,6 +111,7 @@ These changes make the persona loop real instead of just narrative:
 
 - **Admin Review mode:** workspace can be generated from Discovery, Operational Intelligence, owner-risk, exposure, stale-content, or remediation signals.
 - **Steward Curation mode:** workspace records need steward owner, review status, pinned source-of-truth files, suggestion decisions, and dry-run approvals.
+- **Permission Bridge:** steward assignment must be compared against actual source visibility so Aethos can expose blind-steward gaps without replacing Microsoft 365 permissioning.
 - **Team View mode:** workspace needs a read-focused view with trusted files, freshness, owner, source link, and workspace-scoped search.
 - **Handoff packets:** Admin-generated workspace opportunities should carry reason codes such as external share, stale file, missing owner, inactive owner, repeated path, repeated tag, or metadata quality issue.
 - **Workspace-scoped trust filters:** users should be able to filter to source-of-truth, recently modified, owned, stale, externally shared, and needs-review files.

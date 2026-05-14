@@ -62,6 +62,14 @@ export interface PinnedArtifact {
     scope: 'everyone' | 'members' | 'owners';
     access: 'read' | 'write' | 'manage';
   };
+  permissionBridge?: {
+    stewardAccess: 'can_access' | 'access_missing' | 'unknown' | 'owner_review_required';
+    reason: string;
+    ownerEmail?: string | null;
+    ownerName?: string | null;
+    externalUserCount?: number;
+    sourceUrl?: string | null;
+  };
   sourceMetadata?: Record<string, any>;
 }
 
