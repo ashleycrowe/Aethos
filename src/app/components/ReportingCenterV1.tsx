@@ -125,8 +125,8 @@ export const ReportingCenter: React.FC = () => {
     },
     {
       label: 'Recovery Potential',
-      value: '$12,400',
-      change: '+$2,840',
+      value: '3.4 TB',
+      change: '+0.7 TB',
       positive: true,
       icon: TrendingUp,
       color: '#10B981'
@@ -182,18 +182,18 @@ export const ReportingCenter: React.FC = () => {
   };
 
   return (
-    <div className="h-full flex flex-col space-y-6 pb-10">
+    <div className="flex h-full min-w-0 flex-col space-y-6 overflow-x-hidden pb-10">
       {/* Header */}
       <div className="space-y-4">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-xl bg-[#00F0FF]/10 text-[#00F0FF] shadow-[0_0_15px_rgba(0,240,255,0.2)]">
             <BarChart3 className="w-5 h-5" />
           </div>
-          <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">
+          <h2 className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 sm:tracking-[0.4em]">
             Intelligence Reporting
           </h2>
         </div>
-        <h1 className={`text-4xl font-black uppercase tracking-tighter ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
+        <h1 className={`text-3xl font-black uppercase tracking-tight sm:text-4xl ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
           Reporting <span className="text-[#00F0FF]">Center</span>
         </h1>
         <p className="text-xs text-slate-500 italic max-w-3xl">
@@ -204,15 +204,15 @@ export const ReportingCenter: React.FC = () => {
       </div>
 
       {/* Period Selector & Actions */}
-      <div className="flex items-center justify-between gap-4">
-        <div className={`flex items-center gap-2 p-1 rounded-xl ${
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+        <div className={`grid w-full grid-cols-2 gap-2 rounded-xl p-1 sm:grid-cols-4 xl:w-auto ${
           isDaylight ? 'bg-slate-100' : 'bg-white/5 border border-white/10'
         }`}>
           {(['week', 'month', 'quarter', 'year'] as ReportPeriod[]).map(period => (
             <button
               key={period}
               onClick={() => setSelectedPeriod(period)}
-              className={`px-4 py-2 rounded-lg text-sm font-bold uppercase tracking-tight transition-all ${
+              className={`min-h-[44px] rounded-lg px-4 py-2 text-sm font-bold uppercase tracking-tight transition-all ${
                 selectedPeriod === period
                   ? 'bg-[#00F0FF] text-black'
                   : isDaylight
@@ -225,10 +225,10 @@ export const ReportingCenter: React.FC = () => {
           ))}
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-3 xl:w-auto">
           <button
             onClick={handleScheduleReport}
-            className={`px-4 py-2 rounded-xl border flex items-center gap-2 text-sm font-bold uppercase tracking-tight transition-all ${
+            className={`flex min-h-[44px] items-center justify-center gap-2 rounded-xl border px-4 py-2 text-sm font-bold uppercase tracking-tight transition-all ${
               isDaylight
                 ? 'bg-white border-slate-200 text-slate-900 hover:bg-slate-50'
                 : 'bg-white/5 border-white/10 text-white hover:bg-white/10'
@@ -240,7 +240,7 @@ export const ReportingCenter: React.FC = () => {
           <button
             onClick={handleExportCSV}
             disabled={isExporting}
-            className={`px-4 py-2 rounded-xl border flex items-center gap-2 text-sm font-bold uppercase tracking-tight transition-all ${
+            className={`flex min-h-[44px] items-center justify-center gap-2 rounded-xl border px-4 py-2 text-sm font-bold uppercase tracking-tight transition-all ${
               isDaylight
                 ? 'bg-white border-slate-200 text-slate-900 hover:bg-slate-50'
                 : 'bg-white/5 border-white/10 text-white hover:bg-white/10'
@@ -251,7 +251,7 @@ export const ReportingCenter: React.FC = () => {
           </button>
           <button
             onClick={handleExportPDF}
-            className="px-4 py-2 rounded-xl bg-[#00F0FF] text-black flex items-center gap-2 text-sm font-bold uppercase tracking-tight hover:bg-[#00F0FF]/90 transition-all shadow-lg shadow-[#00F0FF]/20"
+            className="flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-[#00F0FF] px-4 py-2 text-sm font-bold uppercase tracking-tight text-black shadow-lg shadow-[#00F0FF]/20 transition-all hover:bg-[#00F0FF]/90"
           >
             <FileDown className="w-4 h-4" />
             Export PDF
@@ -281,7 +281,7 @@ export const ReportingCenter: React.FC = () => {
                   {metric.change}
                 </span>
               </div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">
+              <p className="mb-2 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500 sm:tracking-widest">
                 {metric.label}
               </p>
               <p className={`text-3xl font-black tracking-tight ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
@@ -295,12 +295,12 @@ export const ReportingCenter: React.FC = () => {
       {/* Charts Row */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Storage Over Time */}
-        <GlassCard className="p-8">
-          <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 mb-6 flex items-center justify-between">
+        <GlassCard className="p-5 sm:p-8">
+          <h3 className="mb-6 flex items-center justify-between gap-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 sm:tracking-[0.4em]">
             Storage Trend (Last 6 Months)
             <HardDrive className="w-4 h-4 text-[#00F0FF]" />
           </h3>
-          <ResponsiveContainer width="100%" height={250}>
+          <ResponsiveContainer width="100%" height={220}>
             <LineChart data={storageOverTime}>
               <CartesianGrid strokeDasharray="3 3" stroke={isDaylight ? '#E2E8F0' : '#1E293B'} />
               <XAxis 
@@ -344,12 +344,12 @@ export const ReportingCenter: React.FC = () => {
         </GlassCard>
 
         {/* Waste Breakdown Pie */}
-        <GlassCard className="p-8">
-          <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 mb-6 flex items-center justify-between">
+        <GlassCard className="p-5 sm:p-8">
+          <h3 className="mb-6 flex items-center justify-between gap-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 sm:tracking-[0.4em]">
             Waste Breakdown by Type
             <Trash2 className="w-4 h-4 text-[#FF5733]" />
           </h3>
-          <ResponsiveContainer width="100%" height={250}>
+          <ResponsiveContainer width="100%" height={220}>
             <PieChart>
               <Pie
                 data={wasteBreakdown}
@@ -382,12 +382,12 @@ export const ReportingCenter: React.FC = () => {
       </div>
 
       {/* Provider Storage Distribution */}
-      <GlassCard className="p-8">
-        <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 mb-6 flex items-center justify-between">
+      <GlassCard className="p-5 sm:p-8">
+        <h3 className="mb-6 flex items-center justify-between gap-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 sm:tracking-[0.4em]">
           Storage by Provider (Microsoft 365)
           <Database className="w-4 h-4 text-[#00F0FF]" />
         </h3>
-        <ResponsiveContainer width="100%" height={300}>
+        <ResponsiveContainer width="100%" height={240}>
           <BarChart data={providerBreakdown}>
             <CartesianGrid strokeDasharray="3 3" stroke={isDaylight ? '#E2E8F0' : '#1E293B'} />
             <XAxis 
@@ -421,8 +421,8 @@ export const ReportingCenter: React.FC = () => {
       </GlassCard>
 
       {/* Top Waste Files */}
-      <GlassCard className="p-8">
-        <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 mb-6 flex items-center justify-between">
+      <GlassCard className="p-5 sm:p-8">
+        <h3 className="mb-6 flex items-center justify-between gap-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 sm:tracking-[0.4em]">
           Top Waste Files (Largest Storage Impact)
           <AlertTriangle className="w-4 h-4 text-[#FF5733]" />
         </h3>
@@ -434,20 +434,20 @@ export const ReportingCenter: React.FC = () => {
                 isDaylight ? 'bg-slate-50/50' : 'bg-white/[0.02]'
               }`}
             >
-              <div className="flex items-center justify-between mb-2">
-                <h4 className={`text-sm font-bold truncate flex-1 ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
+              <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <h4 className={`min-w-0 break-words text-sm font-bold ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
                   {file.name}
                 </h4>
-                <span className="text-sm font-black text-[#FF5733] ml-4">
+                <span className="text-sm font-black text-[#FF5733] sm:ml-4">
                   {file.size}
                 </span>
               </div>
-              <div className="flex items-center gap-4 text-[10px] text-slate-500 uppercase tracking-widest font-black">
+              <div className="flex flex-wrap items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500 sm:gap-4 sm:tracking-widest">
                 <span className="flex items-center gap-1">
                   <Users className="w-3 h-3" />
                   {file.owner}
                 </span>
-                <span>•</span>
+                <span className="hidden sm:inline">-</span>
                 <span className="flex items-center gap-1">
                   <Clock className="w-3 h-3" />
                   {file.lastModified}
@@ -459,8 +459,8 @@ export const ReportingCenter: React.FC = () => {
       </GlassCard>
 
       {/* Summary Insights */}
-      <GlassCard className="p-8">
-        <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 mb-6 flex items-center justify-between">
+      <GlassCard className="p-5 sm:p-8">
+        <h3 className="mb-6 flex items-center justify-between gap-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 sm:tracking-[0.4em]">
           Weekly Summary Insights
           <Sparkles className="w-4 h-4 text-[#00F0FF]" />
         </h3>
@@ -493,10 +493,10 @@ export const ReportingCenter: React.FC = () => {
             <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
             <div>
               <p className={`text-sm font-bold mb-1 ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
-                Potential savings: $12,400/month
+                Recovery candidate volume identified
               </p>
               <p className="text-xs text-slate-500">
-                By archiving identified waste (3.4 TB), estimated monthly storage cost reduction.
+                Aethos found 3.4 TB of review-ready waste. Configure storage assumptions before showing dollar impact.
               </p>
             </div>
           </div>
