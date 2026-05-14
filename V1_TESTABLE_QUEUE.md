@@ -247,12 +247,12 @@ Completed component passes:
 
 Audit rules:
 - [ ] Test at 375px, 390px, 768px, 820px, 1024px, 1280px, and 1920px.
-- [ ] Remove accidental horizontal overflow; allow only intentional tab/filter/stat-pill carousels.
-- [ ] Ensure primary touch targets are at least 44px x 44px.
-- [ ] Keep interactive control text readable: `text-sm` preferred, `text-xs` acceptable for compact tabs/pills that scale up at `sm:`.
-- [ ] Preserve Aethos tiny metadata labels for non-interactive/supporting text only.
-- [ ] Use progressive dashboard grids: 1 col mobile, 2 col small tablet, 3-4 col desktop.
-- [ ] Keep primary dashboard/report cards stacked vertically on mobile instead of horizontal carousels.
+- [x] Remove accidental horizontal overflow; allow only intentional tab/filter/stat-pill carousels.
+- [x] Ensure primary touch targets are at least 44px x 44px.
+- [x] Keep interactive control text readable: `text-sm` preferred, `text-xs` acceptable for compact tabs/pills that scale up at `sm:`.
+- [x] Preserve Aethos tiny metadata labels for non-interactive/supporting text only.
+- [x] Use progressive dashboard grids: 1 col mobile, 2 col small tablet, 3-4 col desktop.
+- [x] Keep primary dashboard/report cards stacked vertically on mobile instead of horizontal carousels.
 - [ ] Convert dense tables/lists to mobile cards using `hidden lg:block` desktop tables and `lg:hidden` card lists.
 - [ ] Make modals full-screen or bottom-sheet style on mobile, centered on desktop.
 - [ ] Keep forms readable with stacked fields/buttons and iOS keyboard-safe spacing.
