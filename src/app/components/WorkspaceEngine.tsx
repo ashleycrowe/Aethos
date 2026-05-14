@@ -79,6 +79,38 @@ const WORKSPACE_PERSONA_LOOP = [
   },
 ];
 
+const WORKSPACE_PERSONA_MODES = [
+  {
+    id: 'admin',
+    label: 'Admin Review',
+    role: 'Systems Admin',
+    headline: 'Handoff risk safely',
+    detail: 'Review workspace anchors as a tenant-backed handoff packet before running any remediation path.',
+    action: 'Open Review Handoff',
+    prompt: (name: string) => `Find externally shared, stale, or ownerless files related to ${name}.`,
+  },
+  {
+    id: 'steward',
+    label: 'Steward Curation',
+    role: 'Context Steward',
+    headline: 'Curate source of truth',
+    detail: 'Pin golden-path files, validate metadata suggestions, and turn handoff packets into usable team context.',
+    action: 'Curate Anchors',
+    prompt: (name: string) => `Find source-of-truth candidates and stale duplicates in ${name}.`,
+  },
+  {
+    id: 'worker',
+    label: 'Team View',
+    role: 'Knowledge Worker',
+    headline: 'Find trusted context',
+    detail: 'Use the workspace as a focused playlist of current files without caring where Microsoft 365 stores them.',
+    action: 'Search Workspace Files',
+    prompt: (name: string) => `Find trusted files related to ${name}.`,
+  },
+] as const;
+
+type WorkspacePersonaModeId = typeof WORKSPACE_PERSONA_MODES[number]['id'];
+
 function fileTypeFromMime(mimeType?: string): PinnedArtifact['type'] {
   if (!mimeType) return 'document';
   if (mimeType.includes('spreadsheet') || mimeType.includes('excel')) return 'spreadsheet';
@@ -212,6 +244,7 @@ export const WorkspaceEngine = () => {
   const [editingArtifact, setEditingArtifact] = useState<PinnedArtifact | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'lattice' | 'pulse' | 'forensic'>('pulse');
+  const [personaModeId, setPersonaModeId] = useState<WorkspacePersonaModeId>('admin');
   const [isSyncing, setIsSyncing] = useState(false);
 
   // Use API data if available, otherwise fall back to context
@@ -502,6 +535,31 @@ export const WorkspaceEngine = () => {
       ? `${Math.min(100, 55 + selectedWorkspace.pinnedItems.length * 10)}/100`
       : 'Pending'
     : 'Pending';
+  const activePersonaMode =
+    WORKSPACE_PERSONA_MODES.find((mode) => mode.id === personaModeId) || WORKSPACE_PERSONA_MODES[0];
+
+  const handlePersonaAction = () => {
+    if (!selectedWorkspace) return;
+
+    if (isDemoMode) {
+      setOracleOpen(true);
+      oracleSearch(`Summarize the delta between the Excel budget and the latest Slack pivots in ${selectedWorkspace.name}.`);
+      return;
+    }
+
+    if (activePersonaMode.id === 'admin') {
+      setActiveTab('forensic');
+      return;
+    }
+
+    if (activePersonaMode.id === 'steward') {
+      setActiveTab('lattice');
+      return;
+    }
+
+    setOracleOpen(true);
+    oracleSearch(activePersonaMode.prompt(selectedWorkspace.name));
+  };
 
   return (
     <Motion.div
@@ -1015,6 +1073,32 @@ export const WorkspaceEngine = () => {
                   Workspace Loop
                 </h3>
               </div>
+              <div className="mt-6 space-y-3">
+                <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">
+                  Persona View Mode
+                </p>
+                <div className="grid grid-cols-1 gap-2">
+                  {WORKSPACE_PERSONA_MODES.map((mode) => (
+                    <button
+                      key={mode.id}
+                      type="button"
+                      onClick={() => setPersonaModeId(mode.id)}
+                      className={`min-h-[44px] rounded-2xl border px-4 py-3 text-left transition-all ${
+                        personaModeId === mode.id
+                          ? 'border-[#00F0FF]/50 bg-[#00F0FF]/10 text-[#00F0FF]'
+                          : 'border-white/5 bg-white/[0.02] text-slate-500 hover:border-white/20 hover:text-white'
+                      }`}
+                    >
+                      <span className="block text-[10px] font-black uppercase tracking-[0.2em]">
+                        {mode.label}
+                      </span>
+                      <span className="mt-1 block text-[9px] font-black uppercase tracking-widest opacity-70">
+                        {mode.role}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div className="mt-6 space-y-4">
                 {WORKSPACE_PERSONA_LOOP.map((persona, index) => (
                   <div key={persona.role} className="flex gap-4">
@@ -1048,29 +1132,22 @@ export const WorkspaceEngine = () => {
                  
                  <div className="space-y-6">
                     <p className="text-xl md:text-2xl font-black uppercase tracking-tight leading-tight text-white">
-                      {isDemoMode ? 'Synthesizing' : 'Reviewing'} <span className="text-[#00F0FF]">Workspace Intelligence...</span>
+                      {isDemoMode ? 'Synthesizing' : activePersonaMode.headline} <span className="text-[#00F0FF]">Workspace Intelligence...</span>
                     </p>
                     <div className="p-5 md:p-6 rounded-3xl bg-white/5 border border-white/5 font-medium text-[12px] leading-relaxed text-slate-400 italic">
                        {isDemoMode
                          ? '"Alpha Strategy is heavily weighted toward M365 Excel. However, high-velocity discussion in Slack suggests a budget pivot is imminent. Recommend anchoring the Slack Pivot Thread to the key resources."'
                          : selectedWorkspace.pinnedItems.length > 0
-                           ? `"${selectedWorkspace.name}" has ${selectedWorkspace.pinnedItems.length} indexed Microsoft artifact${selectedWorkspace.pinnedItems.length === 1 ? '' : 's'} anchored. Add approved metadata tags to improve future workspace automation.`
-                           : `"${selectedWorkspace.name}" is ready. Add indexed Microsoft files or run Discovery to populate workspace intelligence.`}
+                           ? `${activePersonaMode.detail} "${selectedWorkspace.name}" currently has ${selectedWorkspace.pinnedItems.length} indexed Microsoft artifact${selectedWorkspace.pinnedItems.length === 1 ? '' : 's'} anchored.`
+                           : `${activePersonaMode.detail} "${selectedWorkspace.name}" is ready for indexed Microsoft files from Discovery.`}
                     </div>
                  </div>
 
                  <button 
-                  onClick={() => {
-                    setOracleOpen(true);
-                    oracleSearch(
-                      isDemoMode
-                        ? `Summarize the delta between the Excel budget and the latest Slack pivots in ${selectedWorkspace.name}.`
-                        : `Find files related to ${selectedWorkspace.name}.`
-                    );
-                  }}
+                  onClick={handlePersonaAction}
                   className="w-full min-h-[44px] px-4 py-5 rounded-2xl bg-[#00F0FF] text-black text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] flex items-center justify-center gap-4 shadow-xl shadow-[#00F0FF]/20 hover:scale-105 transition-all"
                  >
-                   <Cpu className="w-4 h-4" /> {isDemoMode ? 'Deconstruct Delta' : 'Search Workspace Files'}
+                   <Cpu className="w-4 h-4" /> {isDemoMode ? 'Deconstruct Delta' : activePersonaMode.action}
                  </button>
                </div>
             </div>

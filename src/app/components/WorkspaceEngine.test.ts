@@ -30,9 +30,14 @@ describe('WorkspaceEngine smoke contract', () => {
 
   it('keeps V1 workspace personas visible in the product surface', () => {
     expect(engineSource).toContain('const WORKSPACE_PERSONA_LOOP');
+    expect(engineSource).toContain('const WORKSPACE_PERSONA_MODES');
     expect(engineSource).toContain('Systems Admin');
     expect(engineSource).toContain('Context Steward');
     expect(engineSource).toContain('Knowledge Worker');
+    expect(engineSource).toContain('Admin Review');
+    expect(engineSource).toContain('Steward Curation');
+    expect(engineSource).toContain('Team View');
+    expect(engineSource).toContain('Persona View Mode');
     expect(engineSource).toContain('Workspace Loop');
     expect(engineSource).toContain('trusted working context that an admin can hand off');
   });

@@ -87,6 +87,49 @@ If V1 only serves the Systems Admin, Aethos risks becoming another compliance da
 
 ---
 
+## Workspace Functionality Needed
+
+These changes make the persona loop real instead of just narrative:
+
+- **Admin Review mode:** workspace can be generated from Discovery, Operational Intelligence, owner-risk, exposure, stale-content, or remediation signals.
+- **Steward Curation mode:** workspace records need steward owner, review status, pinned source-of-truth files, suggestion decisions, and dry-run approvals.
+- **Team View mode:** workspace needs a read-focused view with trusted files, freshness, owner, source link, and workspace-scoped search.
+- **Handoff packets:** Admin-generated workspace opportunities should carry reason codes such as external share, stale file, missing owner, inactive owner, repeated path, repeated tag, or metadata quality issue.
+- **Workspace-scoped trust filters:** users should be able to filter to source-of-truth, recently modified, owned, stale, externally shared, and needs-review files.
+- **Audit trail:** steward decisions should be recorded before any future write-back to Microsoft 365 or destructive remediation action.
+
+V1 can expose the three modes in the UI and route users to the right surfaces. V1.5 should persist the underlying stewardship and review-state model.
+
+---
+
+## Broad App Applicability
+
+The three Workspace personas apply broadly across Aethos:
+
+- **Systems Admin:** primary for Discovery, Admin Center, Operational Intelligence, Remediation, setup, diagnostics, permissions, and tenant safety.
+- **Context Steward:** primary for Workspaces, metadata suggestions, owner/offboarding review, workspace opportunities, report handoffs, and approval workflows.
+- **Knowledge Worker:** primary for Oracle Search, workspace consumption, trusted file access, source-of-truth cues, and daily context retrieval.
+
+Oracle Search should serve all three, but with different defaults:
+
+- Admin asks: "What is exposed, stale, unowned, or unsafe?"
+- Steward asks: "What should be trusted, pinned, renamed, tagged, or handed off?"
+- Knowledge Worker asks: "Which file is the right one for this job?"
+
+---
+
+## Secondary Personas
+
+Keep the three core personas as the product spine. Add secondary lenses where they clarify decisions:
+
+- **Executive Sponsor / Buyer:** wants ROI, health trends, adoption, storage/risk reduction, and a clear before/after story. Mostly served by Operational Intelligence, reports, pricing, and beta onboarding.
+- **Compliance / Security Reviewer:** wants evidence, approvals, dry-run logs, audit exports, permission boundaries, and privacy posture. Mostly served by Remediation, diagnostics, reporting, and AppSource/security readiness.
+- **Implementation Partner / MSP:** useful later for multi-tenant rollout, setup repeatability, customer handoff, and support playbooks. Defer as a first-class V1 persona unless partner-led pilots become central.
+
+These should not become separate V1 app roles yet. They are decision lenses for copy, reporting, auditability, and onboarding.
+
+---
+
 ## Buyer Lens
 
 For V1 sales polish, keep asking:
