@@ -332,7 +332,7 @@ export const AdminCenter = () => {
       setScanResult(result);
       await refreshLastScanSummary();
       toast.success('Discovery scan complete', {
-        description: `${result.results.totalFiles.toLocaleString()} files found across ${result.results.totalSites.toLocaleString()} sites.`,
+        description: `${result.results.totalFiles.toLocaleString()} files found across ${result.results.totalSites.toLocaleString()} sites. Metadata only; content scanning stayed off.`,
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Discovery scan failed';
@@ -852,6 +852,9 @@ export const AdminCenter = () => {
                   Found {scanResult.results.totalFiles.toLocaleString()} files across{' '}
                   {scanResult.results.totalSites.toLocaleString()} sites. New indexed files:{' '}
                   {scanResult.results.newFiles.toLocaleString()}.
+                </p>
+                <p className="mt-2 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                  Scope: Microsoft file metadata only. SharePoint Lists and document bodies deferred.
                 </p>
                 <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
                   <button

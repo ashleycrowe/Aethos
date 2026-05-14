@@ -35,4 +35,10 @@ describe('IntelligenceDashboard live/demo smoke contract', () => {
     expect(discoverySource).toContain('Content scanning stays opt-in');
     expect(discoverySource).not.toContain('AI enrichment included');
   });
+
+  it('keeps Live Mode metadata guidance review-first before content scanning', () => {
+    const metadataSource = readFileSync(new URL('./MetadataIntelligenceDashboard.tsx', import.meta.url), 'utf8');
+    expect(metadataSource).toContain('review metadata suggestions before considering AI+ content scanning');
+    expect(metadataSource).toContain('Content-aware enrichment remains an explicit AI+ step after V1 metadata review is working.');
+  });
 });

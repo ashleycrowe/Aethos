@@ -41,6 +41,11 @@ export interface DiscoveryScanResponse {
     newFiles: number;
     errors: number;
   };
+  scope?: {
+    included: string[];
+    deferred: string[];
+    contentScanning: boolean;
+  };
 }
 
 export interface IntelligenceMetricsResponse {

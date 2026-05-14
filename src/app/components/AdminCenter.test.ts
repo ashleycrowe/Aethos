@@ -45,4 +45,9 @@ describe('AdminCenter smoke contract', () => {
     expect(source).toContain('SharePoint / Teams');
     expect(source).toContain('They do not claim deeper Graph permission validation');
   });
+
+  it('states the V1 discovery scope after live scans', () => {
+    expect(source).toContain('Metadata only; content scanning stayed off.');
+    expect(source).toContain('SharePoint Lists and document bodies deferred.');
+  });
 });

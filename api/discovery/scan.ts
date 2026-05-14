@@ -1,11 +1,12 @@
 /**
  * Discovery Scan API Endpoint
  * 
- * PURPOSE: Scan Microsoft 365 tenant and index all files/sites
+ * PURPOSE: Scan Microsoft 365 tenant and index file/site metadata
  * TRIGGER: Manual button click or scheduled cron job
  * DURATION: 5-30 minutes depending on tenant size
  * 
- * V1 SCOPE: Microsoft 365 only (SharePoint, OneDrive, Teams)
+ * V1 SCOPE: Microsoft 365 files and containers only (SharePoint, OneDrive, Teams).
+ * SharePoint Lists and row-level list data are intentionally deferred.
  */
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
@@ -335,6 +336,11 @@ export default async function handler(
         totalSites,
         newFiles,
         errors: errors.length,
+      },
+      scope: {
+        included: ['sharepoint_files', 'onedrive_files', 'teams_files', 'site_metadata'],
+        deferred: ['sharepoint_lists', 'list_items', 'document_body_content'],
+        contentScanning: false,
       },
     });
   } catch (error: any) {

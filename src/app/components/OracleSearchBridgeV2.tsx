@@ -72,6 +72,8 @@ type SearchFileResult = {
   is_stale?: boolean | null;
 };
 
+const V1_DATA_CLASS = 'Document';
+const FUTURE_DATA_CLASSES = ['Published Knowledge', 'Structured List', 'Container', 'Signal'];
 const TEST_TENANT_ID = '00000000-0000-0000-0000-000000000101';
 
 const demoSearchResults: SearchFileResult[] = [
@@ -548,6 +550,9 @@ export const OracleSearchBridgeV2 = () => {
                               {item.provider || 'microsoft'} / {item.path || 'Indexed file'}
                             </p>
                             <div className="mt-4 flex flex-wrap gap-2">
+                              <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[8px] font-black uppercase tracking-widest text-slate-300">
+                                {V1_DATA_CLASS}
+                              </span>
                               {(item.ai_tags || []).slice(0, 4).map((tag) => (
                                 <span
                                   key={tag}
@@ -698,6 +703,31 @@ export const OracleSearchBridgeV2 = () => {
                           {provider}
                         </button>
                       ))}
+                    </div>
+                  </div>
+
+                  {/* Data Classes */}
+                  <div className="space-y-3">
+                    <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Data Class</label>
+                    <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                      <div className="flex flex-wrap gap-2">
+                        <div className="flex items-center gap-2 rounded-lg border border-[#00F0FF]/20 bg-[#00F0FF]/10 px-3 py-1.5 text-[9px] font-black uppercase tracking-wider text-[#00F0FF]">
+                          <Layers className="w-3 h-3" />
+                          {V1_DATA_CLASS}
+                        </div>
+                        {FUTURE_DATA_CLASSES.map(dataClass => (
+                          <div
+                            key={dataClass}
+                            className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-1.5 text-[9px] font-black uppercase tracking-wider text-slate-500"
+                          >
+                            {dataClass}
+                          </div>
+                        ))}
+                      </div>
+                      <p className="mt-3 text-[10px] leading-5 text-slate-500">
+                        V1 search indexes Microsoft file metadata as Document results. Published Knowledge, Structured List,
+                        Container, and Signal classes stay deferred until their ingestion boundaries are live-backed.
+                      </p>
                     </div>
                   </div>
 

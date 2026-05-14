@@ -78,7 +78,7 @@ Known follow-up from the latest audit:
 
 - [x] Stop Metadata Intelligence from falling back to sample metrics when the Live Mode metrics API fails.
 - [x] Remove demo-only federated provider claims from Live Mode Oracle/Workspace copy.
-- [ ] Finish a full pass on secondary Intelligence tabs for remaining prototype-only controls.
+- [x] Finish a full pass on secondary Intelligence tabs for remaining prototype-only controls.
 
 ---
 
@@ -152,9 +152,9 @@ See `docs/OPERATIONAL_INTELLIGENCE_DEVELOPMENT_QUEUE.md` for the detailed implem
 
 - [x] Define V1 data scope as files/documents, metadata, permissions, activity, containers, workspaces, and safe remediation.
 - [x] Define V1.5 direction as content intelligence plus SharePoint pages/news inventory as published knowledge.
-- [ ] Keep SharePoint Lists out of first testable V1 implementation.
+- [x] Keep SharePoint Lists out of first testable V1 implementation.
 - [ ] Add SharePoint Lists as a V1.5/V2 discovery spike after Live Mode auth, discovery, search, and workspace creation are stable.
-- [ ] Add data-class labels to future search/results UX: Document, Published Knowledge, Structured List, Container, Signal.
+- [x] Add data-class labels to future search/results UX: Document, Published Knowledge, Structured List, Container, Signal.
 - [ ] Validate customer demand for SharePoint Lists with pilot users before ingesting row-level list data.
 - [ ] Keep full row-level SharePoint List ingestion opt-in only until privacy/governance controls are designed.
 

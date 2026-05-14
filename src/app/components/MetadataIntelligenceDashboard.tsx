@@ -1099,7 +1099,9 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
               <p className="text-sm text-[#F39C12] flex items-center gap-2">
                 <AlertCircle className="w-4 h-4" />
                 {categories.find(c => c.category === 'Uncategorized')?.count.toLocaleString()} files remain uncategorized - 
-                enable Content Reading for better results
+                {isDemoMode
+                  ? 'enable Content Reading for better results'
+                  : 'review metadata suggestions before considering AI+ content scanning'}
               </p>
             </div>
           </motion.div>

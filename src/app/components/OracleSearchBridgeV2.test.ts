@@ -17,4 +17,11 @@ describe('OracleSearchBridgeV2 smoke contract', () => {
     expect(source).toContain('Predictive demo anchors are hidden in Live Mode');
     expect(source).toContain("globalDemoMode ? 'Apply Filters' : 'Search With Current Filters'");
   });
+
+  it('labels V1 Oracle results by data class and defers future classes', () => {
+    expect(source).toContain("const V1_DATA_CLASS = 'Document'");
+    expect(source).toContain("const FUTURE_DATA_CLASSES = ['Published Knowledge', 'Structured List', 'Container', 'Signal']");
+    expect(source).toContain('V1 search indexes Microsoft file metadata as Document results');
+    expect(source).toContain('classes stay deferred until their ingestion boundaries are live-backed');
+  });
 });
