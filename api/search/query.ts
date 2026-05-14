@@ -13,6 +13,7 @@
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { requireApiContext, sendApiError, supabase } from '../_lib/apiAuth.js';
+import { getApiRequestId, logApiEvent } from '../_lib/apiLogger.js';
 
 function sanitizeIlikeTerm(value: string) {
   return value.replace(/[%_,]/g, ' ').trim();
@@ -22,6 +23,9 @@ export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
+  const requestId = getApiRequestId(req);
+  const route = '/api/search/query';
+  const startedAt = Date.now();
   const context = await requireApiContext(req, res, { methods: ['POST'] });
   if (!context) return;
 
@@ -190,7 +194,15 @@ export default async function handler(
     const { data, error, count } = await dbQuery;
 
     if (error) {
-      console.error('Search query failed:', error);
+      logApiEvent('error', 'search.query.database_failed', {
+        route,
+        tenantId,
+        requestId,
+        statusCode: 500,
+        durationMs: Date.now() - startedAt,
+        metadata: { query, page, pageSize },
+        error,
+      });
       return sendApiError(res, 500, 'Search failed', 'DATABASE_ERROR');
     }
 
@@ -209,8 +221,30 @@ export default async function handler(
         hasPreviousPage: page > 1,
       },
     });
+    logApiEvent('info', 'search.query.completed', {
+      route,
+      tenantId,
+      requestId,
+      statusCode: 200,
+      durationMs: Date.now() - startedAt,
+      metadata: {
+        hasQuery: Boolean(query && query.trim()),
+        resultCount: data?.length || 0,
+        totalResults: count || 0,
+        page,
+        pageSize,
+      },
+    });
   } catch (error: any) {
-    console.error('Search error:', error);
+    logApiEvent('error', 'search.query.failed', {
+      route,
+      tenantId,
+      requestId,
+      statusCode: 500,
+      durationMs: Date.now() - startedAt,
+      metadata: { query, page, pageSize },
+      error,
+    });
     sendApiError(res, 500, error.message, 'INTERNAL_ERROR');
   }
 }

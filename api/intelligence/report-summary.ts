@@ -7,6 +7,7 @@
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { requireApiContext, sendApiError, supabase } from '../_lib/apiAuth.js';
+import { getApiRequestId, logApiEvent } from '../_lib/apiLogger.js';
 import {
   buildReportSummary,
   type ReportFileRow,
@@ -60,6 +61,9 @@ async function fetchFiles(tenantId: string): Promise<ReportFileRow[]> {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  const requestId = getApiRequestId(req);
+  const route = '/api/intelligence/report-summary';
+  const startedAt = Date.now();
   const context = await requireApiContext(req, res, { methods: ['POST'] });
   if (!context) return;
 
@@ -125,8 +129,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       success: true,
       summary,
     });
+    logApiEvent('info', 'report_summary.completed', {
+      route,
+      tenantId,
+      requestId,
+      statusCode: 200,
+      durationMs: Date.now() - startedAt,
+      metadata: {
+        totalFiles: files.length,
+        totalSites: sites?.length || 0,
+        scanCount: scans?.length || 0,
+        healthLabel: summary.healthScore.label,
+      },
+    });
   } catch (error) {
-    console.error('Error generating report summary:', error);
+    logApiEvent('error', 'report_summary.failed', {
+      route,
+      tenantId: context.tenantId,
+      requestId,
+      statusCode: 500,
+      durationMs: Date.now() - startedAt,
+      error,
+    });
     sendApiError(res, 500, 'Failed to generate report summary', 'DATABASE_ERROR');
   }
 }

@@ -11,6 +11,7 @@
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { requireApiContext, sendApiError, supabase } from '../_lib/apiAuth.js';
+import { getApiRequestId, logApiEvent } from '../_lib/apiLogger.js';
 import {
   getAllSharePointSites,
   getFilesInSite,
@@ -24,6 +25,8 @@ export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
+  const requestId = getApiRequestId(req);
+  const route = '/api/discovery/scan';
   const context = await requireApiContext(req, res, { methods: ['POST'] });
   if (!context) return;
 
@@ -51,6 +54,13 @@ export default async function handler(
 
   const scanId = scanRecord.id;
   const startTime = Date.now();
+  logApiEvent('info', 'discovery.scan.started', {
+    route,
+    tenantId,
+    userId,
+    requestId,
+    metadata: { scanId, scanType },
+  });
 
   try {
     let totalFiles = 0;
@@ -59,7 +69,13 @@ export default async function handler(
     let errors: string[] = [];
 
     // Step 1: Scan SharePoint Sites
-    console.log('[Discovery] Scanning SharePoint sites...');
+    logApiEvent('info', 'discovery.sharepoint.started', {
+      route,
+      tenantId,
+      userId,
+      requestId,
+      metadata: { scanId },
+    });
     try {
       const sites = await getAllSharePointSites(accessToken);
       totalSites += sites.length;
@@ -161,7 +177,13 @@ export default async function handler(
     }
 
     // Step 2: Scan OneDrive (user's personal files)
-    console.log('[Discovery] Scanning OneDrive...');
+    logApiEvent('info', 'discovery.onedrive.started', {
+      route,
+      tenantId,
+      userId,
+      requestId,
+      metadata: { scanId },
+    });
     try {
       const oneDriveFiles = await getUserOneDriveFiles(accessToken);
       totalFiles += oneDriveFiles.length;
@@ -218,7 +240,13 @@ export default async function handler(
     }
 
     // Step 3: Scan Teams
-    console.log('[Discovery] Scanning Teams...');
+    logApiEvent('info', 'discovery.teams.started', {
+      route,
+      tenantId,
+      userId,
+      requestId,
+      metadata: { scanId },
+    });
     try {
       const teams = await getAllTeams(accessToken);
       totalSites += teams.length;
@@ -327,6 +355,23 @@ export default async function handler(
       });
     }
 
+    logApiEvent(errors.length > 0 ? 'warn' : 'info', 'discovery.scan.completed', {
+      route,
+      tenantId,
+      userId,
+      requestId,
+      statusCode: 200,
+      durationMs: Date.now() - startTime,
+      metadata: {
+        scanId,
+        status: errors.length > 0 ? 'partial' : 'completed',
+        totalFiles,
+        totalSites,
+        newFiles,
+        errors: errors.length,
+      },
+    });
+
     res.status(200).json({
       success: true,
       scanId,
@@ -344,7 +389,16 @@ export default async function handler(
       },
     });
   } catch (error: any) {
-    console.error('Discovery scan failed:', error);
+    logApiEvent('error', 'discovery.scan.failed', {
+      route,
+      tenantId,
+      userId,
+      requestId,
+      statusCode: 500,
+      durationMs: Date.now() - startTime,
+      metadata: { scanId },
+      error,
+    });
 
     // Mark scan as failed
     await supabase

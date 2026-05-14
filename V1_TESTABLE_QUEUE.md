@@ -206,7 +206,7 @@ See `docs/OPERATIONAL_INTELLIGENCE_DEVELOPMENT_QUEUE.md` for the detailed implem
 - [ ] Document Control production mode.
 - [ ] Slack and Google connection UI flows.
 - [x] Rate limit enforcement for non-public APIs.
-- [ ] Observability/logging pass with structured logs.
+- [x] Observability/logging pass with structured logs.
 - [ ] AppSource preparation docs, privacy policy, support docs, and demo video checklist.
 - [ ] Advanced bundle tuning after first lazy-loading pass.
 - [x] Add formal feature promotion flags for `pre-release -> demo -> live` rollout.
