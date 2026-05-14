@@ -24,7 +24,7 @@ export default async function handler(
   if (!context) return;
 
   if (!context.accessToken) {
-    return sendApiError(res, 401, 'Missing authorization token');
+    return sendApiError(res, 401, 'Missing authorization token', 'AUTH_TOKEN_MISSING');
   }
 
   const limit = Math.max(1, Math.min(Number(req.body?.limit) || 25, 50));
@@ -38,7 +38,7 @@ export default async function handler(
 
   if (ownerError) {
     console.error('Owner status candidate query failed:', ownerError);
-    return sendApiError(res, 500, 'Failed to query owner candidates');
+    return sendApiError(res, 500, 'Failed to query owner candidates', 'DATABASE_ERROR');
   }
 
   const ownerCandidates = new Map<string, { ownerEmail: string; ownerName: string | null; fileCount: number }>();

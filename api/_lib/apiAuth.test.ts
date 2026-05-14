@@ -67,4 +67,35 @@ describe('apiAuth request parsing', () => {
     });
     expect(getTokenTenantId(token)).toBe('microsoft-tenant-123');
   });
+
+  it('emits structured API error envelopes', async () => {
+    process.env.SUPABASE_URL = 'https://example.supabase.co';
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key';
+
+    const payloads: unknown[] = [];
+    const res = {
+      statusCode: 0,
+      status(status: number) {
+        this.statusCode = status;
+        return this;
+      },
+      json(payload: unknown) {
+        payloads.push(payload);
+        return payload;
+      },
+    } as any;
+
+    const { sendApiError } = await import('./apiAuth');
+    sendApiError(res, 400, 'Missing name', 'VALIDATION_ERROR', { field: 'name' });
+
+    expect(res.statusCode).toBe(400);
+    expect(payloads[0]).toEqual({
+      success: false,
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: 'Missing name',
+        details: { field: 'name' },
+      },
+    });
+  });
 });

@@ -30,12 +30,14 @@ export default async function handler(
   const isDryRun = dryRun !== false;
 
   if (!action || !Array.isArray(fileIds) || fileIds.length === 0) {
-    return sendApiError(res, 400, 'Missing required parameters');
+    return sendApiError(res, 400, 'Missing required parameters', 'VALIDATION_ERROR', {
+      required: ['action', 'fileIds'],
+    });
   }
 
   // Validate action type
   if (!['archive', 'delete', 'revoke_links'].includes(action)) {
-    return sendApiError(res, 400, 'Invalid action type');
+    return sendApiError(res, 400, 'Invalid action type', 'VALIDATION_ERROR');
   }
 
   const { data: files, error: filesError } = await supabase
@@ -45,7 +47,7 @@ export default async function handler(
     .eq('tenant_id', tenantId);
 
   if (filesError) {
-    return sendApiError(res, 500, 'Failed to fetch files from database');
+    return sendApiError(res, 500, 'Failed to fetch files from database', 'DATABASE_ERROR');
   }
 
   const matchedFiles = files || [];
@@ -82,7 +84,7 @@ export default async function handler(
     .single();
 
   if (actionError) {
-    return sendApiError(res, 500, 'Failed to create action record');
+    return sendApiError(res, 500, 'Failed to create action record', 'DATABASE_ERROR');
   }
 
   const actionId = actionRecord.id;
@@ -105,7 +107,7 @@ export default async function handler(
     }
 
     if (!accessToken) {
-      return sendApiError(res, 401, 'Missing authorization token');
+      return sendApiError(res, 401, 'Missing authorization token', 'AUTH_TOKEN_MISSING');
     }
 
     let successCount = 0;
@@ -254,9 +256,6 @@ export default async function handler(
       })
       .eq('id', actionId);
 
-    res.status(500).json({
-      success: false,
-      error: error.message,
-    });
+    sendApiError(res, 500, error.message, 'UPSTREAM_ERROR');
   }
 }

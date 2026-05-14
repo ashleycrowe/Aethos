@@ -9,7 +9,7 @@
  */
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { requireApiContext, supabase } from '../_lib/apiAuth.js';
+import { requireApiContext, sendApiError, supabase } from '../_lib/apiAuth.js';
 
 export default async function handler(
   req: VercelRequest,
@@ -30,7 +30,9 @@ export default async function handler(
   const { tenantId, userId } = context;
 
   if (!tenantId || !userId || !name) {
-    return res.status(400).json({ error: 'Missing required parameters' });
+    return sendApiError(res, 400, 'Missing required parameters', 'VALIDATION_ERROR', {
+      required: ['tenant context', 'user context', 'name'],
+    });
   }
 
   try {
@@ -60,7 +62,7 @@ export default async function handler(
 
     if (workspaceError) {
       console.error('Error creating workspace:', workspaceError);
-      return res.status(500).json({ error: 'Failed to create workspace' });
+      return sendApiError(res, 500, 'Failed to create workspace', 'DATABASE_ERROR');
     }
 
     // If auto-sync is enabled and tags are provided, sync immediately
@@ -91,9 +93,6 @@ export default async function handler(
     });
   } catch (error: any) {
     console.error('Workspace creation failed:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message,
-    });
+    sendApiError(res, 500, error.message, 'INTERNAL_ERROR');
   }
 }

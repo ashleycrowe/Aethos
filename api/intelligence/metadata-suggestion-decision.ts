@@ -38,19 +38,19 @@ export default async function handler(
   } = req.body;
 
   if (!suggestionId || typeof suggestionId !== 'string') {
-    return sendApiError(res, 400, 'Missing suggestion ID');
+    return sendApiError(res, 400, 'Missing suggestion ID', 'VALIDATION_ERROR');
   }
 
   if (!VALID_TYPES.has(suggestionType)) {
-    return sendApiError(res, 400, 'Invalid suggestion type');
+    return sendApiError(res, 400, 'Invalid suggestion type', 'VALIDATION_ERROR');
   }
 
   if (!VALID_STATUSES.has(decisionStatus)) {
-    return sendApiError(res, 400, 'Invalid decision status');
+    return sendApiError(res, 400, 'Invalid decision status', 'VALIDATION_ERROR');
   }
 
   if (confidence && !VALID_CONFIDENCE.has(confidence)) {
-    return sendApiError(res, 400, 'Invalid confidence value');
+    return sendApiError(res, 400, 'Invalid confidence value', 'VALIDATION_ERROR');
   }
 
   const { data: decision, error } = await supabase
@@ -83,7 +83,7 @@ export default async function handler(
 
   if (error || !decision) {
     console.error('Metadata suggestion decision insert failed:', error);
-    return sendApiError(res, 500, 'Failed to record metadata suggestion decision');
+    return sendApiError(res, 500, 'Failed to record metadata suggestion decision', 'DATABASE_ERROR');
   }
 
   return res.status(200).json({

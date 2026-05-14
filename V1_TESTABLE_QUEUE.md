@@ -191,7 +191,7 @@ See `docs/OPERATIONAL_INTELLIGENCE_DEVELOPMENT_QUEUE.md` for the detailed implem
 
 - [ ] Re-enable Vercel API deployment after backend P0 hardening.
 - [x] Implement route/component code splitting in `src/app/App.tsx`.
-- [ ] Add consistent API error envelopes and status codes.
+- [x] Add consistent API error envelopes and status codes.
 - [x] Add loading, error, and empty state audit for V1 screens.
 - [x] Update inaccurate docs that still claim full V1-V4 production readiness.
 - [x] Create `BETA_TESTING_GUIDE.md`.

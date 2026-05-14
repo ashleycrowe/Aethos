@@ -8,7 +8,7 @@
  */
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { requireApiContext, supabase } from '../../_lib/apiAuth.js';
+import { requireApiContext, sendApiError, supabase } from '../../_lib/apiAuth.js';
 
 export default async function handler(
   req: VercelRequest,
@@ -20,7 +20,9 @@ export default async function handler(
   const { id } = req.query;
 
   if (!tenantId || !id) {
-    return res.status(400).json({ error: 'Missing tenant ID or workspace ID' });
+    return sendApiError(res, 400, 'Missing tenant ID or workspace ID', 'VALIDATION_ERROR', {
+      required: ['tenant context', 'workspace id'],
+    });
   }
 
   try {
@@ -47,7 +49,7 @@ export default async function handler(
 
     if (workspaceError) {
       if (workspaceError.code === 'PGRST116') {
-        return res.status(404).json({ error: 'Workspace not found' });
+        return sendApiError(res, 404, 'Workspace not found', 'RESOURCE_NOT_FOUND');
       }
       throw workspaceError;
     }
@@ -149,6 +151,6 @@ export default async function handler(
 
   } catch (error) {
     console.error('Error fetching workspace details:', error);
-    res.status(500).json({ error: 'Failed to fetch workspace details' });
+    sendApiError(res, 500, 'Failed to fetch workspace details', 'DATABASE_ERROR');
   }
 }

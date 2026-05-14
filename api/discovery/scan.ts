@@ -10,7 +10,7 @@
  */
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { requireApiContext, supabase } from '../_lib/apiAuth.js';
+import { requireApiContext, sendApiError, supabase } from '../_lib/apiAuth.js';
 import {
   getAllSharePointSites,
   getFilesInSite,
@@ -30,7 +30,7 @@ export default async function handler(
   const { accessToken, tenantId, userId } = context;
   const { scanType = 'full' } = req.body;
   if (!accessToken) {
-    return res.status(401).json({ success: false, error: 'Missing authorization token' });
+    return sendApiError(res, 401, 'Missing authorization token', 'AUTH_TOKEN_MISSING');
   }
 
   // Create a discovery scan record
@@ -46,7 +46,7 @@ export default async function handler(
     .single();
 
   if (scanError) {
-    return res.status(500).json({ error: 'Failed to create scan record' });
+    return sendApiError(res, 500, 'Failed to create scan record', 'DATABASE_ERROR');
   }
 
   const scanId = scanRecord.id;
@@ -356,9 +356,6 @@ export default async function handler(
       })
       .eq('id', scanId);
 
-    res.status(500).json({
-      success: false,
-      error: error.message,
-    });
+    sendApiError(res, 500, error.message, 'UPSTREAM_ERROR');
   }
 }

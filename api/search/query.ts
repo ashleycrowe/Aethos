@@ -36,7 +36,7 @@ export default async function handler(
   const { tenantId } = context;
 
   if (!tenantId) {
-    return sendApiError(res, 400, 'Missing tenant ID');
+    return sendApiError(res, 400, 'Missing tenant ID', 'TENANT_ID_MISSING');
   }
 
   try {
@@ -191,7 +191,7 @@ export default async function handler(
 
     if (error) {
       console.error('Search query failed:', error);
-      return res.status(500).json({ error: 'Search failed' });
+      return sendApiError(res, 500, 'Search failed', 'DATABASE_ERROR');
     }
 
     // Calculate pagination metadata
@@ -211,9 +211,6 @@ export default async function handler(
     });
   } catch (error: any) {
     console.error('Search error:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message,
-    });
+    sendApiError(res, 500, error.message, 'INTERNAL_ERROR');
   }
 }

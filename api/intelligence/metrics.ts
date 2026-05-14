@@ -8,7 +8,7 @@
  */
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { requireApiContext, supabase } from '../_lib/apiAuth.js';
+import { requireApiContext, sendApiError, supabase } from '../_lib/apiAuth.js';
 
 export default async function handler(
   req: VercelRequest,
@@ -288,7 +288,7 @@ export default async function handler(
 
   } catch (error) {
     console.error('Error fetching intelligence metrics:', error);
-    res.status(500).json({ error: 'Failed to fetch intelligence metrics' });
+    sendApiError(res, 500, 'Failed to fetch intelligence metrics', 'DATABASE_ERROR');
   }
 }
 

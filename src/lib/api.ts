@@ -2,6 +2,21 @@ import { DEMO_MODE_MESSAGE, isDemoModeEnabled } from '@/app/config/demoMode';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
+interface ApiErrorEnvelope {
+  success: false;
+  error: string | {
+    code?: string;
+    message?: string;
+    details?: unknown;
+  };
+}
+
+function getApiErrorMessage(errorBody: ApiErrorEnvelope | null, fallback: string) {
+  if (!errorBody?.error) return fallback;
+  if (typeof errorBody.error === 'string') return errorBody.error;
+  return errorBody.error.message || fallback;
+}
+
 export interface SearchFilesRequest {
   tenantId: string;
   query?: string;
@@ -371,8 +386,8 @@ async function request<T>(path: string, options: RequestInit = {}, accessToken?:
   });
 
   if (!response.ok) {
-    const errorBody = await response.json().catch(() => null);
-    throw new Error(errorBody?.error || `${response.status} ${response.statusText}`);
+    const errorBody = await response.json().catch(() => null) as ApiErrorEnvelope | null;
+    throw new Error(getApiErrorMessage(errorBody, `${response.status} ${response.statusText}`));
   }
 
   return response.json();

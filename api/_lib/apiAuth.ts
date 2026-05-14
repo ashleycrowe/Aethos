@@ -23,6 +23,31 @@ export type ApiAuthContext = {
   tokenClaims?: Record<string, unknown>;
 };
 
+export type ApiErrorCode =
+  | 'METHOD_NOT_ALLOWED'
+  | 'SERVER_NOT_CONFIGURED'
+  | 'AUTH_TOKEN_MISSING'
+  | 'TENANT_PROVISIONING_FAILED'
+  | 'TENANT_ID_MISSING'
+  | 'TENANT_NOT_FOUND'
+  | 'RESOURCE_NOT_FOUND'
+  | 'TENANT_INACTIVE'
+  | 'TENANT_MISMATCH'
+  | 'USER_TENANT_MISMATCH'
+  | 'VALIDATION_ERROR'
+  | 'DATABASE_ERROR'
+  | 'UPSTREAM_ERROR'
+  | 'INTERNAL_ERROR';
+
+export type ApiErrorEnvelope = {
+  success: false;
+  error: {
+    code: ApiErrorCode;
+    message: string;
+    details?: unknown;
+  };
+};
+
 function firstString(value: unknown): string | undefined {
   if (Array.isArray(value)) return typeof value[0] === 'string' ? value[0] : undefined;
   return typeof value === 'string' ? value : undefined;
@@ -170,7 +195,7 @@ export async function requireApiContext(
   const requireTenant = options.requireTenant ?? true;
 
   if (!methods.includes(req.method || '')) {
-    res.status(405).json({ success: false, error: 'Method not allowed' });
+    sendApiError(res, 405, 'Method not allowed', 'METHOD_NOT_ALLOWED', { allowedMethods: methods });
     return null;
   }
 
@@ -179,10 +204,7 @@ export async function requireApiContext(
       hasSupabaseUrl: Boolean(SUPABASE_SERVER_URL),
       hasServiceRoleKey: Boolean(SUPABASE_SERVICE_ROLE_KEY),
     });
-    res.status(500).json({
-      success: false,
-      error: 'Server Supabase environment is not configured',
-    });
+    sendApiError(res, 500, 'Server Supabase environment is not configured', 'SERVER_NOT_CONFIGURED');
     return null;
   }
 
@@ -194,7 +216,7 @@ export async function requireApiContext(
   let userId = getRequestUserId(req);
 
   if (requireAuth && !accessToken) {
-    res.status(401).json({ success: false, error: 'Missing authorization token' });
+    sendApiError(res, 401, 'Missing authorization token', 'AUTH_TOKEN_MISSING');
     return null;
   }
 
@@ -205,13 +227,13 @@ export async function requireApiContext(
       userId = userId || (await ensureUserFromToken(tenantId, tokenClaims));
     } catch (error) {
       console.error('Tenant JIT provisioning failed:', error);
-      res.status(500).json({ success: false, error: 'Unable to provision tenant' });
+      sendApiError(res, 500, 'Unable to provision tenant', 'TENANT_PROVISIONING_FAILED');
       return null;
     }
   }
 
   if (requireTenant && !tenantId) {
-    res.status(400).json({ success: false, error: 'Missing tenant ID' });
+    sendApiError(res, 400, 'Missing tenant ID', 'TENANT_ID_MISSING');
     return null;
   }
 
@@ -226,17 +248,17 @@ export async function requireApiContext(
     .single();
 
   if (tenantError || !tenant) {
-    res.status(404).json({ success: false, error: 'Tenant not found' });
+    sendApiError(res, 404, 'Tenant not found', 'TENANT_NOT_FOUND');
     return null;
   }
 
   if (tenant.status && tenant.status !== 'active') {
-    res.status(403).json({ success: false, error: 'Tenant is not active' });
+    sendApiError(res, 403, 'Tenant is not active', 'TENANT_INACTIVE');
     return null;
   }
 
   if (microsoftTenantId && tenant.microsoft_tenant_id && tenant.microsoft_tenant_id !== microsoftTenantId) {
-    res.status(403).json({ success: false, error: 'Token tenant does not match request tenant' });
+    sendApiError(res, 403, 'Token tenant does not match request tenant', 'TENANT_MISMATCH');
     return null;
   }
 
@@ -260,7 +282,7 @@ export async function requireApiContext(
       .single();
 
     if (userError || !user) {
-      res.status(403).json({ success: false, error: 'User does not belong to tenant' });
+      sendApiError(res, 403, 'User does not belong to tenant', 'USER_TENANT_MISMATCH');
       return null;
     }
   }
@@ -268,6 +290,21 @@ export async function requireApiContext(
   return { tenantId, userId, accessToken, microsoftTenantId, tokenClaims: tokenClaims || undefined };
 }
 
-export function sendApiError(res: VercelResponse, status: number, error: string) {
-  return res.status(status).json({ success: false, error });
+export function sendApiError(
+  res: VercelResponse,
+  status: number,
+  message: string,
+  code: ApiErrorCode = 'INTERNAL_ERROR',
+  details?: unknown
+) {
+  const envelope: ApiErrorEnvelope = {
+    success: false,
+    error: {
+      code,
+      message,
+      ...(details === undefined ? {} : { details }),
+    },
+  };
+
+  return res.status(status).json(envelope);
 }

@@ -127,6 +127,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   } catch (error) {
     console.error('Error generating report summary:', error);
-    sendApiError(res, 500, 'Failed to generate report summary');
+    sendApiError(res, 500, 'Failed to generate report summary', 'DATABASE_ERROR');
   }
 }
