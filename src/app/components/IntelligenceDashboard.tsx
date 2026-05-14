@@ -102,7 +102,7 @@ function openAppTab(tab: string) {
 }
 
 const DataSourceBadge = ({ mode }: { mode: 'live' | 'demo' }) => (
-  <span className={`w-fit rounded-full border px-3 py-1 text-[9px] font-black uppercase tracking-widest ${
+  <span className={`w-fit rounded-full border px-3 py-1 text-[9px] font-black uppercase tracking-[0.12em] sm:tracking-widest ${
     mode === 'live'
       ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400'
       : 'border-[#F59E0B]/25 bg-[#F59E0B]/10 text-[#F59E0B]'
@@ -157,14 +157,14 @@ const LastScanStrip = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-5 xl:min-w-[640px]">
+        <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-5 xl:w-auto xl:min-w-[640px]">
           {stats.map(([label, value]) => (
             <div
               key={label}
               className={`rounded-xl border p-3 ${isDaylight ? 'border-slate-200 bg-slate-50' : 'border-white/10 bg-white/[0.03]'}`}
             >
-              <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">{label}</p>
-              <p className={`mt-1 truncate text-sm font-black ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
+              <p className="break-words text-[9px] font-black uppercase tracking-[0.12em] text-slate-500 sm:tracking-widest">{label}</p>
+              <p className={`mt-1 break-words text-sm font-black ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
                 {value}
               </p>
             </div>
@@ -212,15 +212,15 @@ export const IntelligenceDashboard = () => {
   };
 
   return (
-    <div className="flex flex-col h-full space-y-5 md:space-y-6">
+    <div className="flex h-full min-w-0 flex-col space-y-5 overflow-x-hidden md:space-y-6">
       {/* Header with View Tabs */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 md:gap-6">
         <div className="space-y-2">
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 items-center gap-3">
             <div className="p-2 rounded-xl bg-[#00F0FF]/10 text-[#00F0FF] shadow-[0_0_15px_rgba(0,240,255,0.2)]">
               <Sparkles className="w-5 h-5" />
             </div>
-            <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">
+            <h2 className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500 sm:tracking-[0.4em]">
               Intelligence Center
             </h2>
           </div>
@@ -235,14 +235,14 @@ export const IntelligenceDashboard = () => {
         </div>
 
         {/* View Tabs */}
-        <div className={`grid grid-cols-2 sm:flex sm:items-center gap-1 p-1 rounded-xl w-full lg:w-auto ${
+        <div className={`grid w-full grid-cols-2 gap-1 rounded-xl p-1 sm:flex sm:items-center lg:w-auto ${
           isDaylight ? 'bg-slate-100' : 'bg-white/5 border border-white/10'
         }`}>
           {views.map((view) => (
             <button
               key={view.id}
               onClick={() => setActiveView(view.id)}
-              className={`min-h-[44px] justify-center px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+              className={`flex min-h-[44px] items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all sm:px-4 ${
                 activeView === view.id
                   ? 'bg-[#00F0FF] text-[#0B0F19]'
                   : isDaylight
@@ -258,7 +258,7 @@ export const IntelligenceDashboard = () => {
       </div>
 
       {/* Dynamic Content */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0">
+      <div className="min-h-0 flex-1 overflow-y-auto custom-scrollbar">
         <AnimatePresence mode="wait">
           <Motion.div
             key={activeView}
@@ -514,13 +514,13 @@ const OverviewDashboard = ({
         <GlassCard className="p-5 md:p-8 border-[#00F0FF]/20 bg-[#00F0FF]/[0.03]">
           <div className="grid gap-5 lg:grid-cols-[220px_1fr_auto] lg:items-center">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.35em] text-slate-500">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 sm:tracking-[0.35em]">
                 Discovery Summary
               </p>
               <p className={`mt-3 text-4xl font-black ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
                 {healthDisplay}
               </p>
-              <p className="mt-1 text-xs font-black uppercase tracking-widest text-[#00F0FF]">
+              <p className="mt-1 text-xs font-black uppercase tracking-[0.14em] text-[#00F0FF] sm:tracking-widest">
                 Tenant Health Score
               </p>
               <div className="mt-3">
@@ -540,7 +540,7 @@ const OverviewDashboard = ({
                 ).map((driver) => (
                   <span
                     key={driver}
-                    className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-400"
+                    className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-slate-400 sm:tracking-widest"
                   >
                     {driver}
                   </span>
@@ -552,7 +552,7 @@ const OverviewDashboard = ({
                 ? openAppTab('admin')
                 : onOpenSignalQueue?.()
               }
-              className="min-h-[44px] rounded-xl bg-white px-5 py-3 text-xs font-black uppercase tracking-[0.2em] text-[#0B0F19] transition hover:bg-[#00F0FF]"
+              className="min-h-[44px] w-full rounded-xl bg-white px-5 py-3 text-xs font-black uppercase tracking-[0.14em] text-[#0B0F19] transition hover:bg-[#00F0FF] lg:w-auto lg:tracking-[0.2em]"
             >
               {healthLabel === 'not_enough_data' ? 'Expand Discovery' : 'View Signal Queue'}
             </button>
@@ -564,7 +564,7 @@ const OverviewDashboard = ({
         <GlassCard className="p-5 md:p-8">
           <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.35em] text-slate-500">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 sm:tracking-[0.35em]">
                 Path To Value
               </p>
               <h3 className={`mt-2 text-xl font-black uppercase tracking-tight ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
@@ -574,7 +574,7 @@ const OverviewDashboard = ({
                 Aethos is connected, but this tenant needs broader discovery coverage before we calculate a reliable health score.
               </p>
             </div>
-            <span className="w-fit rounded-full border border-[#00F0FF]/20 bg-[#00F0FF]/10 px-3 py-1 text-[9px] font-black uppercase tracking-widest text-[#00F0FF]">
+            <span className="w-fit rounded-full border border-[#00F0FF]/20 bg-[#00F0FF]/10 px-3 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-[#00F0FF] sm:tracking-widest">
               {reportSummary.discovery.totalFiles.toLocaleString()} files / {reportSummary.discovery.totalSites.toLocaleString()} sites
             </span>
             <DataSourceBadge mode="live" />
@@ -633,7 +633,7 @@ const OverviewDashboard = ({
                   }`}>
                     {step.complete ? <CheckCircle2 className="h-4 w-4" /> : index + 1}
                   </div>
-                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">
+                  <span className="text-[9px] font-black uppercase tracking-[0.12em] text-slate-500 sm:tracking-widest">
                     {step.action}
                   </span>
                 </div>
@@ -673,7 +673,7 @@ const OverviewDashboard = ({
                 )}
               </div>
               <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">
+                <p className="mb-2 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500 sm:tracking-widest">
                   {metric.label}
                 </p>
                 <p className={`text-2xl md:text-3xl font-black tracking-tight ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
@@ -683,7 +683,7 @@ const OverviewDashboard = ({
                   {metric.description}
                 </p>
                 {!isDemoMode && (
-                  <p className="mt-3 text-[9px] font-black uppercase tracking-widest text-slate-500">
+                  <p className="mt-3 text-[9px] font-black uppercase tracking-[0.12em] text-slate-500 sm:tracking-widest">
                     Data source: Live tenant
                   </p>
                 )}
@@ -698,7 +698,7 @@ const OverviewDashboard = ({
           <GlassCard className="xl:col-span-2 p-5 md:p-8">
             <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.35em] text-slate-500">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 sm:tracking-[0.35em]">
                   Ownership & Offboarding Risk
                 </p>
                 <h3 className={`mt-2 text-xl font-black uppercase tracking-tight ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
@@ -719,7 +719,7 @@ const OverviewDashboard = ({
                 <button
                   onClick={() => void handleOwnerStatusSync()}
                   disabled={isSyncingOwners}
-                  className={`min-h-[40px] rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-[9px] font-black uppercase tracking-widest text-slate-300 transition hover:border-[#00F0FF]/40 hover:text-white ${
+                  className={`min-h-[44px] w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-[9px] font-black uppercase tracking-[0.12em] text-slate-300 transition hover:border-[#00F0FF]/40 hover:text-white sm:w-auto sm:tracking-widest ${
                     isSyncingOwners ? 'cursor-wait opacity-60' : ''
                   }`}
                 >
@@ -741,16 +741,16 @@ const OverviewDashboard = ({
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
                             <span
-                              className="rounded-lg px-2 py-1 text-[9px] font-black uppercase tracking-widest"
+                              className="rounded-lg px-2 py-1 text-[9px] font-black uppercase tracking-[0.12em] sm:tracking-widest"
                               style={{ backgroundColor: `${color}18`, color }}
                             >
                               OLS {owner.ownerLiabilityScore}/100
                             </span>
-                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                            <span className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500 sm:tracking-widest">
                               {owner.primaryRiskFactor}
                             </span>
                             <span
-                              className="rounded-lg px-2 py-1 text-[9px] font-black uppercase tracking-widest"
+                              className="rounded-lg px-2 py-1 text-[9px] font-black uppercase tracking-[0.12em] sm:tracking-widest"
                               style={{
                                 backgroundColor: `${getOwnerStatusColor(owner.ownerStatus)}18`,
                                 color: getOwnerStatusColor(owner.ownerStatus),
@@ -759,15 +759,15 @@ const OverviewDashboard = ({
                               {formatOwnerStatus(owner.ownerStatus || owner.ownerLookupStatus)}
                             </span>
                           </div>
-                          <p className={`mt-3 truncate text-sm font-black ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
+                          <p className={`mt-3 break-words text-sm font-black ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
                             {owner.ownerName || owner.ownerEmail || 'Unknown Owner'}
                           </p>
-                          <p className="mt-1 truncate text-xs text-slate-500">
+                          <p className="mt-1 break-words text-xs text-slate-500">
                             {owner.ownerEmail || 'No owner metadata available'}
                           </p>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 md:min-w-[420px]">
+                        <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-4 md:w-auto md:min-w-[420px]">
                           {[
                             ['Files', owner.fileCount],
                             ['External', owner.externalShareCount],
@@ -775,7 +775,7 @@ const OverviewDashboard = ({
                             ['Stale', owner.staleCount],
                           ].map(([label, value]) => (
                             <div key={label} className="rounded-lg bg-white/[0.04] p-3">
-                              <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">{label}</p>
+                              <p className="break-words text-[9px] font-black uppercase tracking-[0.12em] text-slate-500 sm:tracking-widest">{label}</p>
                               <p className={`mt-1 text-lg font-black ${isDaylight ? 'text-slate-900' : 'text-white'}`}>{value}</p>
                             </div>
                           ))}
@@ -784,13 +784,13 @@ const OverviewDashboard = ({
                       <div className="mt-4 flex flex-wrap gap-2 border-t border-white/10 pt-4">
                         <button
                           onClick={() => openAppTab('nexus')}
-                          className="min-h-[40px] rounded-xl bg-white px-4 py-2 text-[9px] font-black uppercase tracking-widest text-[#0B0F19] transition hover:bg-[#00F0FF]"
+                          className="min-h-[44px] w-full rounded-xl bg-white px-4 py-2 text-[9px] font-black uppercase tracking-[0.12em] text-[#0B0F19] transition hover:bg-[#00F0FF] sm:w-auto sm:tracking-widest"
                         >
                           Handoff Workspace
                         </button>
                         <button
                           onClick={() => openRemediation(owner.missingOwnerCount > 0 ? 'missing_owner' : owner.externalShareCount > 0 ? 'external_share' : owner.staleCount > 0 ? 'stale' : 'high_risk')}
-                          className="min-h-[40px] rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-[9px] font-black uppercase tracking-widest text-slate-300 transition hover:border-[#00F0FF]/40 hover:text-white"
+                          className="min-h-[44px] w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-[9px] font-black uppercase tracking-[0.12em] text-slate-300 transition hover:border-[#00F0FF]/40 hover:text-white sm:w-auto sm:tracking-widest"
                         >
                           Review Files
                         </button>
@@ -804,7 +804,7 @@ const OverviewDashboard = ({
               </div>
             ) : (
               <div className="rounded-xl border border-white/10 bg-white/[0.03] p-6">
-                <p className={`text-sm font-black uppercase tracking-widest ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
+                <p className={`text-sm font-black uppercase tracking-[0.12em] sm:tracking-widest ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
                   {ownerMetadataState === 'missing_owner_metadata'
                     ? 'Owner metadata not available yet'
                     : 'No owner groups yet'}
@@ -817,13 +817,13 @@ const OverviewDashboard = ({
                 <div className="mt-5 flex flex-wrap gap-3">
                   <button
                     onClick={() => ownerMetadataState === 'missing_owner_metadata' ? openRemediation('missing_owner') : openAppTab('admin')}
-                    className="min-h-[40px] rounded-xl bg-white px-4 py-2 text-[9px] font-black uppercase tracking-widest text-[#0B0F19] transition hover:bg-[#00F0FF]"
+                    className="min-h-[44px] w-full rounded-xl bg-white px-4 py-2 text-[9px] font-black uppercase tracking-[0.12em] text-[#0B0F19] transition hover:bg-[#00F0FF] sm:w-auto sm:tracking-widest"
                   >
                     {ownerMetadataState === 'missing_owner_metadata' ? 'Review Missing Owners' : 'Run Discovery'}
                   </button>
                   <button
                     onClick={() => openAppTab('admin')}
-                    className="min-h-[40px] rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-[9px] font-black uppercase tracking-widest text-slate-300 transition hover:border-[#00F0FF]/40 hover:text-white"
+                    className="min-h-[44px] w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-[9px] font-black uppercase tracking-[0.12em] text-slate-300 transition hover:border-[#00F0FF]/40 hover:text-white sm:w-auto sm:tracking-widest"
                   >
                     Check Permissions
                   </button>
@@ -836,7 +836,7 @@ const OverviewDashboard = ({
             <GlassCard className="xl:col-span-3 p-5 md:p-8 border-[#F59E0B]/20">
               <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.35em] text-slate-500">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 sm:tracking-[0.35em]">
                     V1.5 Owner Status Review
                   </p>
                   <h3 className={`mt-2 text-xl font-black uppercase tracking-tight ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
@@ -848,7 +848,7 @@ const OverviewDashboard = ({
                 </div>
                 <div className="flex flex-col items-start gap-2 md:items-end">
                   <DataSourceBadge mode="live" />
-                  <span className="rounded-full border border-[#F59E0B]/25 bg-[#F59E0B]/10 px-3 py-1 text-[9px] font-black uppercase tracking-widest text-[#F59E0B]">
+                  <span className="rounded-full border border-[#F59E0B]/25 bg-[#F59E0B]/10 px-3 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-[#F59E0B] sm:tracking-widest">
                     {reportSummary.ownership.ownerStatusReview.reviewRequiredOwners} owner{reportSummary.ownership.ownerStatusReview.reviewRequiredOwners === 1 ? '' : 's'} need review
                   </span>
                 </div>
@@ -862,7 +862,7 @@ const OverviewDashboard = ({
                   >
                     <div className="mb-4 flex flex-wrap items-center gap-2">
                       <span
-                        className="rounded-lg px-2 py-1 text-[9px] font-black uppercase tracking-widest"
+                        className="rounded-lg px-2 py-1 text-[9px] font-black uppercase tracking-[0.12em] sm:tracking-widest"
                         style={{
                           backgroundColor: `${getOwnerStatusColor(owner.status)}18`,
                           color: getOwnerStatusColor(owner.status),
@@ -870,14 +870,14 @@ const OverviewDashboard = ({
                       >
                         {formatOwnerStatus(owner.status)}
                       </span>
-                      <span className="rounded-lg border border-white/10 bg-white/[0.04] px-2 py-1 text-[9px] font-black uppercase tracking-widest text-slate-500">
+                      <span className="rounded-lg border border-white/10 bg-white/[0.04] px-2 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-slate-500 sm:tracking-widest">
                         OLS {owner.ownerLiabilityScore}/100
                       </span>
                     </div>
-                    <p className={`truncate text-sm font-black ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
+                    <p className={`break-words text-sm font-black ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
                       {owner.ownerName || owner.ownerEmail}
                     </p>
-                    <p className="mt-1 truncate text-xs text-slate-500">{owner.ownerEmail}</p>
+                    <p className="mt-1 break-words text-xs text-slate-500">{owner.ownerEmail}</p>
                     <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
                       {[
                         ['Files', owner.fileCount],
@@ -886,7 +886,7 @@ const OverviewDashboard = ({
                         ['Stale', owner.staleCount],
                       ].map(([label, value]) => (
                         <div key={label} className="rounded-lg bg-white/[0.04] p-3">
-                          <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">{label}</p>
+                          <p className="break-words text-[9px] font-black uppercase tracking-[0.12em] text-slate-500 sm:tracking-widest">{label}</p>
                           <p className={`mt-1 text-lg font-black ${isDaylight ? 'text-slate-900' : 'text-white'}`}>{value}</p>
                         </div>
                       ))}
@@ -894,13 +894,13 @@ const OverviewDashboard = ({
                     <div className="mt-5 flex flex-wrap items-center gap-3">
                       <button
                         onClick={() => openAppTab('nexus')}
-                        className="min-h-[40px] rounded-xl bg-white px-4 py-2 text-[9px] font-black uppercase tracking-widest text-[#0B0F19] transition hover:bg-[#00F0FF]"
+                        className="min-h-[44px] w-full rounded-xl bg-white px-4 py-2 text-[9px] font-black uppercase tracking-[0.12em] text-[#0B0F19] transition hover:bg-[#00F0FF] sm:w-auto sm:tracking-widest"
                       >
                         Handoff Workspace
                       </button>
                       <button
                         onClick={() => openRemediation(owner.externalShareCount > 0 ? 'external_share' : owner.staleCount > 0 ? 'stale' : 'high_risk')}
-                        className="min-h-[40px] rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-[9px] font-black uppercase tracking-widest text-slate-300 transition hover:border-[#00F0FF]/40 hover:text-white"
+                        className="min-h-[44px] w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-[9px] font-black uppercase tracking-[0.12em] text-slate-300 transition hover:border-[#00F0FF]/40 hover:text-white sm:w-auto sm:tracking-widest"
                       >
                         Review Files
                       </button>
@@ -915,16 +915,16 @@ const OverviewDashboard = ({
           )}
 
           <GlassCard className="p-5 md:p-8">
-            <div className="mb-6 flex items-start justify-between gap-4">
+            <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.35em] text-slate-500">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 sm:tracking-[0.35em]">
                   Discovery Reports
                 </p>
                 <h3 className={`mt-2 text-xl font-black uppercase tracking-tight ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
                   Risk Snapshot
                 </h3>
               </div>
-              <div className="flex flex-col items-end gap-3">
+              <div className="flex flex-col items-start gap-3 sm:items-end">
                 <DataSourceBadge mode="live" />
                 <ShieldAlert className="h-5 w-5 text-[#FF5733]" />
               </div>
@@ -974,15 +974,15 @@ const OverviewDashboard = ({
                   className={`w-full rounded-xl border p-4 text-left transition hover:border-[#00F0FF]/40 ${isDaylight ? 'border-slate-200 bg-slate-50' : 'border-white/10 bg-white/[0.03]'}`}
                 >
                   <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">{item.label}</p>
+                    <div className="min-w-0">
+                      <p className="break-words text-[9px] font-black uppercase tracking-[0.12em] text-slate-500 sm:tracking-widest">{item.label}</p>
                       <p className={`mt-1 text-2xl font-black ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
                         {typeof item.value === 'number' ? item.value.toLocaleString() : item.value}
                       </p>
                     </div>
                     <div className="h-10 w-1 rounded-full" style={{ backgroundColor: item.color }} />
                   </div>
-                  <p className="mt-2 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                  <p className="mt-2 break-words text-[10px] font-black uppercase tracking-[0.12em] text-slate-500 sm:tracking-widest">
                     {item.helper}
                   </p>
                 </button>
@@ -1031,9 +1031,9 @@ const OverviewDashboard = ({
             },
           ].map((card) => (
             <GlassCard key={card.title} className="p-5 md:p-8">
-              <div className="mb-6 flex items-start justify-between gap-4">
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.35em] text-slate-500">
+              <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 sm:tracking-[0.35em]">
                   {card.eyebrow}
                   </p>
                   <h3 className={`mt-2 text-xl font-black uppercase tracking-tight ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
@@ -1043,11 +1043,11 @@ const OverviewDashboard = ({
                   {card.description}
                 </p>
               </div>
-                <div className="flex flex-col items-end gap-3">
+                <div className="flex flex-col items-start gap-3 sm:items-end">
                   <DataSourceBadge mode="live" />
                   <button
                     onClick={() => openRemediation(card.issue)}
-                    className="min-h-[40px] rounded-xl border border-white/10 bg-white/[0.04] px-3 text-[9px] font-black uppercase tracking-widest text-slate-300 transition hover:border-[#00F0FF]/40 hover:text-white"
+                    className="min-h-[44px] w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 text-[9px] font-black uppercase tracking-[0.12em] text-slate-300 transition hover:border-[#00F0FF]/40 hover:text-white sm:w-auto sm:tracking-widest"
                   >
                     Review
                   </button>
@@ -1060,7 +1060,7 @@ const OverviewDashboard = ({
                     key={label}
                     className={`rounded-xl border p-4 ${isDaylight ? 'border-slate-200 bg-slate-50' : 'border-white/10 bg-white/[0.03]'}`}
                   >
-                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">
+                    <p className="break-words text-[9px] font-black uppercase tracking-[0.12em] text-slate-500 sm:tracking-widest">
                       {label}
                     </p>
                     <p className={`mt-1 text-xl font-black ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
@@ -1079,14 +1079,14 @@ const OverviewDashboard = ({
                     key={label as string}
                     className={`rounded-xl border p-4 ${isDaylight ? 'border-slate-200 bg-slate-50' : 'border-white/10 bg-white/[0.03]'}`}
                   >
-                    <p className="mb-3 text-[9px] font-black uppercase tracking-widest text-slate-500">
+                    <p className="mb-3 text-[9px] font-black uppercase tracking-[0.12em] text-slate-500 sm:tracking-widest">
                       {label as string}
                     </p>
                     {(buckets as ReportSummaryResponse['summary']['exposureReview']['providerBreakdown']).length > 0 ? (
                       <div className="space-y-2">
                         {(buckets as ReportSummaryResponse['summary']['exposureReview']['providerBreakdown']).slice(0, 3).map((bucket) => (
                           <div key={bucket.label} className="flex items-center justify-between gap-3 text-xs">
-                            <span className={`truncate font-semibold ${isDaylight ? 'text-slate-700' : 'text-slate-300'}`}>
+                            <span className={`min-w-0 break-words font-semibold ${isDaylight ? 'text-slate-700' : 'text-slate-300'}`}>
                               {bucket.label}
                             </span>
                             <span className="shrink-0 font-black text-slate-500">
@@ -1114,13 +1114,13 @@ const OverviewDashboard = ({
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="min-w-0">
-                          <p className={`truncate text-sm font-black ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
+                          <p className={`break-words text-sm font-black ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
                             {file.name}
                           </p>
-                          <p className="mt-1 truncate text-xs text-slate-500">
+                          <p className="mt-1 break-words text-xs text-slate-500">
                             {file.ownerName || file.ownerEmail || 'Unknown owner'} | {file.providerType || 'microsoft'}
                           </p>
-                          <p className="mt-2 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                          <p className="mt-2 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500 sm:tracking-widest">
                             {card.meta(file as any)}
                           </p>
                         </div>
@@ -1143,7 +1143,7 @@ const OverviewDashboard = ({
         <GlassCard className="p-5 md:p-8">
           <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.35em] text-slate-500">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 sm:tracking-[0.35em]">
                 Workspace Opportunities
               </p>
               <h3 className={`mt-2 text-xl font-black uppercase tracking-tight ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
@@ -1157,7 +1157,7 @@ const OverviewDashboard = ({
               <DataSourceBadge mode="live" />
               <button
                 onClick={() => openAppTab('nexus')}
-                className="min-h-[44px] rounded-xl bg-white px-5 py-3 text-xs font-black uppercase tracking-[0.2em] text-[#0B0F19] transition hover:bg-[#00F0FF]"
+                className="min-h-[44px] w-full rounded-xl bg-white px-5 py-3 text-xs font-black uppercase tracking-[0.14em] text-[#0B0F19] transition hover:bg-[#00F0FF] md:w-auto md:tracking-[0.2em]"
               >
                 Open Workspaces
               </button>
@@ -1175,7 +1175,7 @@ const OverviewDashboard = ({
                   }`}
                 >
                   <div className="mb-5 flex items-center justify-between gap-3">
-                    <div className="rounded-lg border border-[#00F0FF]/20 bg-[#00F0FF]/10 px-3 py-1 text-[9px] font-black uppercase tracking-widest text-[#00F0FF]">
+                    <div className="rounded-lg border border-[#00F0FF]/20 bg-[#00F0FF]/10 px-3 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-[#00F0FF] sm:tracking-widest">
                       {opportunity.fileCount.toLocaleString()} files
                     </div>
                     <Database className="h-4 w-4 text-slate-500" />
@@ -1190,7 +1190,7 @@ const OverviewDashboard = ({
                     {opportunity.suggestedTags.map((tag) => (
                       <span
                         key={tag}
-                        className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-[9px] font-black uppercase tracking-widest text-slate-500"
+                        className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-slate-500 sm:tracking-widest"
                       >
                         {tag}
                       </span>
@@ -1207,9 +1207,9 @@ const OverviewDashboard = ({
 
           {reportSummary.topicClusters.length > 0 && (
             <div className="mt-6 border-t border-white/10 pt-6">
-              <div className="mb-4 flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">
+              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <p className="text-[9px] font-black uppercase tracking-[0.12em] text-slate-500 sm:tracking-widest">
                     Topic Clusters
                   </p>
                   <p className="mt-1 text-xs leading-5 text-slate-500">
@@ -1229,10 +1229,10 @@ const OverviewDashboard = ({
                     }`}
                   >
                     <div className="mb-3 flex items-center justify-between gap-3">
-                      <span className="rounded-full border border-[#00F0FF]/20 bg-[#00F0FF]/10 px-3 py-1 text-[9px] font-black uppercase tracking-widest text-[#00F0FF]">
+                      <span className="rounded-full border border-[#00F0FF]/20 bg-[#00F0FF]/10 px-3 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-[#00F0FF] sm:tracking-widest">
                         {cluster.source}
                       </span>
-                      <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">
+                      <span className="text-[9px] font-black uppercase tracking-[0.12em] text-slate-500 sm:tracking-widest">
                         {cluster.confidence}
                       </span>
                     </div>
@@ -1255,7 +1255,7 @@ const OverviewDashboard = ({
           <GlassCard className="p-5 md:p-8">
             <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.35em] text-slate-500">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 sm:tracking-[0.35em]">
                   Remediation Dry Run
                 </p>
                 <h3 className={`mt-2 text-xl font-black uppercase tracking-tight ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
@@ -1269,7 +1269,7 @@ const OverviewDashboard = ({
                 <DataSourceBadge mode="live" />
                 <button
                   onClick={() => openAppTab('archival')}
-                  className="min-h-[44px] rounded-xl bg-white px-5 py-3 text-xs font-black uppercase tracking-[0.2em] text-[#0B0F19] transition hover:bg-[#00F0FF]"
+                  className="min-h-[44px] w-full rounded-xl bg-white px-5 py-3 text-xs font-black uppercase tracking-[0.14em] text-[#0B0F19] transition hover:bg-[#00F0FF] md:w-auto md:tracking-[0.2em]"
                 >
                   Open Remediation
                 </button>
@@ -1277,7 +1277,7 @@ const OverviewDashboard = ({
             </div>
 
             <div className="mb-5 rounded-xl border border-[#00F0FF]/20 bg-[#00F0FF]/10 p-4">
-              <p className="text-[9px] font-black uppercase tracking-widest text-[#00F0FF]">
+              <p className="text-[9px] font-black uppercase tracking-[0.12em] text-[#00F0FF] sm:tracking-widest">
                 No destructive action taken by default
               </p>
               <p className="mt-2 text-sm text-slate-400">
@@ -1295,16 +1295,16 @@ const OverviewDashboard = ({
                       isDaylight ? 'border-slate-200 bg-slate-50' : 'border-white/10 bg-white/[0.03]'
                     }`}
                   >
-                    <div className="flex items-center justify-between gap-4">
-                      <div>
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0">
                         <p className={`text-sm font-black ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
                           {formatAction(dryRun.actionType)}
                         </p>
-                        <p className="mt-1 text-xs text-slate-500">
+                        <p className="mt-1 break-words text-xs text-slate-500">
                           {dryRun.fileCount.toLocaleString()} files | {dryRun.status} | {formatDate(dryRun.executedAt)}
                         </p>
                       </div>
-                      <span className="rounded-lg border border-white/10 bg-white/[0.04] px-2 py-1 text-[9px] font-black uppercase tracking-widest text-slate-500">
+                      <span className="w-fit rounded-lg border border-white/10 bg-white/[0.04] px-2 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-slate-500 sm:tracking-widest">
                         Dry Run
                       </span>
                     </div>
@@ -1323,7 +1323,7 @@ const OverviewDashboard = ({
               <div className="mb-4">
                 <DataSourceBadge mode="live" />
               </div>
-              <p className="text-[10px] font-black uppercase tracking-[0.35em] text-slate-500">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 sm:tracking-[0.35em]">
                 V1.5 Identity Readiness
               </p>
               <h3 className={`mt-2 text-xl font-black uppercase tracking-tight ${isDaylight ? 'text-slate-900' : 'text-white'}`}>

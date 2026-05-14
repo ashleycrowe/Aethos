@@ -41,4 +41,12 @@ describe('IntelligenceDashboard live/demo smoke contract', () => {
     expect(metadataSource).toContain('review metadata suggestions before considering AI+ content scanning');
     expect(metadataSource).toContain('Content-aware enrichment remains an explicit AI+ step after V1 metadata review is working.');
   });
+
+  it('keeps intelligence reports mobile-first', () => {
+    expect(dashboardSource).toContain('overflow-x-hidden');
+    expect(dashboardSource).toContain('grid w-full grid-cols-2 gap-2 sm:grid-cols-5');
+    expect(dashboardSource).toContain('break-words text-sm font-black');
+    expect(dashboardSource).toContain('md:w-auto md:min-w-[420px]');
+    expect(dashboardSource).toContain('min-h-[44px] w-full rounded-xl');
+  });
 });

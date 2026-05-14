@@ -232,6 +232,7 @@ Priority order:
 5. AdminCenter.
 
 Completed component passes:
+- [x] IntelligenceDashboard: remove mobile overflow pressure from scan strips and owner/report cards, reduce tight tracking, and wrap long owner/file labels.
 - [x] OracleSearch: make filter panel full-width on mobile, stack status controls, wrap chat/result text, and keep core search controls touch-sized.
 - [x] RemediationCenter: stack filters/tabs/actions at mobile widths, make candidate cards wrap instead of truncate, and use a bottom-sheet confirmation dialog on phones.
 - [x] AdminCenter: stack header/setup/diagnostic controls at mobile widths, reduce tight tracking, wrap long status values, and reduce mobile backdrop cost.
