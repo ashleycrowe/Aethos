@@ -1,7 +1,7 @@
 # Aethos V1 Testable Queue
 
-**Last Updated:** May 14, 2026  
-**Status:** V1 live walkthrough blocked by Live-vs-Demo boundary polish  
+**Last Updated:** May 15, 2026  
+**Status:** V1 live walkthrough integrating Integrity Layer, accessibility, and workspace remediation polish  
 **Scope:** First testable V1, not full production readiness
 
 ---
@@ -13,6 +13,17 @@ Make Aethos V1 testable end to end:
 `Microsoft auth -> tenant/user setup -> discovery scan -> metadata search -> workspace creation -> safe remediation/reporting`
 
 This file is the short-cycle engineering queue. Keep `IMPLEMENTATION_TASKS.md` as the broader production-readiness backlog.
+
+---
+
+## Integrity Layer Narrative
+
+- [x] Reframe the product from a "plumbing" metaphor to the Integrity Layer.
+- [x] Define the first buyer as a Founder/COO or AI Strategy Lead who needs sense-making infrastructure before AI rollout.
+- [x] Anchor the narrative: Aethos clears architectural debt so Microsoft 365 content becomes trustworthy enough for AI readiness.
+- [x] Update founder story direction: seven years building intranets led to the conclusion that the traditional intranet model is an architectural liability, not the answer.
+- [x] Add global persona modes for Admin, Steward, and Worker so product surfaces can filter toward review, curation, or consumption.
+- [x] Promote Blind Steward remediation as a V1 workflow: restricted workspace -> remediation brief -> access request packet.
 
 ---
 

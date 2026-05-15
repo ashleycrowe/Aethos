@@ -49,6 +49,8 @@ import { WorkspaceCreationWizard } from './WorkspaceCreationWizard';
 import { WorkspaceSyncManager } from './WorkspaceSyncManager';
 import { ArtifactWizard } from './ArtifactWizard';
 import { ResourceSynthesizer } from './ResourceSynthesizer';
+import { WorkspaceVisibilityIndicator } from './Workspace/WorkspaceVisibilityIndicator';
+import { RemediationBrief } from './Workspace/RemediationBrief';
 import { useTheme } from '@/app/context/ThemeContext';
 import { useOracle } from '@/app/context/OracleContext';
 import { useUser } from '@/app/context/UserContext';
@@ -110,6 +112,7 @@ const WORKSPACE_PERSONA_MODES = [
 ] as const;
 
 type WorkspacePersonaModeId = typeof WORKSPACE_PERSONA_MODES[number]['id'];
+type GlobalPersonaModeId = 'admin' | 'steward' | 'worker';
 
 const WORKSPACE_REVIEW_STATUS_LABELS: Record<NonNullable<Workspace['stewardship']>['reviewStatus'], string> = {
   admin_review: 'Admin Review',
@@ -420,6 +423,10 @@ function toWorkspace(row: any): Workspace {
     description: row.description,
     color: row.color || '#00F0FF',
     icon: row.icon || 'Target',
+    isAccessible: row.isAccessible ?? row.is_accessible ?? true,
+    steward: row.steward || row.stewardOwnerName || row.steward_owner_name || row.stewardOwnerEmail || row.steward_owner_email || 'Unassigned',
+    path: row.path || `/Aethos Workspaces/${row.name}`,
+    accessRestrictionReason: row.accessRestrictionReason || row.access_restriction_reason || 'STEWARD_ACCESS_GAP',
     primaryStorage: {
       provider: 'microsoft',
       containerId: `workspace-${row.id}`,
@@ -526,6 +533,7 @@ export const WorkspaceEngine = () => {
   const [personaModeId, setPersonaModeId] = useState<WorkspacePersonaModeId>('admin');
   const [trustFilterId, setTrustFilterId] = useState<WorkspaceTrustFilterId>('all');
   const [isSyncing, setIsSyncing] = useState(false);
+  const [remediationBriefOpen, setRemediationBriefOpen] = useState(false);
 
   // Use API data if available, otherwise fall back to context
   const effectiveWorkspaces = isDemoMode ? workspaces : apiWorkspaces;
@@ -605,6 +613,20 @@ export const WorkspaceEngine = () => {
     fetchWorkspaceDetail();
   }, [selectedWorkspaceId, isDemoMode, activeTenantId]);
 
+  useEffect(() => {
+    const readGlobalPersona = () => {
+      if (typeof window === 'undefined') return;
+      const stored = window.localStorage.getItem('aethos:persona-mode') as GlobalPersonaModeId | null;
+      if (stored === 'admin' || stored === 'steward' || stored === 'worker') {
+        setPersonaModeId(stored);
+      }
+    };
+
+    readGlobalPersona();
+    window.addEventListener('aethos:persona-mode', readGlobalPersona);
+    return () => window.removeEventListener('aethos:persona-mode', readGlobalPersona);
+  }, []);
+
   const handleSync = async () => {
     setIsSyncing(true);
     await validatePointers();
@@ -664,6 +686,9 @@ export const WorkspaceEngine = () => {
         description: data.description,
         color: '#00F0FF',
         icon: 'Target',
+        isAccessible: true,
+        steward: user.name || 'Current User',
+        path: `/Shared Documents/${data.name}`,
         primaryStorage: {
           provider: 'microsoft',
           containerId: 'sp-new-auto',
@@ -983,6 +1008,7 @@ export const WorkspaceEngine = () => {
                   <div>
                     <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2 gap-3 min-w-0">
                       <h1 className="text-2xl sm:text-3xl md:text-4xl font-black uppercase tracking-tight leading-tight text-slate-900 dark:text-white break-words">{selectedWorkspace.name}</h1>
+                      <WorkspaceVisibilityIndicator isAccessible={selectedWorkspace.isAccessible} />
                       {isDemoMode && (
                         <Motion.span
                           initial={{ opacity: 0, scale: 0.8 }}
@@ -999,6 +1025,15 @@ export const WorkspaceEngine = () => {
                        </span>
                         <div className="w-1.5 h-1.5 rounded-full bg-[#00F0FF] animate-pulse shadow-[0_0_10px_#00F0FF]" />
                      </div>
+                    {!selectedWorkspace.isAccessible && (
+                      <button
+                        type="button"
+                        onClick={() => setRemediationBriefOpen(true)}
+                        className="mt-4 min-h-[44px] rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-xs font-black uppercase tracking-[0.12em] text-amber-300 transition hover:bg-amber-500/20"
+                      >
+                        View Remediation Brief -&gt;
+                      </button>
+                    )}
                   </div>
                 </div>
                 <p className="text-sm text-slate-500 dark:text-slate-400 max-w-full md:max-w-2xl font-medium leading-relaxed italic">
@@ -1809,6 +1844,16 @@ export const WorkspaceEngine = () => {
             isOpen={!!editingArtifact} 
             editArtifact={editingArtifact}
             onClose={() => setEditingArtifact(null)} 
+          />
+          <RemediationBrief
+            isOpen={remediationBriefOpen}
+            onClose={() => setRemediationBriefOpen(false)}
+            reason={selectedWorkspace.accessRestrictionReason || 'STEWARD_ACCESS_GAP'}
+            workspace={{
+              name: selectedWorkspace.name,
+              path: selectedWorkspace.path,
+              steward: selectedWorkspace.steward,
+            }}
           />
         </>
       )}

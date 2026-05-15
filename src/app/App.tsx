@@ -18,7 +18,7 @@ import { Sidebar } from '@/app/components/Sidebar';
 import { VersionToggle } from '@/app/components/VersionToggle';
 import { RuntimeModeBadge } from '@/app/components/RuntimeModeBadge';
 import { AethosLogo } from '@/app/components/branding/AethosLogo';
-import { Search, Bell, Settings, LogIn, ShieldCheck } from 'lucide-react';
+import { Search, Bell, Settings, LogIn, ShieldCheck, Users } from 'lucide-react';
 
 const AdminCenter = lazy(() => import('@/app/components/AdminCenter').then((module) => ({ default: module.AdminCenter })));
 const DesignCenter = lazy(() => import('@/app/components/DesignCenter').then((module) => ({ default: module.DesignCenter })));
@@ -225,8 +225,22 @@ const DiagnosticsBridge = () => {
 const Layout: React.FC = () => {
   const [activeTab, setActiveTab] = useState('insights');
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [personaMode, setPersonaMode] = useState<'admin' | 'steward' | 'worker'>('admin');
   const { isDaylight } = useTheme();
   const { version, isDemoMode } = useVersion();
+
+  useEffect(() => {
+    const stored = window.localStorage.getItem('aethos:persona-mode');
+    if (stored === 'admin' || stored === 'steward' || stored === 'worker') {
+      setPersonaMode(stored);
+    }
+  }, []);
+
+  const updatePersonaMode = (mode: 'admin' | 'steward' | 'worker') => {
+    setPersonaMode(mode);
+    window.localStorage.setItem('aethos:persona-mode', mode);
+    window.dispatchEvent(new CustomEvent('aethos:persona-mode', { detail: { mode } }));
+  };
 
   // VERSION-AWARE TAB VALIDATION: Redirect to valid V1 tab if user is on V2+ tab
   useEffect(() => {
@@ -349,6 +363,24 @@ const Layout: React.FC = () => {
 
           <div className="ml-3 flex shrink-0 items-center gap-2 sm:ml-10 sm:gap-6">
             <RuntimeModeBadge />
+            <div className="hidden items-center gap-1 rounded-2xl border border-white/10 bg-white/[0.04] p-1 md:flex">
+              <Users className="ml-2 h-4 w-4 text-slate-500" aria-hidden="true" />
+              {(['admin', 'steward', 'worker'] as const).map((mode) => (
+                <button
+                  key={mode}
+                  type="button"
+                  onClick={() => updatePersonaMode(mode)}
+                  className={`min-h-[36px] rounded-xl px-3 text-xs font-black uppercase tracking-[0.12em] transition ${
+                    personaMode === mode
+                      ? 'bg-[#1AFFFF] text-[#061018]'
+                      : 'text-slate-500 hover:bg-white/10 hover:text-white'
+                  }`}
+                  aria-pressed={personaMode === mode}
+                >
+                  {mode}
+                </button>
+              ))}
+            </div>
             <button className="relative flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl p-2 text-slate-500 transition-colors hover:text-[#00F0FF]">
               <Bell size={20} />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#FF5733] rounded-full border border-[#0B0F19]" />

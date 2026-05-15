@@ -550,19 +550,19 @@ export const OracleSearchBridgeV2 = () => {
                               {item.provider || 'microsoft'} / {item.path || 'Indexed file'}
                             </p>
                             <div className="mt-4 flex flex-wrap gap-2">
-                              <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[8px] font-black uppercase tracking-widest text-slate-300">
+                              <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs font-black uppercase tracking-widest text-slate-300">
                                 {V1_DATA_CLASS}
                               </span>
                               {(item.ai_tags || []).slice(0, 4).map((tag) => (
                                 <span
                                   key={tag}
-                                  className="rounded-full border border-[#00F0FF]/20 bg-[#00F0FF]/10 px-2.5 py-1 text-[8px] font-black uppercase tracking-widest text-[#00F0FF]"
+                                  className="rounded-full border border-[#00F0FF]/20 bg-[#00F0FF]/10 px-2.5 py-1 text-xs font-black uppercase tracking-widest text-[#00F0FF]"
                                 >
                                   {tag}
                                 </span>
                               ))}
                               {item.has_external_share && (
-                                <span className="rounded-full border border-[#FF5733]/30 bg-[#FF5733]/10 px-2.5 py-1 text-[8px] font-black uppercase tracking-widest text-[#FF5733]">
+                                <span className="rounded-full border border-[#FF5733]/30 bg-[#FF5733]/10 px-2.5 py-1 text-xs font-black uppercase tracking-widest text-[#FF5733]">
                                   External
                                 </span>
                               )}

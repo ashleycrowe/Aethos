@@ -26,6 +26,7 @@ import { IntelligenceStream } from '@/app/components/IntelligenceStream';
 import { MetadataIntelligenceDashboard } from '@/app/components/MetadataIntelligenceDashboard';
 import { IdentityEngine } from '@/app/components/IdentityEngine';
 import { DiscoveryScanSimulation } from '@/app/components/DiscoveryScanSimulation';
+import { IntegrityScoreCard } from '@/app/components/visualizations/IntegrityScoreCard';
 import { toast } from 'sonner';
 import { getReportSummary, syncOwnerStatus, type ReportSummaryResponse } from '@/lib/api';
 import { useAuth } from '@/app/context/AuthContext';
@@ -716,6 +717,12 @@ const OverviewDashboard = ({
           </GlassCard>
         ))}
       </div>
+
+      <IntegrityScoreCard
+        score={healthScore ?? 88}
+        trendDelta="+4%"
+        onOpenRemediation={openRemediation}
+      />
 
       {!isDemoMode && reportSummary && (
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8">

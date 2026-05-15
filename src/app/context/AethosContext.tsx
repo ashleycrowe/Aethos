@@ -232,6 +232,10 @@ export const AethosProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       description: 'Core strategic alignment for the Q1 global rollout.',
       color: '#FF5733',
       icon: 'Rocket',
+      isAccessible: false,
+      steward: 'Sarah Chen',
+      path: '/Shared Documents/Alpha_Launch',
+      accessRestrictionReason: 'STEWARD_ACCESS_GAP',
       primaryStorage: {
         provider: 'microsoft',
         containerId: 'sp-marketing-launch',

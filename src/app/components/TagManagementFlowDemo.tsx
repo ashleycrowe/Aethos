@@ -107,6 +107,9 @@ const mockWorkspace: Workspace = {
   description: 'All files related to Q1 product launch planning',
   color: '#00F0FF',
   icon: 'Rocket',
+  isAccessible: true,
+  steward: 'Sarah Chen',
+  path: '/Product/Launch',
   primaryStorage: {
     provider: 'microsoft',
     containerId: 'site-001',

@@ -153,6 +153,10 @@ export interface Workspace {
   description?: string;
   color: string;
   icon: string;
+  isAccessible: boolean;
+  steward: string;
+  path: string;
+  accessRestrictionReason?: 'STEWARD_ACCESS_GAP' | 'EXTERNAL_SHARE' | 'OWNERSHIP_UNKNOWN';
   primaryStorage: StorageConfig;
   pinnedItems: PinnedArtifact[];
   linkedSources: Array<{

@@ -87,6 +87,9 @@ export const WorkspaceWizard: React.FC<WorkspaceWizardProps> = ({ isOpen, onClos
       description: formData.description,
       color: formData.color,
       icon: formData.icon,
+      isAccessible: true,
+      steward: 'Sarah Chen',
+      path: `/Shared Documents/${formData.name}`,
       primaryStorage: {
         provider: 'microsoft',
         containerId: 'sp-new-auto',

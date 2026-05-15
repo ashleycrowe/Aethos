@@ -144,7 +144,7 @@
   }
 
   *:focus-visible {
-    @apply ring-2 ring-[#00F0FF] ring-offset-2 ring-offset-[#0B0F19];
+    @apply ring-2 ring-[#1AFFFF] ring-offset-2 ring-offset-[#0B0F19];
   }
 
   body {
@@ -227,7 +227,7 @@
   }
 
   .skip-link {
-    @apply absolute -top-20 left-4 z-[100] bg-[#00F0FF] text-black px-4 py-2 rounded-lg font-bold uppercase text-xs tracking-widest transition-all focus:top-4;
+    @apply absolute -top-20 left-4 z-[100] bg-[#1AFFFF] text-black px-4 py-2 rounded-lg font-bold uppercase text-xs tracking-widest transition-all focus:top-4;
   }
 
   /**
@@ -286,4 +286,16 @@
   0% { transform: scale(1); opacity: 1; }
   50% { transform: scale(1.2); opacity: 0.7; }
   100% { transform: scale(1); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+
+  .animate-pulse {
+    animation: none !important;
+  }
 }
