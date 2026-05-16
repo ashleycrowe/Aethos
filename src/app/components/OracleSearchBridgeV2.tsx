@@ -45,7 +45,7 @@ import {
   Info
 } from 'lucide-react';
 import { motion as Motion, AnimatePresence } from 'motion/react';
-import { searchFiles } from '@/lib/api';
+import { detectPii, indexFileContent, searchFiles, semanticSearch, summarizeFile, type SemanticSearchResponse } from '@/lib/api';
 import { isDemoModeEnabled } from '@/app/config/demoMode';
 import { useAuth } from '@/app/context/AuthContext';
 import { useTheme } from '@/app/context/ThemeContext';
@@ -70,7 +70,13 @@ type SearchFileResult = {
   ai_category?: string | null;
   has_external_share?: boolean | null;
   is_stale?: boolean | null;
+  content_indexed?: boolean | null;
+  content_chunk_count?: number | null;
+  has_pii?: boolean | null;
+  pii_risk_level?: 'low' | 'medium' | 'high' | null;
 };
+
+type SemanticResult = SemanticSearchResponse['results'][number];
 
 const V1_DATA_CLASS = 'Document';
 const FUTURE_DATA_CLASSES = ['Published Knowledge', 'Structured List', 'Container', 'Signal'];
@@ -139,7 +145,13 @@ export const OracleSearchBridgeV2 = () => {
   const [showQuickActions, setShowQuickActions] = useState(false);
   const [aiSearchMode, setAISearchMode] = useState(false); // V1.5+ feature
   const [metadataResults, setMetadataResults] = useState<SearchFileResult[]>([]);
+  const [semanticResults, setSemanticResults] = useState<SemanticResult[]>([]);
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [aiSearchError, setAiSearchError] = useState<string | null>(null);
+  const [isSearchingContent, setIsSearchingContent] = useState(false);
+  const [summarizingFileId, setSummarizingFileId] = useState<string | null>(null);
+  const [indexingFileId, setIndexingFileId] = useState<string | null>(null);
+  const [scanningPiiFileId, setScanningPiiFileId] = useState<string | null>(null);
   const [isDemoMode, setIsDemoMode] = useState(isDemoModeEnabled());
   const [isSearchingFiles, setIsSearchingFiles] = useState(false);
   const [hasLiveSearchRun, setHasLiveSearchRun] = useState(false);
@@ -158,6 +170,8 @@ export const OracleSearchBridgeV2 = () => {
   const runMetadataSearch = async (searchQuery: string) => {
     if (globalDemoMode) {
       setSearchError(null);
+      setAiSearchError(null);
+      setSemanticResults([]);
       setIsDemoMode(true);
       setMetadataResults(demoSearchResults);
       return;
@@ -166,6 +180,8 @@ export const OracleSearchBridgeV2 = () => {
     try {
       setIsSearchingFiles(true);
       setSearchError(null);
+      setAiSearchError(null);
+      setSemanticResults([]);
       setIsDemoMode(false);
       setHasLiveSearchRun(true);
 
@@ -178,16 +194,123 @@ export const OracleSearchBridgeV2 = () => {
       });
 
       setMetadataResults(response.results || []);
+
+      if (aiSearchMode && hasSemanticSearch) {
+        setIsSearchingContent(true);
+        try {
+          const semanticResponse = await semanticSearch({
+            tenantId: tenantId || TEST_TENANT_ID,
+            query: searchQuery,
+            limit: 5,
+            threshold: 0.65,
+            accessToken: token,
+          });
+          setSemanticResults(semanticResponse.results || []);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'AI+ semantic search unavailable';
+          setAiSearchError(message);
+          setSemanticResults([]);
+          toast.error('AI+ content search unavailable', {
+            description: message,
+          });
+        } finally {
+          setIsSearchingContent(false);
+        }
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Search API unreachable';
       setSearchError(message);
+      setAiSearchError(null);
       setIsDemoMode(false);
       setMetadataResults([]);
+      setSemanticResults([]);
       toast.error('Live search unavailable', {
         description: message,
       });
     } finally {
       setIsSearchingFiles(false);
+    }
+  };
+
+  const handleSummarize = async (item: SearchFileResult) => {
+    try {
+      setSummarizingFileId(item.id);
+      const response = await summarizeFile({
+        fileId: item.id,
+        summaryType: 'concise',
+        accessToken: await getAccessToken(),
+      });
+      toast.success('AI+ summary generated', {
+        description: response.summary.slice(0, 140),
+      });
+    } catch (error) {
+      toast.error('AI+ summary unavailable', {
+        description: error instanceof Error ? error.message : 'Run AI+ content indexing before summarizing.',
+      });
+    } finally {
+      setSummarizingFileId(null);
+    }
+  };
+
+  const handleIndexContent = async (item: SearchFileResult) => {
+    try {
+      setIndexingFileId(item.id);
+      const response = await indexFileContent({
+        fileId: item.id,
+        fileUrl: item.url,
+        mimeType: item.mime_type,
+        accessToken: await getAccessToken(),
+      });
+      toast.success('AI+ content indexed', {
+        description: `${response.chunksProcessed} content chunks are ready for semantic search.`,
+      });
+      setMetadataResults((current) =>
+        current.map((result) =>
+          result.id === item.id
+            ? {
+                ...result,
+                content_indexed: true,
+                content_chunk_count: response.chunksProcessed,
+              }
+            : result
+        )
+      );
+    } catch (error) {
+      toast.error('AI+ indexing unavailable', {
+        description: error instanceof Error ? error.message : 'Confirm OpenAI, tenant AI+ access, and Microsoft file permissions.',
+      });
+    } finally {
+      setIndexingFileId(null);
+    }
+  };
+
+  const handleDetectPii = async (item: SearchFileResult) => {
+    try {
+      setScanningPiiFileId(item.id);
+      const response = await detectPii({
+        fileId: item.id,
+        accessToken: await getAccessToken(),
+      });
+      toast.success('AI+ PII scan complete', {
+        description: `${response.totalFindings} findings, ${response.riskLevel} risk.`,
+      });
+      setMetadataResults((current) =>
+        current.map((result) =>
+          result.id === item.id
+            ? {
+                ...result,
+                has_pii: response.totalFindings > 0,
+                pii_risk_level: response.riskLevel,
+              }
+            : result
+        )
+      );
+    } catch (error) {
+      toast.error('AI+ PII scan unavailable', {
+        description: error instanceof Error ? error.message : 'Index content before running PII detection.',
+      });
+    } finally {
+      setScanningPiiFileId(null);
     }
   };
 
@@ -278,7 +401,7 @@ export const OracleSearchBridgeV2 = () => {
           {/* Right: Status + Filter Button */}
           <div className="grid w-full grid-cols-1 gap-2 sm:w-auto sm:grid-cols-[1fr_auto] md:flex md:flex-wrap md:items-center md:gap-3">
             {isDemoMode && (
-              <div className="flex min-h-[36px] items-center justify-center gap-2 rounded-full border border-[#F39C12]/30 bg-[#F39C12]/10 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-[#F39C12]">
+              <div className="flex min-h-[36px] items-center justify-center gap-2 rounded-full border border-[#F39C12]/30 bg-[#F39C12]/10 px-3 py-1.5 text-xs font-black uppercase tracking-widest text-[#F39C12]">
                 <Info className="w-3.5 h-3.5" />
                 Demo Mode
               </div>
@@ -286,7 +409,7 @@ export const OracleSearchBridgeV2 = () => {
             {/* Federation Status Badges */}
             {Object.entries(federationStatus).map(([provider, state]) => (
               state !== 'none' && (
-                <div key={provider} className={`flex min-h-[36px] items-center justify-center gap-2 rounded-full border px-3 py-1.5 text-[9px] font-black uppercase tracking-widest transition-all ${
+                <div key={provider} className={`flex min-h-[36px] items-center justify-center gap-2 rounded-full border px-3 py-1.5 text-xs font-black uppercase tracking-widest transition-all ${
                   state === 'complete' 
                     ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' 
                     : 'bg-yellow-500/10 border-yellow-500/20 text-yellow-500 animate-pulse'
@@ -499,38 +622,71 @@ export const OracleSearchBridgeV2 = () => {
                 )}
               </AnimatePresence>
 
-              {(metadataResults.length > 0 || isSearchingFiles || searchError || hasLiveSearchRun) && (
+              {(metadataResults.length > 0 || semanticResults.length > 0 || isSearchingFiles || isSearchingContent || searchError || aiSearchError || hasLiveSearchRun) && (
                 <div className="space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div>
                       <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 sm:tracking-[0.35em]">
-                        Indexed Metadata Results
+                        {aiSearchMode ? 'AI+ Search Results' : 'Indexed Metadata Results'}
                       </h3>
                       {searchError && (
                         <p className="mt-2 text-[10px] font-bold text-[#FF5733]">
                           Live search error: {searchError}
                         </p>
                       )}
-                      {!searchError && hasLiveSearchRun && metadataResults.length === 0 && !isSearchingFiles && (
+                      {aiSearchError && (
+                        <p className="mt-2 text-xs font-bold text-[#F59E0B]">
+                          AI+ search note: {aiSearchError}
+                        </p>
+                      )}
+                      {!searchError && !aiSearchError && hasLiveSearchRun && metadataResults.length === 0 && semanticResults.length === 0 && !isSearchingFiles && !isSearchingContent && (
                         <p className="mt-2 text-[10px] font-bold text-slate-500">
-                          No indexed Microsoft files matched. Run Admin Discovery if this tenant has not been indexed yet.
+                          No indexed Microsoft files matched. Run Admin Discovery first; AI+ results also require content indexing.
                         </p>
                       )}
                     </div>
-                    {isSearchingFiles && (
+                    {(isSearchingFiles || isSearchingContent) && (
                       <div className="text-[9px] font-black uppercase tracking-widest text-[#00F0FF]">
-                        Querying Supabase...
+                        {isSearchingContent ? 'Searching indexed content...' : 'Querying Supabase...'}
                       </div>
                     )}
                   </div>
 
+                  {semanticResults.length > 0 && (
+                    <div className="space-y-3">
+                      {semanticResults.map((item, index) => (
+                        <div
+                          key={`${item.file_id}-${index}`}
+                          className="rounded-2xl border border-[#A855F7]/25 bg-[#A855F7]/10 p-4 sm:p-5"
+                        >
+                          <div className="mb-3 flex flex-wrap items-center gap-2">
+                            <span className="rounded-full border border-[#A855F7]/30 bg-[#A855F7]/15 px-2.5 py-1 text-xs font-black uppercase tracking-widest text-[#C084FC]">
+                              Content Match
+                            </span>
+                            {typeof item.similarity === 'number' && (
+                              <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs font-black uppercase tracking-widest text-slate-300">
+                                {Math.round(item.similarity * 100)}%
+                              </span>
+                            )}
+                          </div>
+                          <h4 className="text-sm font-black uppercase tracking-tight text-white">
+                            {item.file?.ai_suggested_title || item.file?.name || 'Indexed content'}
+                          </h4>
+                          <p className="mt-2 line-clamp-3 text-sm leading-6 text-slate-300">
+                            {item.chunk_text}
+                          </p>
+                          <p className="mt-3 break-words text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
+                            {item.file?.provider || 'microsoft'} / {item.file?.path || 'Content chunk'}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                     {metadataResults.map((item) => (
-                      <a
+                      <div
                         key={item.id}
-                        href={item.url || '#'}
-                        target={item.url ? '_blank' : undefined}
-                        rel={item.url ? 'noopener noreferrer' : undefined}
                         className="group rounded-2xl border border-white/10 bg-white/[0.04] p-4 sm:p-5 transition-all hover:border-[#00F0FF]/40 hover:bg-[#00F0FF]/5"
                       >
                         <div className="flex items-start gap-4">
@@ -566,10 +722,61 @@ export const OracleSearchBridgeV2 = () => {
                                   External
                                 </span>
                               )}
+                              {item.has_pii && (
+                                <span className="rounded-full border border-[#F59E0B]/30 bg-[#F59E0B]/10 px-2.5 py-1 text-xs font-black uppercase tracking-widest text-[#F59E0B]">
+                                  PII {item.pii_risk_level || 'Detected'}
+                                </span>
+                              )}
+                            </div>
+                            <div className="mt-4 flex flex-wrap gap-2">
+                              {item.url && (
+                                <a
+                                  href={item.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex min-h-[36px] items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-black uppercase tracking-[0.12em] text-slate-300 transition hover:text-white"
+                                >
+                                  Open Source <ExternalLink className="h-3.5 w-3.5" />
+                                </a>
+                              )}
+                              {hasAISearch && (
+                                <button
+                                  type="button"
+                                  onClick={() => void handleIndexContent(item)}
+                                  disabled={indexingFileId === item.id}
+                                  className="min-h-[36px] rounded-xl border border-[#1AFFFF]/30 bg-[#1AFFFF]/10 px-3 py-2 text-xs font-black uppercase tracking-[0.12em] text-[#1AFFFF] transition hover:bg-[#1AFFFF]/20 disabled:cursor-wait disabled:opacity-60"
+                                >
+                                  {indexingFileId === item.id
+                                    ? 'Indexing'
+                                    : item.content_indexed
+                                      ? `Indexed${item.content_chunk_count ? ` ${item.content_chunk_count}` : ''}`
+                                      : 'Index Content'}
+                                </button>
+                              )}
+                              {hasAISearch && (
+                                <button
+                                  type="button"
+                                  onClick={() => void handleDetectPii(item)}
+                                  disabled={scanningPiiFileId === item.id}
+                                  className="min-h-[36px] rounded-xl border border-[#F59E0B]/30 bg-[#F59E0B]/10 px-3 py-2 text-xs font-black uppercase tracking-[0.12em] text-[#F59E0B] transition hover:bg-[#F59E0B]/20 disabled:cursor-wait disabled:opacity-60"
+                                >
+                                  {scanningPiiFileId === item.id ? 'Scanning' : 'Scan PII'}
+                                </button>
+                              )}
+                              {hasAISearch && (
+                                <button
+                                  type="button"
+                                  onClick={() => void handleSummarize(item)}
+                                  disabled={summarizingFileId === item.id}
+                                  className="min-h-[36px] rounded-xl border border-[#A855F7]/30 bg-[#A855F7]/10 px-3 py-2 text-xs font-black uppercase tracking-[0.12em] text-[#C084FC] transition hover:bg-[#A855F7]/20 disabled:cursor-wait disabled:opacity-60"
+                                >
+                                  {summarizingFileId === item.id ? 'Summarizing' : 'Summarize'}
+                                </button>
+                              )}
                             </div>
                           </div>
                         </div>
-                      </a>
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -698,7 +905,7 @@ export const OracleSearchBridgeV2 = () => {
                       {(globalDemoMode ? ['Microsoft', 'Slack', 'Box', 'Local'] : ['Microsoft']).map(provider => (
                         <button
                           key={provider}
-                          className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[9px] font-black uppercase tracking-wider text-slate-400 hover:text-[#00F0FF] hover:border-[#00F0FF]/30 transition-all"
+                          className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-xs font-black uppercase tracking-wider text-slate-400 hover:text-[#00F0FF] hover:border-[#00F0FF]/30 transition-all"
                         >
                           {provider}
                         </button>
@@ -711,14 +918,14 @@ export const OracleSearchBridgeV2 = () => {
                     <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Data Class</label>
                     <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
                       <div className="flex flex-wrap gap-2">
-                        <div className="flex items-center gap-2 rounded-lg border border-[#00F0FF]/20 bg-[#00F0FF]/10 px-3 py-1.5 text-[9px] font-black uppercase tracking-wider text-[#00F0FF]">
+                        <div className="flex items-center gap-2 rounded-lg border border-[#00F0FF]/20 bg-[#00F0FF]/10 px-3 py-1.5 text-xs font-black uppercase tracking-wider text-[#00F0FF]">
                           <Layers className="w-3 h-3" />
                           {V1_DATA_CLASS}
                         </div>
                         {FUTURE_DATA_CLASSES.map(dataClass => (
                           <div
                             key={dataClass}
-                            className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-1.5 text-[9px] font-black uppercase tracking-wider text-slate-500"
+                            className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs font-black uppercase tracking-wider text-slate-500"
                           >
                             {dataClass}
                           </div>
@@ -772,7 +979,7 @@ export const OracleSearchBridgeV2 = () => {
                         {['Budget', 'Q1-2026', 'Marketing', 'Security'].map(tag => (
                           <div
                             key={tag}
-                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#00F0FF]/10 border border-[#00F0FF]/20 text-[9px] font-black uppercase tracking-wider text-[#00F0FF]"
+                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#00F0FF]/10 border border-[#00F0FF]/20 text-xs font-black uppercase tracking-wider text-[#00F0FF]"
                           >
                             <Tag className="w-3 h-3" />
                             {tag}

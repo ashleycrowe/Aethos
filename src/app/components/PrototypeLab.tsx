@@ -59,10 +59,10 @@ export const PrototypeLab = () => {
              <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">Aethos Intelligence Briefing • Investor Mode</h2>
           </div>
           <h1 className={`text-fluid-3xl font-black uppercase tracking-tighter leading-[0.8] ${isDaylight ? 'text-slate-900' : 'text-white'}`}>
-            Operational<br /><span className="text-[#00F0FF]">Clarity</span>
+            Data<br /><span className="text-[#00F0FF]">Triage</span>
           </h1>
           <p className={`text-sm ${isDaylight ? 'text-slate-500' : 'text-slate-400'} max-w-xl italic font-medium leading-relaxed`}>
-            "Defining the next generation of Enterprise Intelligence. Aethos is the architectural layer that transforms fragmented digital noise into stateful organizational clarity."
+            "Discover everything. Deep-index what matters first. Aethos is the AI-readiness layer that turns architectural debt into governed, searchable, budget-aware intelligence."
           </p>
         </div>
 
@@ -119,9 +119,9 @@ export const PrototypeLab = () => {
                 <div className="p-3 w-fit rounded-xl bg-emerald-500/10 text-emerald-500">
                   <Layers className="w-6 h-6" />
                 </div>
-                <h3 className="text-xl font-black uppercase tracking-tight text-white">The Intelligence Gap</h3>
+                <h3 className="text-xl font-black uppercase tracking-tight text-white">The AI Spend Trap</h3>
                 <p className="text-sm text-slate-400 leading-relaxed italic">
-                  IT departments are buried in low-value maintenance. Aethos automates <strong>governance as culture</strong>, freeing leadership to focus on high-impact operational strategy.
+                  Teams want AI on everything, but not everything deserves AI attention. Aethos turns cost control into <strong>Data Triage</strong>, guiding AI+ indexing toward the content with the highest operational value.
                 </p>
               </GlassCard>
             </div>
@@ -131,18 +131,18 @@ export const PrototypeLab = () => {
                   <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">Market Opportunity</h4>
                   <div className="space-y-6">
                      <p className="text-sm text-slate-300 leading-relaxed">
-                        The SaaS Management (SMP) market is worth <strong>$3.2B</strong>, but it's fundamentally broken. Current players focus on "Permissions" and "Licenses." Aethos focuses on <strong>"Identity"</strong> and <strong>"Operational Value."</strong>
+                        The SaaS Management market is crowded with tools that inventory sprawl after the fact. Aethos focuses on <strong>AI readiness</strong>: mapping the whole tenant, clearing architectural debt, and deciding where paid AI attention should go first.
                      </p>
                      <div className="grid grid-cols-2 gap-4">
                         <div className="p-4 rounded-xl bg-white/5 border border-white/10">
-                           <span className="text-[9px] font-black text-[#00F0FF] uppercase block mb-1">TAM</span>
-                           <span className="text-lg font-black text-white">$12.4B</span>
-                           <p className="text-[8px] text-slate-500 uppercase mt-1">Enterprise Intelligence</p>
+                           <span className="text-[9px] font-black text-[#00F0FF] uppercase block mb-1">Motion</span>
+                           <span className="text-lg font-black text-white">Map First</span>
+                           <p className="text-[8px] text-slate-500 uppercase mt-1">Metadata-wide discovery</p>
                         </div>
                         <div className="p-4 rounded-xl bg-white/5 border border-white/10">
-                           <span className="text-[9px] font-black text-[#00F0FF] uppercase block mb-1">Target ROI</span>
-                           <span className="text-lg font-black text-white">30 Days</span>
-                           <p className="text-[8px] text-slate-500 uppercase mt-1">Capital Recovery</p>
+                           <span className="text-[9px] font-black text-[#00F0FF] uppercase block mb-1">AI+ Motion</span>
+                           <span className="text-lg font-black text-white">Index Smart</span>
+                           <p className="text-[8px] text-slate-500 uppercase mt-1">Credit-aware content waves</p>
                         </div>
                      </div>
                   </div>
@@ -284,34 +284,34 @@ export const PrototypeLab = () => {
              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {[
                   { 
-                    tier: 'Base Tier', 
+                    tier: 'Base', 
                     price: '$499', 
-                    focus: 'Metadata Intelligence Layer', 
-                    desc: 'Complete metadata enrichment, tag management, workspace auto-sync, and cross-provider search. No content reading.', 
+                    focus: 'Metadata Intelligence', 
+                    desc: 'Full-tenant discovery, workspace stewardship, Oracle metadata search, and AI-readiness mapping without reading document bodies.', 
                     color: 'text-[#00F0FF]',
                     features: [
-                      'Metadata enrichment & intelligence scoring',
+                      'Metadata-wide tenant discovery',
+                      'Integrity scoring and workspace visibility',
+                      'Oracle metadata search',
                       'Tag-based workspace auto-sync',
-                      'Cross-provider search (M365, Google, Slack, Box)',
-                      'Universal Adapter Pattern (Tier 1 & 2)',
-                      'Governance dashboard & compliance reports',
-                      'Identity reconciliation (metadata-only)'
+                      'Stewardship and remediation workflows',
+                      'AI readiness map without content reading'
                     ]
                   },
                   { 
-                    tier: 'AI+ Tier', 
+                    tier: 'AI+ Add-On', 
                     price: '$698', 
-                    focus: 'Full Intelligence Layer', 
-                    desc: 'Base tier + AI-powered content reading, analysis, and smart recommendations. Includes document semantic search.', 
+                    focus: 'Content Intelligence', 
+                    desc: 'Base plus opt-in deep indexing for the content that matters first. Includes semantic search, summaries, PII scans, and Intelligence Credit controls.', 
                     color: 'text-purple-400',
-                    priceBreakdown: 'Base $499 + AI Upsell $199',
+                    priceBreakdown: 'Base $499 + AI+ $199',
                     features: [
-                      'All Base Tier features',
-                      'AI content analysis & semantic search',
-                      'Document reading & summarization',
-                      'Smart content recommendations',
-                      'Advanced duplicate detection (content-level)',
-                      'Predictive workspace suggestions'
+                      'All Base features',
+                      'Targeted content indexing',
+                      'Semantic content search',
+                      'Cached document summaries',
+                      'PII scans with regex-first efficiency',
+                      'Monthly Intelligence Credit ledger'
                     ]
                   }
                 ].map((t, i) => (
@@ -363,7 +363,7 @@ export const PrototypeLab = () => {
                         14-Day Free Trial
                       </h4>
                       <p className="text-sm text-slate-400 max-w-md italic leading-relaxed">
-                         \"Experience the intelligence layer with full Base Tier access. No credit card required. Limited to 1 workspace and 100 assets during trial.\"
+                         \"Experience the metadata intelligence layer first. AI+ content intelligence can be enabled with a 100-credit trial pack after explicit admin opt-in.\"
                       </p>
                       <div className="flex flex-wrap gap-2 pt-2">
                         <span className="px-3 py-1.5 bg-amber-500/10 text-amber-500 rounded-lg border border-amber-500/20 text-[8px] font-black tracking-widest">
@@ -373,7 +373,7 @@ export const PrototypeLab = () => {
                           1 WORKSPACE MAX
                         </span>
                         <span className="px-3 py-1.5 bg-slate-500/10 text-slate-400 rounded-lg border border-slate-500/20 text-[8px] font-black tracking-widest">
-                          BASIC SEARCH ONLY
+                          METADATA SEARCH
                         </span>
                       </div>
                    </div>

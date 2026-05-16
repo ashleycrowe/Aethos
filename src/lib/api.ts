@@ -14,7 +14,12 @@ interface ApiErrorEnvelope {
 function getApiErrorMessage(errorBody: ApiErrorEnvelope | null, fallback: string) {
   if (!errorBody?.error) return fallback;
   if (typeof errorBody.error === 'string') return errorBody.error;
-  return errorBody.error.message || fallback;
+  const message = errorBody.error.message || fallback;
+  const details = errorBody.error.details;
+  const action = details && typeof details === 'object' && 'action' in details
+    ? (details as { action?: unknown }).action
+    : undefined;
+  return typeof action === 'string' && action ? `${message} ${action}` : message;
 }
 
 export interface SearchFilesRequest {
@@ -376,6 +381,21 @@ export interface ListDiagnosticsResponse {
   events: DiagnosticEvent[];
 }
 
+export interface AiPlusReadinessResponse {
+  success: boolean;
+  ready: boolean;
+  migrationApplied: boolean;
+  openAiConfigured: boolean;
+  tenantAiEnabled: boolean;
+  subscriptionTier: string | null;
+  indexedFiles: number;
+  indexedChunks: number;
+  piiScans: number;
+  pendingAiSuggestions: number;
+  blockers: string[];
+  details?: string;
+}
+
 async function request<T>(path: string, options: RequestInit = {}, accessToken?: string | null): Promise<T> {
   if (isDemoModeEnabled()) {
     throw new Error(DEMO_MODE_MESSAGE);
@@ -452,6 +472,10 @@ export interface WorkspaceListResponse {
     syncRules?: any;
     stewardOwnerEmail?: string | null;
     stewardOwnerName?: string | null;
+    isAccessible?: boolean;
+    steward?: string | null;
+    path?: string | null;
+    accessRestrictionReason?: 'STEWARD_ACCESS_GAP' | 'EXTERNAL_SHARE' | 'OWNERSHIP_UNKNOWN' | null;
     reviewStatus?: 'admin_review' | 'steward_review' | 'team_ready' | 'archived';
     handoffReasonCodes?: string[];
     handoffPacket?: CreateWorkspaceRequest['handoffPacket'];
@@ -478,6 +502,10 @@ export interface WorkspaceDetailResponse {
     syncRules?: any;
     stewardOwnerEmail?: string | null;
     stewardOwnerName?: string | null;
+    isAccessible?: boolean;
+    steward?: string | null;
+    path?: string | null;
+    accessRestrictionReason?: 'STEWARD_ACCESS_GAP' | 'EXTERNAL_SHARE' | 'OWNERSHIP_UNKNOWN' | null;
     reviewStatus?: 'admin_review' | 'steward_review' | 'team_ready' | 'archived';
     handoffReasonCodes?: string[];
     handoffPacket?: CreateWorkspaceRequest['handoffPacket'];
@@ -518,6 +546,10 @@ export interface CreateWorkspaceResponse {
     sync_rules?: Record<string, unknown>;
     steward_owner_email?: string | null;
     steward_owner_name?: string | null;
+    is_accessible?: boolean;
+    steward?: string | null;
+    path?: string | null;
+    access_restriction_reason?: 'STEWARD_ACCESS_GAP' | 'EXTERNAL_SHARE' | 'OWNERSHIP_UNKNOWN' | null;
     review_status?: 'admin_review' | 'steward_review' | 'team_ready' | 'archived';
     handoff_reason_codes?: string[];
     source_of_truth_item_ids?: string[];
@@ -530,12 +562,173 @@ export interface CreateWorkspaceResponse {
   syncedCount: number;
 }
 
+export interface SemanticSearchRequest {
+  tenantId?: string;
+  query: string;
+  limit?: number;
+  threshold?: number;
+  accessToken?: string | null;
+}
+
+export interface SemanticSearchResponse {
+  success: boolean;
+  query: string;
+  results: Array<{
+    id?: string;
+    file_id: string;
+    chunk_text: string;
+    similarity?: number;
+    file?: {
+      id: string;
+      name?: string | null;
+      ai_suggested_title?: string | null;
+      path?: string | null;
+      owner_email?: string | null;
+      provider?: string | null;
+      ai_tags?: string[] | null;
+      modified_at?: string | null;
+    } | null;
+  }>;
+  count: number;
+}
+
+export interface SummarizeFileRequest {
+  fileId: string;
+  summaryType?: 'concise' | 'detailed';
+  accessToken?: string | null;
+}
+
+export interface SummarizeFileResponse {
+  success: boolean;
+  summary: string;
+  keyPoints: string[];
+  cached: boolean;
+}
+
+export interface IndexFileContentRequest {
+  fileId: string;
+  fileUrl?: string | null;
+  mimeType?: string | null;
+  accessToken?: string | null;
+}
+
+export interface IndexFileContentResponse {
+  success: boolean;
+  fileId: string;
+  chunksProcessed: number;
+  embeddings: unknown[];
+}
+
+export interface DetectPiiRequest {
+  fileId: string;
+  accessToken?: string | null;
+}
+
+export interface DetectPiiResponse {
+  success: boolean;
+  fileId: string;
+  riskLevel: 'low' | 'medium' | 'high';
+  riskScore: number;
+  findings: {
+    patterns: Array<{ type: string; value: string; position: number }>;
+    aiDetected: string[];
+  };
+  totalFindings: number;
+}
+
+export interface RunMetadataEnrichmentRequest {
+  fileIds?: string[];
+  batchSize?: number;
+  accessToken?: string | null;
+}
+
+export interface RunMetadataEnrichmentResponse {
+  success: boolean;
+  message?: string;
+  suggestionsCreated: number;
+  enrichedCount: number;
+  totalProcessed?: number;
+  reviewRequired?: boolean;
+  skippedPending?: number;
+  errors?: Array<{ fileId: string; error: string }>;
+}
+
 export async function searchFiles<T = unknown>({
   accessToken,
   ...body
 }: SearchFilesRequest): Promise<SearchFilesResponse<T>> {
   return request<SearchFilesResponse<T>>(
     '/search/query',
+    {
+      method: 'POST',
+      body: JSON.stringify(body),
+    },
+    accessToken
+  );
+}
+
+export async function indexFileContent({
+  accessToken,
+  ...body
+}: IndexFileContentRequest): Promise<IndexFileContentResponse> {
+  return request<IndexFileContentResponse>(
+    '/intelligence/embeddings',
+    {
+      method: 'POST',
+      body: JSON.stringify(body),
+    },
+    accessToken
+  );
+}
+
+export async function runMetadataEnrichment({
+  accessToken,
+  ...body
+}: RunMetadataEnrichmentRequest = {}): Promise<RunMetadataEnrichmentResponse> {
+  return request<RunMetadataEnrichmentResponse>(
+    '/intelligence/enrich',
+    {
+      method: 'POST',
+      body: JSON.stringify(body),
+    },
+    accessToken
+  );
+}
+
+export async function detectPii({
+  accessToken,
+  ...body
+}: DetectPiiRequest): Promise<DetectPiiResponse> {
+  return request<DetectPiiResponse>(
+    '/intelligence/pii-detection',
+    {
+      method: 'POST',
+      body: JSON.stringify(body),
+    },
+    accessToken
+  );
+}
+
+export async function semanticSearch({
+  accessToken,
+  ...body
+}: SemanticSearchRequest): Promise<SemanticSearchResponse> {
+  return request<SemanticSearchResponse>(
+    '/intelligence/semantic-search',
+    {
+      method: 'POST',
+      body: JSON.stringify(body),
+    },
+    accessToken
+  );
+}
+
+export async function summarizeFile({
+  accessToken,
+  ...body
+}: SummarizeFileRequest): Promise<SummarizeFileResponse> {
+  return request<SummarizeFileResponse>(
+    '/intelligence/summarize',
     {
       method: 'POST',
       body: JSON.stringify(body),
@@ -580,6 +773,21 @@ export async function getReportSummary({
 } = {}): Promise<ReportSummaryResponse> {
   return request<ReportSummaryResponse>(
     '/intelligence/report-summary',
+    {
+      method: 'POST',
+      body: JSON.stringify({}),
+    },
+    accessToken
+  );
+}
+
+export async function getAiPlusReadiness({
+  accessToken,
+}: {
+  accessToken?: string | null;
+} = {}): Promise<AiPlusReadinessResponse> {
+  return request<AiPlusReadinessResponse>(
+    '/intelligence/ai-readiness',
     {
       method: 'POST',
       body: JSON.stringify({}),

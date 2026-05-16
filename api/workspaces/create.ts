@@ -1,7 +1,7 @@
 /**
  * Workspace Creation API Endpoint
  * 
- * PURPOSE: Create a new workspace (The Nexus)
+ * PURPOSE: Create a new workspace
  * V1 KEY FEATURE: Tag-based auto-sync
  * 
  * When a workspace is created with tags, it automatically syncs files

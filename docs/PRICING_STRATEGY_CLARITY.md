@@ -6,6 +6,31 @@
 
 ---
 
+## 2026-05-16 AI+ Usage Guardrail Update
+
+V1.5 AI+ remains a paid add-on direction, but paid launch should include explicit usage controls before it is treated as generally available.
+
+Current implementation supports pre-release/local validation through:
+
+- tenant-level `ai_features_enabled`
+- backend-only `OPENAI_API_KEY`
+- manual Oracle `Index Content`
+- Admin Center `AI+ Readiness`
+- semantic search, summaries, PII scans, and review-first AI+ metadata suggestions
+
+Before paid AI+ launch, add:
+
+- monthly AI credit budget
+- per-action usage ledger
+- bulk job queue
+- admin usage meter
+- cache-first charging rules
+- overage or expansion-pack policy
+
+Detailed guardrails: `docs/AI_PLUS_USAGE_GUARDRAILS.md`.
+
+---
+
 ## 🎯 **Decision Made: Option 1B (Base + AI Upsell)**
 
 **Approved Pricing Model for v1:**

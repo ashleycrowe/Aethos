@@ -416,6 +416,13 @@ function toWorkspace(row: any): Workspace {
       sourceMetadata: file,
     };
   });
+  const hasStewardAccessGap = pinnedItems.some((item) => item.permissionBridge?.stewardAccess === 'access_missing');
+  const hasExternalExposure = pinnedItems.some((item) => item.permissionBridge?.externalUserCount && item.permissionBridge.externalUserCount > 0);
+  const derivedRestrictionReason: Workspace['accessRestrictionReason'] =
+    hasStewardAccessGap ? 'STEWARD_ACCESS_GAP' :
+    hasExternalExposure ? 'EXTERNAL_SHARE' :
+    stewardship.stewardOwnerEmail || stewardship.stewardOwnerName ? undefined : 'OWNERSHIP_UNKNOWN';
+  const isAccessible = row.isAccessible ?? row.is_accessible ?? !hasStewardAccessGap;
 
   return {
     id: row.id,
@@ -423,10 +430,10 @@ function toWorkspace(row: any): Workspace {
     description: row.description,
     color: row.color || '#00F0FF',
     icon: row.icon || 'Target',
-    isAccessible: row.isAccessible ?? row.is_accessible ?? true,
+    isAccessible,
     steward: row.steward || row.stewardOwnerName || row.steward_owner_name || row.stewardOwnerEmail || row.steward_owner_email || 'Unassigned',
     path: row.path || `/Aethos Workspaces/${row.name}`,
-    accessRestrictionReason: row.accessRestrictionReason || row.access_restriction_reason || 'STEWARD_ACCESS_GAP',
+    accessRestrictionReason: row.accessRestrictionReason || row.access_restriction_reason || derivedRestrictionReason,
     primaryStorage: {
       provider: 'microsoft',
       containerId: `workspace-${row.id}`,
@@ -506,6 +513,13 @@ function openRemediation(issue?: string) {
   if (typeof window === 'undefined') return;
   window.dispatchEvent(new CustomEvent('aethos:navigate', {
     detail: { tab: 'archival', issue },
+  }));
+}
+
+function openAppTab(tab: string) {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent('aethos:navigate', {
+    detail: { tab },
   }));
 }
 
@@ -797,7 +811,7 @@ export const WorkspaceEngine = () => {
           {workspaceError
             ? `Live workspace data could not load: ${workspaceError}`
             : isDemoMode
-              ? 'Create an operational workspace to synthesize cross-cloud resources into a unified lattice.'
+              ? 'Create an operational workspace to synthesize Microsoft 365 context into a usable review surface.'
               : 'No live workspaces exist for this tenant yet. Create a trusted working context that an admin can hand off, a steward can curate, and a team can actually use.'}
         </p>
         <div className="mb-10 grid w-full max-w-4xl grid-cols-1 gap-3 px-4 sm:grid-cols-3">
@@ -812,12 +826,23 @@ export const WorkspaceEngine = () => {
             </div>
           ))}
         </div>
-        <button 
-          onClick={handleOpenWizard}
-          className="px-10 py-4 bg-slate-900 dark:bg-white text-white dark:text-black rounded-2xl font-black text-[11px] uppercase tracking-[0.3em] shadow-xl hover:scale-105 active:scale-95 transition-all"
-        >
-          Create Workspace
-        </button>
+        <div className="flex flex-col items-center gap-3 sm:flex-row">
+          {workspaceError && (
+            <button
+              type="button"
+              onClick={() => openAppTab('admin')}
+              className="min-h-[44px] rounded-2xl border border-[#1AFFFF]/30 bg-[#1AFFFF]/10 px-6 py-3 text-xs font-black uppercase tracking-[0.16em] text-[#1AFFFF] transition hover:bg-[#1AFFFF]/20"
+            >
+              Open Admin Diagnostics
+            </button>
+          )}
+          <button
+            onClick={handleOpenWizard}
+            className="min-h-[44px] rounded-2xl bg-slate-900 px-10 py-4 text-xs font-black uppercase tracking-[0.2em] text-white shadow-xl transition-all hover:scale-105 active:scale-95 dark:bg-white dark:text-black"
+          >
+            Create Workspace
+          </button>
+        </div>
         <WorkspaceCreationWizard
           isOpen={isWizardOpen}
           onClose={() => setIsWizardOpen(false)}
@@ -847,7 +872,7 @@ export const WorkspaceEngine = () => {
     : null;
   const workspaceTabs = [
     { id: 'pulse', label: 'Signal Feed', icon: Activity },
-    { id: 'lattice', label: 'Lattice Resources', icon: Database },
+    { id: 'lattice', label: 'Workspace Anchors', icon: Database },
     { id: 'forensic', label: isDemoMode ? 'Purge Ops' : 'Review Handoff', icon: ShieldCheck },
   ].filter((tab) => personaModeId !== 'worker' || tab.id !== 'forensic') as Array<{
     id: 'pulse' | 'lattice' | 'forensic';
@@ -1161,7 +1186,7 @@ export const WorkspaceEngine = () => {
                              className={`flex min-h-[44px] w-full items-center justify-center gap-3 rounded-2xl border px-6 py-4 text-[11px] font-black uppercase tracking-[0.14em] transition-all sm:w-auto sm:px-8 sm:tracking-[0.2em] ${isSyncing ? 'bg-white/5 border-white/5 text-slate-500' : 'bg-white/5 border-white/10 text-white hover:bg-white/10'}`}
                            >
                               <RefreshCcw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
-                              {isSyncing ? 'Validating Pointers...' : 'Workspace Sync Engine'}
+                              {isSyncing ? 'Validating Links...' : 'Workspace Link Check'}
                            </button>
                          </>
                        )}
@@ -1189,7 +1214,7 @@ export const WorkspaceEngine = () => {
                             <div>
                                <h4 className="text-sm font-black text-white uppercase tracking-tight">Pointer Drift Detected</h4>
                                <p className="mt-1 text-[10px] font-black uppercase tracking-[0.12em] text-[#FF5733] italic sm:tracking-widest">
-                                 {selectedWorkspace.pinnedItems.filter(i => i.syncStatus === 'broken').length} Molecules have moved or lost source connectivity.
+                                 {selectedWorkspace.pinnedItems.filter(i => i.syncStatus === 'broken').length} anchors moved or lost source connectivity.
                                </p>
                             </div>
                          </div>
@@ -1197,7 +1222,7 @@ export const WorkspaceEngine = () => {
                            onClick={handleSync}
                            className="min-h-[44px] w-full rounded-xl bg-[#FF5733] px-6 py-3 text-[10px] font-black uppercase tracking-[0.12em] text-white transition-all hover:scale-105 sm:tracking-widest md:w-auto"
                          >
-                            Heal Resource Lattice
+                            Refresh Source Links
                          </button>
                       </Motion.div>
                     )}
@@ -1456,7 +1481,7 @@ export const WorkspaceEngine = () => {
                          </div>
                          <div className="min-w-0">
                             <h3 className="text-xl md:text-2xl font-black uppercase tracking-tight text-white">Workspace Purge Ops</h3>
-                            <p className="mt-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500 italic sm:tracking-[0.3em]">Identify and eliminate dead capital from the lattice</p>
+                            <p className="mt-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500 italic sm:tracking-[0.3em]">Identify and resolve stale workspace context</p>
                          </div>
                       </div>
 
@@ -1506,7 +1531,7 @@ export const WorkspaceEngine = () => {
                           </p>
                         </div>
                       </div>
-                      <span className="w-fit rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-emerald-400 sm:tracking-widest">
+                      <span className="w-fit rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-black uppercase tracking-[0.12em] text-emerald-400 sm:tracking-widest">
                         Data source: Live tenant
                       </span>
                     </div>
@@ -1649,7 +1674,7 @@ export const WorkspaceEngine = () => {
                     ).map((reason) => (
                       <span
                         key={reason}
-                        className="rounded-full border border-[#00F0FF]/20 bg-[#00F0FF]/10 px-3 py-1 text-[9px] font-black uppercase tracking-[0.1em] text-[#00F0FF]"
+                        className="rounded-full border border-[#00F0FF]/20 bg-[#00F0FF]/10 px-3 py-1 text-xs font-black uppercase tracking-[0.1em] text-[#00F0FF]"
                       >
                         {reason.replace(/[-_]/g, ' ')}
                       </span>
@@ -1668,7 +1693,7 @@ export const WorkspaceEngine = () => {
                         </p>
                       </div>
                       {selectedHandoffPacket.ownerReviewRequired && (
-                        <span className="shrink-0 rounded-full border border-amber-300/25 bg-amber-300/10 px-2 py-1 text-[8px] font-black uppercase tracking-[0.1em] text-amber-200">
+                        <span className="shrink-0 rounded-full border border-amber-300/25 bg-amber-300/10 px-2 py-1 text-xs font-black uppercase tracking-[0.1em] text-amber-200">
                           Owner Review
                         </span>
                       )}

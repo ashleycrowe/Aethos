@@ -15,6 +15,15 @@ const v1EndpointSources = [
   '../intelligence/owner-status-sync.ts',
 ].map((path) => readFileSync(new URL(path, import.meta.url), 'utf8'));
 
+const v15AiEndpointSources = [
+  '../intelligence/ai-readiness.ts',
+  '../intelligence/embeddings.ts',
+  '../intelligence/enrich.ts',
+  '../intelligence/semantic-search.ts',
+  '../intelligence/summarize.ts',
+  '../intelligence/pii-detection.ts',
+].map((path) => readFileSync(new URL(path, import.meta.url), 'utf8'));
+
 describe('V1 API error envelope contract', () => {
   it('defines structured errors with codes and messages', () => {
     expect(authSource).toContain('export type ApiErrorEnvelope');
@@ -33,6 +42,14 @@ describe('V1 API error envelope contract', () => {
   it('uses sendApiError across V1 tester endpoints', () => {
     v1EndpointSources.forEach((source) => {
       expect(source).toContain('sendApiError');
+    });
+  });
+
+  it('uses structured actionable errors for V1.5 AI+ endpoints', () => {
+    v15AiEndpointSources.forEach((source) => {
+      expect(source).toContain('sendApiError');
+      expect(source).toContain('OPENAI_API_KEY');
+      expect(source).toContain('ai_features_enabled');
     });
   });
 });

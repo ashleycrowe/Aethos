@@ -135,6 +135,20 @@ export default async function handler(
     }) || [];
 
     // Calculate some stats
+    const hasStewardAccessGap = formattedItems.some((item) => {
+      const stewardEmail = workspace.steward_owner_email?.toLowerCase();
+      const ownerEmail = item.file?.ownerEmail?.toLowerCase();
+      return Boolean(stewardEmail && ownerEmail && stewardEmail !== ownerEmail);
+    });
+    const hasExternalExposure = formattedItems.some((item) => (item.file?.externalUserCount || 0) > 0);
+    const accessRestrictionReason = hasStewardAccessGap
+      ? 'STEWARD_ACCESS_GAP'
+      : hasExternalExposure
+        ? 'EXTERNAL_SHARE'
+        : workspace.steward_owner_email || workspace.steward_owner_name
+          ? null
+          : 'OWNERSHIP_UNKNOWN';
+
     const stats = {
       totalItems: formattedItems.length,
       pinnedItems: formattedItems.filter(item => item.pinned).length,
@@ -158,6 +172,10 @@ export default async function handler(
       syncRules: workspace.sync_rules,
       stewardOwnerEmail: workspace.steward_owner_email,
       stewardOwnerName: workspace.steward_owner_name,
+      isAccessible: !hasStewardAccessGap,
+      steward: workspace.steward_owner_name || workspace.steward_owner_email || null,
+      path: `/Aethos Workspaces/${workspace.name}`,
+      accessRestrictionReason,
       reviewStatus: workspace.review_status,
       handoffReasonCodes: workspace.handoff_reason_codes || [],
       handoffPacket: workspace.suggestion_decisions?.handoffPacket || null,

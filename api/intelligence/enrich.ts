@@ -10,7 +10,8 @@
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import OpenAI from 'openai';
-import { requireApiContext, supabase } from '../_lib/apiAuth.js';
+import { recordAiCreditUsage, verifyAiCreditsAvailable } from '../_lib/aiCredits.js';
+import { requireApiContext, sendApiError, supabase } from '../_lib/apiAuth.js';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -87,13 +88,27 @@ export default async function handler(
   const { tenantId } = context;
   const { fileIds, batchSize = 10 } = req.body;
 
+  if (fileIds !== undefined && !Array.isArray(fileIds)) {
+    return sendApiError(res, 400, 'fileIds must be an array when provided.', 'VALIDATION_ERROR');
+  }
+
   if (!process.env.OPENAI_API_KEY) {
-    return res.status(503).json({ 
-      error: 'AI enrichment not configured. Add OPENAI_API_KEY to environment variables.' 
-    });
+    return sendApiError(res, 503, 'AI+ metadata enrichment is not configured. Add OPENAI_API_KEY.', 'SERVER_NOT_CONFIGURED');
   }
 
   try {
+    const { data: tenant } = await supabase
+      .from('tenants')
+      .select('ai_features_enabled')
+      .eq('id', tenantId)
+      .single();
+
+    if (!tenant?.ai_features_enabled) {
+      return sendApiError(res, 403, 'AI+ features are not enabled for this tenant.', 'TENANT_INACTIVE', {
+        action: 'Enable ai_features_enabled before generating AI+ metadata suggestions.',
+      });
+    }
+
     let filesToEnrich: any[];
 
     if (fileIds && fileIds.length > 0) {
@@ -104,7 +119,9 @@ export default async function handler(
         .in('id', fileIds)
         .eq('tenant_id', tenantId);
 
-      if (error) throw error;
+      if (error) {
+        return sendApiError(res, 500, 'Unable to load files for AI+ metadata enrichment.', 'DATABASE_ERROR', error.message);
+      }
       filesToEnrich = data || [];
     } else {
       // Generate suggestions for files that do not already have final AI metadata.
@@ -115,7 +132,9 @@ export default async function handler(
         .is('ai_enriched_at', null)
         .limit(batchSize);
 
-      if (error) throw error;
+      if (error) {
+        return sendApiError(res, 500, 'Unable to load files for AI+ metadata enrichment.', 'DATABASE_ERROR', error.message);
+      }
       filesToEnrich = data || [];
     }
 
@@ -137,7 +156,9 @@ export default async function handler(
       .eq('status', 'pending')
       .in('file_id', filesToEnrich.map((file) => file.id));
 
-    if (pendingError) throw pendingError;
+    if (pendingError) {
+      return sendApiError(res, 500, 'Unable to check pending metadata suggestions.', 'DATABASE_ERROR', pendingError.message);
+    }
 
     const pendingFileIds = new Set((existingPendingSuggestions || []).map((suggestion) => suggestion.file_id));
     filesToEnrich = filesToEnrich.filter((file) => !pendingFileIds.has(file.id));
@@ -202,6 +223,17 @@ Provide:
 
 Return JSON only with keys: title, tags, category, summary, score, confidence, rationale`;
 
+        const creditCheck = await verifyAiCreditsAvailable({
+          tenantId,
+          requiredCredits: 2,
+          actionType: 'metadata_suggestion',
+        });
+
+        if (!creditCheck.allowed) {
+          errors.push({ fileId: file.id, error: creditCheck.message || 'Insufficient Intelligence Credits.' });
+          break;
+        }
+
         const response = await openai.chat.completions.create({
           model: 'gpt-4o-mini',
           messages: [
@@ -264,6 +296,20 @@ Return JSON only with keys: title, tags, category, summary, score, confidence, r
           console.error(`Error staging metadata suggestion for ${file.id}:`, insertError);
           errors.push({ fileId: file.id, error: insertError.message });
         } else {
+          await recordAiCreditUsage({
+            tenantId,
+            userId: context.userId,
+            fileId: file.id,
+            actionType: 'metadata_suggestion',
+            creditCost: 2,
+            model: 'gpt-4o-mini',
+            inputTokens: response.usage?.prompt_tokens ?? null,
+            outputTokens: response.usage?.completion_tokens ?? null,
+            metadata: {
+              contentAware: hasContentExcerpt,
+              source: suggestionSource,
+            },
+          });
           suggestionsCreated++;
         }
 
@@ -285,10 +331,7 @@ Return JSON only with keys: title, tags, category, summary, score, confidence, r
     });
   } catch (error: any) {
     console.error('AI enrichment failed:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message,
-    });
+    return sendApiError(res, 500, error.message || 'AI enrichment failed', 'INTERNAL_ERROR');
   }
 }
 

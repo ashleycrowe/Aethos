@@ -61,14 +61,31 @@ Required frontend env vars:
 VITE_SUPABASE_URL=
 VITE_SUPABASE_ANON_KEY=
 VITE_MICROSOFT_CLIENT_ID=
-VITE_MICROSOFT_TENANT_ID=
 VITE_API_BASE_URL=/api
+VITE_DEMO_MODE=false
 ```
 
 Backend-only env vars should not use the `VITE_` prefix.
+
+Required backend env vars:
+
+```env
+SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
+```
+
+Optional V1.5 AI+ backend env vars:
+
+```env
+OPENAI_API_KEY=
+```
+
+V1.5 AI+ also requires the `003_v15_to_v4_features.sql` migration, including pgvector, and `tenants.ai_features_enabled = true` for the specific test tenant. Keep the flag off for normal V1 validation. Microsoft content indexing uses delegated Graph access from the signed-in user, so the app registration must keep `Files.Read.All` and `Sites.Read.All`.
+
+Detailed V1.5 setup checklist: `docs/V15_AI_PLUS_SETUP_CHECKLIST.md`.
 
 ---
 
 ## Test Status
 
-Automated tests are not configured yet. Add Vitest before Phase 1 backend beta testing.
+Run `npm run test` for Vitest coverage and `npm run build` for production bundle validation.

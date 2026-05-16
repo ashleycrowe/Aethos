@@ -176,7 +176,7 @@ const LoginGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               Aethos Live
             </p>
             <h1 className="text-2xl font-black tracking-tight text-white sm:text-3xl">
-              Sign in to continue
+              Data Triage for AI Readiness
             </h1>
           </div>
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#00F0FF]/25 bg-[#00F0FF]/10 text-[#00F0FF]">
@@ -185,7 +185,7 @@ const LoginGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         </div>
 
         <p className="mb-8 text-sm leading-6 text-slate-300">
-          Connect with Microsoft to test the live tenant flow, JIT provisioning, and protected API endpoints.
+          Discover everything at the metadata layer. Deep-index what matters first with opt-in AI+ content intelligence and Intelligence Credit controls.
         </p>
 
         <button

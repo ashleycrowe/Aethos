@@ -14,11 +14,8 @@
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import OpenAI from 'openai';
-import { requireApiContext, supabase } from '../_lib/apiAuth.js';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { recordAiCreditUsage, verifyAiCreditsAvailable } from '../_lib/aiCredits.js';
+import { requireApiContext, sendApiError, supabase } from '../_lib/apiAuth.js';
 
 // PII Detection Patterns
 const PII_PATTERNS = {
@@ -48,6 +45,10 @@ function detectPIIPatterns(text: string): Array<{ type: string; value: string; p
 
 async function detectPIIWithAI(text: string): Promise<string[]> {
   try {
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
@@ -78,12 +79,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!context) return;
 
   try {
-    const { tenantId } = context;
-    const { fileId, artifactId } = req.body;
+    const { tenantId, userId } = context;
+    const { fileId, artifactId, aiAssist = false } = req.body;
     const targetFileId = fileId || artifactId;
 
     if (!targetFileId) {
-      return res.status(400).json({ error: 'Missing required fields' });
+      return sendApiError(res, 400, 'Missing required fields', 'VALIDATION_ERROR', {
+        required: ['fileId'],
+      });
     }
 
     // Check if tenant has AI+ subscription
@@ -94,7 +97,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .single();
 
     if (!tenant?.ai_features_enabled) {
-      return res.status(403).json({ error: 'AI+ features not enabled for this tenant' });
+      return sendApiError(res, 403, 'AI+ features are not enabled for this tenant.', 'TENANT_INACTIVE', {
+        action: 'Enable ai_features_enabled for this tenant before scanning indexed content.',
+      });
     }
 
     // Retrieve content chunks
@@ -106,7 +111,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .order('chunk_index', { ascending: true });
 
     if (!chunks || chunks.length === 0) {
-      return res.status(404).json({ error: 'No content found for this file' });
+      return sendApiError(res, 404, 'No indexed content found for this file.', 'RESOURCE_NOT_FOUND', {
+        action: 'Run AI+ content indexing before PII detection.',
+      });
     }
 
     const fullText = chunks.map((c) => c.chunk_text).join('\n\n');
@@ -114,8 +121,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Run regex-based detection
     const patternFindings = detectPIIPatterns(fullText);
 
-    // Run AI-based detection for more complex PII
-    const aiPIITypes = await detectPIIWithAI(fullText);
+    const shouldRunAiAssist = Boolean(aiAssist) || patternFindings.length > 0;
+    const aiAssistConfigured = Boolean(process.env.OPENAI_API_KEY);
+    const piiCreditCost = shouldRunAiAssist && aiAssistConfigured ? 5 : 0;
+
+    const creditCheck = await verifyAiCreditsAvailable({
+      tenantId,
+      requiredCredits: piiCreditCost,
+      actionType: piiCreditCost > 0 ? 'pii_scan_ai_assist' : 'pii_scan_regex',
+    });
+
+    if (!creditCheck.allowed) {
+      return sendApiError(res, 402, creditCheck.message || 'Insufficient Intelligence Credits.', 'CREDIT_LIMIT_EXCEEDED', creditCheck);
+    }
+
+    // Run AI-based detection only when there is a reason to spend model calls.
+    // Clean regex passes stay deterministic and free for credit accounting.
+    const aiPIITypes =
+      shouldRunAiAssist && aiAssistConfigured ? await detectPIIWithAI(fullText) : [];
 
     // Calculate risk score
     const riskScore = Math.min(
@@ -126,8 +149,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const riskLevel =
       riskScore >= 70 ? 'high' : riskScore >= 40 ? 'medium' : 'low';
 
+    const { error: deleteError } = await supabase
+      .from('pii_detections')
+      .delete()
+      .eq('tenant_id', tenantId)
+      .eq('file_id', targetFileId);
+
+    if (deleteError) {
+      console.error('Error clearing existing PII detections:', deleteError);
+      return sendApiError(res, 500, 'Unable to prepare file for PII rescan', 'DATABASE_ERROR', deleteError.message);
+    }
+
     // Store PII detection results
-    await supabase.from('pii_detections').insert({
+    const { error: insertError } = await supabase.from('pii_detections').insert({
       tenant_id: tenantId,
       file_id: targetFileId,
       risk_level: riskLevel,
@@ -138,14 +172,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       scanned_at: new Date().toISOString(),
     });
 
+    if (insertError) {
+      console.error('Error storing PII detection:', insertError);
+      return sendApiError(res, 500, 'Unable to store PII detection result', 'DATABASE_ERROR', insertError.message);
+    }
+
     // Update file with PII flag
-    await supabase
+    const { error: updateError } = await supabase
       .from('files')
       .update({
         has_pii: patternFindings.length > 0 || aiPIITypes.length > 0,
         pii_risk_level: riskLevel,
       })
       .eq('id', targetFileId);
+
+    if (updateError) {
+      console.error('Error updating PII file flags:', updateError);
+      return sendApiError(res, 500, 'Unable to update file PII flags', 'DATABASE_ERROR', updateError.message);
+    }
+
+    await recordAiCreditUsage({
+      tenantId,
+      userId,
+      fileId: targetFileId,
+      actionType: shouldRunAiAssist && aiAssistConfigured ? 'pii_scan_ai_assist' : 'pii_scan_regex',
+      creditCost: piiCreditCost,
+      model: shouldRunAiAssist && aiAssistConfigured ? 'gpt-4o-mini' : null,
+      metadata: {
+        riskLevel,
+        riskScore,
+        patternFindingCount: patternFindings.length,
+        aiDetectedTypeCount: aiPIITypes.length,
+        aiAssistRequested: Boolean(aiAssist),
+      },
+    });
 
     return res.status(200).json({
       success: true,
@@ -156,10 +216,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         patterns: patternFindings,
         aiDetected: aiPIITypes,
       },
+      aiAssist: {
+        requested: Boolean(aiAssist),
+        used: shouldRunAiAssist && aiAssistConfigured,
+        skippedReason:
+          !shouldRunAiAssist
+            ? 'No deterministic PII patterns found.'
+            : !aiAssistConfigured
+              ? 'OPENAI_API_KEY is not configured; regex-only scan completed.'
+              : null,
+      },
       totalFindings: patternFindings.length + aiPIITypes.length,
     });
   } catch (error: any) {
     console.error('Error detecting PII:', error);
-    return res.status(500).json({ error: error.message || 'Internal server error' });
+    return sendApiError(res, 500, error.message || 'Internal server error', 'INTERNAL_ERROR');
   }
 }

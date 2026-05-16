@@ -37,13 +37,16 @@ describe('AdminCenter smoke contract', () => {
     expect(source).toContain('Live diagnostics are retained in Supabase');
   });
 
-  it('surfaces tenant capability status without claiming deep Graph probes', () => {
+  it('surfaces tenant capability status with AI+ readiness', () => {
     expect(source).toContain('Tenant Capability Status');
+    expect(source).toContain('getAiPlusReadiness');
+    expect(source).toContain('AI+ Readiness');
+    expect(source).toContain('AI+ Validation Snapshot');
+    expect(source).toContain('Refresh AI+');
     expect(source).toContain('Microsoft Sign-In');
     expect(source).toContain('Tenant Provisioning');
     expect(source).toContain('OneDrive / Files');
     expect(source).toContain('SharePoint / Teams');
-    expect(source).toContain('They do not claim deeper Graph permission validation');
   });
 
   it('states the V1 discovery scope after live scans', () => {

@@ -48,6 +48,9 @@ describe('IntelligenceDashboard live/demo smoke contract', () => {
     const metadataSource = readFileSync(new URL('./MetadataIntelligenceDashboard.tsx', import.meta.url), 'utf8');
     expect(metadataSource).toContain('review metadata suggestions before considering AI+ content scanning');
     expect(metadataSource).toContain('Content-aware enrichment remains an explicit AI+ step after V1 metadata review is working.');
+    expect(metadataSource).toContain('runMetadataEnrichment');
+    expect(metadataSource).toContain('Run AI+ Suggestions');
+    expect(metadataSource).toContain('AI+ metadata suggestions staged');
   });
 
   it('keeps intelligence reports mobile-first', () => {

@@ -37,6 +37,14 @@ describe('workspace stewardship persistence contract', () => {
     expect(detailSource).not.toContain('grant');
   });
 
+  it('surfaces derived workspace access visibility for Blind Steward review', () => {
+    expect(listSource).toContain('isAccessible');
+    expect(detailSource).toContain('isAccessible');
+    expect(detailSource).toContain('STEWARD_ACCESS_GAP');
+    expect(detailSource).toContain('EXTERNAL_SHARE');
+    expect(detailSource).toContain('OWNERSHIP_UNKNOWN');
+  });
+
   it('keeps local seed fixtures aligned with stewardship and handoff UX', () => {
     expect(seedSource).toContain('steward_owner_email');
     expect(seedSource).toContain('handoff_reason_codes');

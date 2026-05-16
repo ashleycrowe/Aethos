@@ -14,7 +14,8 @@
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import OpenAI from 'openai';
-import { requireApiContext, supabase } from '../_lib/apiAuth.js';
+import { recordAiCreditUsage, verifyAiCreditsAvailable } from '../_lib/aiCredits.js';
+import { requireApiContext, sendApiError, supabase } from '../_lib/apiAuth.js';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -25,11 +26,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!context) return;
 
   try {
-    const { tenantId } = context;
+    const { tenantId, userId } = context;
     const { query, limit = 10, threshold = 0.7 } = req.body;
 
     if (!query) {
-      return res.status(400).json({ error: 'Missing required fields' });
+      return sendApiError(res, 400, 'Missing required fields', 'VALIDATION_ERROR', {
+        required: ['query'],
+      });
+    }
+
+    if (!process.env.OPENAI_API_KEY) {
+      return sendApiError(res, 503, 'AI+ semantic search is not configured. Add OPENAI_API_KEY.', 'SERVER_NOT_CONFIGURED');
     }
 
     // Check if tenant has AI+ subscription
@@ -40,7 +47,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .single();
 
     if (!tenant?.ai_features_enabled) {
-      return res.status(403).json({ error: 'AI+ features not enabled for this tenant' });
+      return sendApiError(res, 403, 'AI+ features are not enabled for this tenant.', 'TENANT_INACTIVE', {
+        action: 'Enable ai_features_enabled for this tenant before using content search.',
+      });
+    }
+
+    const creditCheck = await verifyAiCreditsAvailable({
+      tenantId,
+      requiredCredits: 1,
+      actionType: 'semantic_search',
+    });
+
+    if (!creditCheck.allowed) {
+      return sendApiError(res, 402, creditCheck.message || 'Insufficient Intelligence Credits.', 'CREDIT_LIMIT_EXCEEDED', creditCheck);
     }
 
     // Generate embedding for the search query
@@ -62,7 +81,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (error) {
       console.error('Semantic search error:', error);
-      throw error;
+      return sendApiError(res, 500, 'Semantic search failed', 'DATABASE_ERROR', error.message);
+    }
+
+    await recordAiCreditUsage({
+      tenantId,
+      userId,
+      actionType: 'semantic_search',
+      creditCost: 1,
+      model: 'text-embedding-3-small',
+      inputTokens: queryEmbedding.usage?.total_tokens ?? null,
+      metadata: {
+        resultCount: results?.length || 0,
+        threshold,
+        limit,
+      },
+    });
+
+    if (!results || results.length === 0) {
+      return res.status(200).json({
+        success: true,
+        query,
+        results: [],
+        count: 0,
+      });
     }
 
     // Enrich results with file metadata
@@ -91,6 +133,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   } catch (error: any) {
     console.error('Error in semantic search:', error);
-    return res.status(500).json({ error: error.message || 'Internal server error' });
+    return sendApiError(res, 500, error.message || 'Internal server error', 'INTERNAL_ERROR');
   }
 }

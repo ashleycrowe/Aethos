@@ -528,7 +528,7 @@ Sales angle:
 ## Cleanup Tasks
 
 - [x] Remove or gate `ReportingCenterV1` mock report data from any live route.
-- [ ] Replace encoding artifacts and smart quote corruption in visible UI/docs.
+- [x] Replace encoding artifacts and smart quote corruption in visible V1 UI/docs.
 - [x] Rename `Nexus` to `Workspaces` or `Nexus Workspaces` in V1 copy.
 - [ ] Standardize terms:
   - Live Mode
@@ -538,7 +538,7 @@ Sales angle:
   - Metadata Quality
   - Ownership & Offboarding Risk
   - Remediation Dry Run
-- [ ] Ensure every live API failure has a clear user action.
+- [x] Ensure V1 live API failures have clear user actions for Search, Intelligence, Workspace, Admin, and Remediation entry points.
 - [ ] Ensure every report card has empty, loading, error, demo, and live states.
 - [ ] Add mobile checks for Operational Intelligence report cards.
 
@@ -693,23 +693,37 @@ Fail:
 Expected:
 
 - Content intelligence is opt-in and clearly marked AI+.
+- AI+ surfaces remain pre-release/local until content indexing is validated.
+- Missing OpenAI configuration, tenant opt-in, or indexed chunks returns actionable setup guidance instead of a generic failure.
 
 Steps:
 
 1. Enable V1.5/demo or pre-release mode.
-2. Run enrichment on a small file set.
-3. Review suggested summaries/tags/categories.
-4. Confirm confidence/rationale appears.
-5. Accept/edit/reject suggestions.
-6. Verify accepted metadata improves search/workspace suggestions.
+2. Confirm the target environment has the V1.5 Supabase migration applied.
+3. Set `OPENAI_API_KEY` and enable `ai_features_enabled` for the intended test tenant.
+4. Open Admin Center and confirm the AI+ readiness snapshot shows expected blockers or ready state.
+5. Run content indexing on a small file set from Oracle's AI+ `Index Content` action so `content_embeddings` has chunks.
+6. Use Oracle AI+ Content Search and confirm semantic content matches appear above metadata results.
+7. Run `Scan PII` on the indexed file and confirm visible risk feedback.
+8. Summarize a metadata result and confirm the summary action succeeds or gives setup/indexing guidance.
+9. Open Metadata Quality and run `Run AI+ Suggestions`.
+10. Review suggested summaries/tags/categories.
+11. Confirm confidence/rationale appears.
+12. Accept/edit/reject suggestions.
+13. Verify accepted metadata improves search/workspace suggestions.
+14. Run the guardrail checks from `docs/V15_AI_PLUS_SETUP_CHECKLIST.md`: summary cache reuse, graceful AI+ disable/degrade, and regex-first PII efficiency.
+15. Optionally enable `credits_enforced` with a very low monthly limit and confirm AI+ actions return `CREDIT_LIMIT_EXCEEDED` while V1 metadata workflows continue.
 
 Pass:
 
 - Users understand content reading is a higher-trust paid/AI+ capability.
+- Oracle AI+ search and summaries work against indexed content without implying V1 metadata search reads file bodies.
+- AI+ accounting schema exists for tenant budgets, ledgers, and queued bulk jobs; successful AI+ actions produce ledger rows; opt-in credit enforcement can block over-budget AI+ actions.
 
 Fail:
 
 - V1 implies content-level understanding when only metadata was scanned.
+- AI+ failures are silent, generic, or appear as V1 search failures.
 
 ---
 

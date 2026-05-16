@@ -16,7 +16,8 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import OpenAI from 'openai';
 import { XMLParser } from 'fast-xml-parser';
-import { requireApiContext, supabase } from '../_lib/apiAuth.js';
+import { recordAiCreditUsage, verifyAiCreditsAvailable } from '../_lib/aiCredits.js';
+import { requireApiContext, sendApiError, supabase } from '../_lib/apiAuth.js';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -25,8 +26,10 @@ const openai = new OpenAI({
 
 const MAX_EXTRACTED_CHARS = 500_000;
 
-async function downloadFile(fileUrl: string): Promise<Buffer> {
-  const response = await fetch(fileUrl);
+async function downloadFile(fileUrl: string, accessToken?: string): Promise<Buffer> {
+  const response = await fetch(fileUrl, accessToken
+    ? { headers: { Authorization: `Bearer ${accessToken}` } }
+    : undefined);
 
   if (!response.ok) {
     throw new Error(`Failed to download file content: ${response.status} ${response.statusText}`);
@@ -34,6 +37,42 @@ async function downloadFile(fileUrl: string): Promise<Buffer> {
 
   const arrayBuffer = await response.arrayBuffer();
   return Buffer.from(arrayBuffer);
+}
+
+function getMicrosoftDriveId(fileRecord: any): string | null {
+  return (
+    fileRecord?.metadata?.parentReference?.driveId ||
+    fileRecord?.raw_api_response?.parentReference?.driveId ||
+    null
+  );
+}
+
+async function resolveDownloadBuffer({
+  fileRecord,
+  fileUrl,
+  accessToken,
+}: {
+  fileRecord?: any;
+  fileUrl?: string | null;
+  accessToken?: string;
+}): Promise<Buffer> {
+  if (fileRecord?.provider === 'microsoft') {
+    const driveId = getMicrosoftDriveId(fileRecord);
+    if (!driveId || !fileRecord.provider_id) {
+      throw new Error('Missing Microsoft drive metadata for content indexing');
+    }
+
+    return downloadFile(
+      `https://graph.microsoft.com/v1.0/drives/${driveId}/items/${fileRecord.provider_id}/content`,
+      accessToken
+    );
+  }
+
+  if (!fileUrl) {
+    throw new Error('Missing fileUrl for non-Microsoft content indexing');
+  }
+
+  return downloadFile(fileUrl);
 }
 
 function normalizeExtractedText(text: string): string {
@@ -87,9 +126,8 @@ async function extractPowerPointText(fileBuffer: Buffer): Promise<string> {
   return normalizeExtractedText(textParts.join('\n'));
 }
 
-async function extractTextContent(fileUrl: string, mimeType: string): Promise<string> {
+async function extractTextContent(fileBuffer: Buffer, mimeType: string): Promise<string> {
   const normalizedMimeType = (mimeType || '').toLowerCase();
-  const fileBuffer = await downloadFile(fileUrl);
   let extractedText = '';
 
   if (normalizedMimeType.includes('pdf')) {
@@ -185,12 +223,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!context) return;
 
   try {
-    const { tenantId } = context;
+    const { tenantId, accessToken, userId } = context;
     const { fileId, artifactId, fileUrl, mimeType } = req.body;
     const targetFileId = fileId || artifactId;
 
-    if (!targetFileId || !fileUrl) {
-      return res.status(400).json({ error: 'Missing required fields' });
+    if (!targetFileId) {
+      return sendApiError(res, 400, 'Missing required fields', 'VALIDATION_ERROR', {
+        required: ['fileId'],
+      });
+    }
+
+    if (!process.env.OPENAI_API_KEY) {
+      return sendApiError(res, 503, 'AI+ content indexing is not configured. Add OPENAI_API_KEY.', 'SERVER_NOT_CONFIGURED');
     }
 
     // Check if tenant has AI+ subscription
@@ -201,14 +245,56 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .single();
 
     if (!tenant?.ai_features_enabled) {
-      return res.status(403).json({ error: 'AI+ features not enabled for this tenant' });
+      return sendApiError(res, 403, 'AI+ features are not enabled for this tenant.', 'TENANT_INACTIVE', {
+        action: 'Enable ai_features_enabled for this tenant before indexing document content.',
+      });
+    }
+
+    const { data: fileRecord, error: fileError } = await supabase
+      .from('files')
+      .select('id, provider, provider_id, url, mime_type, metadata, raw_api_response')
+      .eq('tenant_id', tenantId)
+      .eq('id', targetFileId)
+      .single();
+
+    if (fileError || !fileRecord) {
+      return sendApiError(res, 404, 'File metadata was not found for content indexing.', 'RESOURCE_NOT_FOUND', {
+        action: 'Run Microsoft Discovery before indexing file content.',
+      });
     }
 
     // Extract text content from document
-    const textContent = await extractTextContent(fileUrl, mimeType);
+    const fileBuffer = await resolveDownloadBuffer({
+      fileRecord,
+      fileUrl: fileUrl || fileRecord.url,
+      accessToken,
+    });
+    const textContent = await extractTextContent(fileBuffer, mimeType || fileRecord.mime_type);
 
     // Chunk the content
     const chunks = chunkText(textContent);
+    const indexingCreditCost = Math.max(1, chunks.length);
+
+    const creditCheck = await verifyAiCreditsAvailable({
+      tenantId,
+      requiredCredits: indexingCreditCost,
+      actionType: 'content_indexing',
+    });
+
+    if (!creditCheck.allowed) {
+      return sendApiError(res, 402, creditCheck.message || 'Insufficient Intelligence Credits.', 'CREDIT_LIMIT_EXCEEDED', creditCheck);
+    }
+
+    const { error: deleteError } = await supabase
+      .from('content_embeddings')
+      .delete()
+      .eq('tenant_id', tenantId)
+      .eq('file_id', targetFileId);
+
+    if (deleteError) {
+      console.error('Error clearing existing embeddings:', deleteError);
+      return sendApiError(res, 500, 'Unable to prepare file for re-indexing', 'DATABASE_ERROR', deleteError.message);
+    }
 
     // Generate embeddings for each chunk
     const embeddingResults = [];
@@ -248,6 +334,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
       .eq('id', targetFileId);
 
+    await recordAiCreditUsage({
+      tenantId,
+      userId,
+      fileId: targetFileId,
+      actionType: 'content_indexing',
+      creditCost: indexingCreditCost,
+      model: 'text-embedding-3-small',
+      metadata: {
+        chunksProcessed: chunks.length,
+        mimeType: mimeType || fileRecord.mime_type || null,
+      },
+    });
+
     return res.status(200).json({
       success: true,
       fileId: targetFileId,
@@ -256,6 +355,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   } catch (error: any) {
     console.error('Error generating embeddings:', error);
-    return res.status(500).json({ error: error.message || 'Internal server error' });
+    return sendApiError(res, 500, error.message || 'Internal server error', 'INTERNAL_ERROR');
   }
 }

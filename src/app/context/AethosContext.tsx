@@ -303,7 +303,7 @@ export const AethosProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       userName: 'Sarah Chen',
       userRole: 'Global Architect',
       avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop',
-      content: "Synchronizing Alpha Strategy meeting results across the lattice. Loop components updated with the new Q1 budget pivots.",
+      content: "Synchronizing Alpha Strategy meeting results across the workspace. Loop components updated with the new Q1 budget pivots.",
       type: 'integration',
       action: 'loop-sync',
       likes: 12,
@@ -748,8 +748,8 @@ export const AethosProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   const validatePointers = async () => {
     // Simulate background sync engine validating links across providers
-    toast("Nexus Sync Engine Initialized", {
-      description: "Validating pinned molecules across federated providers...",
+    toast("Workspace Link Check Started", {
+      description: "Validating pinned anchors against their source locations...",
     });
 
     await new Promise(resolve => setTimeout(resolve, 2000));

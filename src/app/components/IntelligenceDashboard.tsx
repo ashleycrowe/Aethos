@@ -127,7 +127,7 @@ function copyWorkspaceOpportunityHandoff(opportunity: ReportSummaryResponse['sum
 }
 
 const DataSourceBadge = ({ mode }: { mode: 'live' | 'demo' }) => (
-  <span className={`w-fit rounded-full border px-3 py-1 text-[9px] font-black uppercase tracking-[0.12em] sm:tracking-widest ${
+  <span className={`w-fit rounded-full border px-3 py-1 text-xs font-black uppercase tracking-[0.12em] sm:tracking-widest ${
     mode === 'live'
       ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400'
       : 'border-[#F59E0B]/25 bg-[#F59E0B]/10 text-[#F59E0B]'
@@ -599,7 +599,7 @@ const OverviewDashboard = ({
                 Aethos is connected, but this tenant needs broader discovery coverage before we calculate a reliable health score.
               </p>
             </div>
-            <span className="w-fit rounded-full border border-[#00F0FF]/20 bg-[#00F0FF]/10 px-3 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-[#00F0FF] sm:tracking-widest">
+            <span className="w-fit rounded-full border border-[#00F0FF]/20 bg-[#00F0FF]/10 px-3 py-1 text-xs font-black uppercase tracking-[0.12em] text-[#00F0FF] sm:tracking-widest">
               {reportSummary.discovery.totalFiles.toLocaleString()} files / {reportSummary.discovery.totalSites.toLocaleString()} sites
             </span>
             <DataSourceBadge mode="live" />
@@ -772,7 +772,7 @@ const OverviewDashboard = ({
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
                             <span
-                              className="rounded-lg px-2 py-1 text-[9px] font-black uppercase tracking-[0.12em] sm:tracking-widest"
+                              className="rounded-lg px-2 py-1 text-xs font-black uppercase tracking-[0.12em] sm:tracking-widest"
                               style={{ backgroundColor: `${color}18`, color }}
                             >
                               OLS {owner.ownerLiabilityScore}/100
@@ -781,7 +781,7 @@ const OverviewDashboard = ({
                               {owner.primaryRiskFactor}
                             </span>
                             <span
-                              className="rounded-lg px-2 py-1 text-[9px] font-black uppercase tracking-[0.12em] sm:tracking-widest"
+                              className="rounded-lg px-2 py-1 text-xs font-black uppercase tracking-[0.12em] sm:tracking-widest"
                               style={{
                                 backgroundColor: `${getOwnerStatusColor(owner.ownerStatus)}18`,
                                 color: getOwnerStatusColor(owner.ownerStatus),
@@ -879,7 +879,7 @@ const OverviewDashboard = ({
                 </div>
                 <div className="flex flex-col items-start gap-2 md:items-end">
                   <DataSourceBadge mode="live" />
-                  <span className="rounded-full border border-[#F59E0B]/25 bg-[#F59E0B]/10 px-3 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-[#F59E0B] sm:tracking-widest">
+                  <span className="rounded-full border border-[#F59E0B]/25 bg-[#F59E0B]/10 px-3 py-1 text-xs font-black uppercase tracking-[0.12em] text-[#F59E0B] sm:tracking-widest">
                     {reportSummary.ownership.ownerStatusReview.reviewRequiredOwners} owner{reportSummary.ownership.ownerStatusReview.reviewRequiredOwners === 1 ? '' : 's'} need review
                   </span>
                 </div>
@@ -893,7 +893,7 @@ const OverviewDashboard = ({
                   >
                     <div className="mb-4 flex flex-wrap items-center gap-2">
                       <span
-                        className="rounded-lg px-2 py-1 text-[9px] font-black uppercase tracking-[0.12em] sm:tracking-widest"
+                        className="rounded-lg px-2 py-1 text-xs font-black uppercase tracking-[0.12em] sm:tracking-widest"
                         style={{
                           backgroundColor: `${getOwnerStatusColor(owner.status)}18`,
                           color: getOwnerStatusColor(owner.status),
@@ -901,7 +901,7 @@ const OverviewDashboard = ({
                       >
                         {formatOwnerStatus(owner.status)}
                       </span>
-                      <span className="rounded-lg border border-white/10 bg-white/[0.04] px-2 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-slate-500 sm:tracking-widest">
+                      <span className="rounded-lg border border-white/10 bg-white/[0.04] px-2 py-1 text-xs font-black uppercase tracking-[0.12em] text-slate-500 sm:tracking-widest">
                         OLS {owner.ownerLiabilityScore}/100
                       </span>
                     </div>
@@ -1205,7 +1205,7 @@ const OverviewDashboard = ({
                   }`}
                 >
                   <div className="mb-5 flex items-center justify-between gap-3">
-                    <div className="rounded-lg border border-[#00F0FF]/20 bg-[#00F0FF]/10 px-3 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-[#00F0FF] sm:tracking-widest">
+                    <div className="rounded-lg border border-[#00F0FF]/20 bg-[#00F0FF]/10 px-3 py-1 text-xs font-black uppercase tracking-[0.12em] text-[#00F0FF] sm:tracking-widest">
                       {opportunity.fileCount.toLocaleString()} files
                     </div>
                     <Database className="h-4 w-4 text-slate-500" />
@@ -1220,7 +1220,7 @@ const OverviewDashboard = ({
                     {opportunity.suggestedTags.map((tag) => (
                       <span
                         key={tag}
-                        className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-slate-500 sm:tracking-widest"
+                        className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-xs font-black uppercase tracking-[0.12em] text-slate-500 sm:tracking-widest"
                       >
                         {tag}
                       </span>
@@ -1230,7 +1230,7 @@ const OverviewDashboard = ({
                     {opportunity.reasonCodes.slice(0, 4).map((reason) => (
                       <span
                         key={reason}
-                        className="rounded-full border border-[#00F0FF]/15 bg-[#00F0FF]/10 px-2 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-[#00F0FF] sm:tracking-widest"
+                        className="rounded-full border border-[#00F0FF]/15 bg-[#00F0FF]/10 px-2 py-1 text-xs font-black uppercase tracking-[0.12em] text-[#00F0FF] sm:tracking-widest"
                       >
                         {reason.replace(/[-_]/g, ' ')}
                       </span>
@@ -1288,7 +1288,7 @@ const OverviewDashboard = ({
                     }`}
                   >
                     <div className="mb-3 flex items-center justify-between gap-3">
-                      <span className="rounded-full border border-[#00F0FF]/20 bg-[#00F0FF]/10 px-3 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-[#00F0FF] sm:tracking-widest">
+                      <span className="rounded-full border border-[#00F0FF]/20 bg-[#00F0FF]/10 px-3 py-1 text-xs font-black uppercase tracking-[0.12em] text-[#00F0FF] sm:tracking-widest">
                         {cluster.source}
                       </span>
                       <span className="text-[9px] font-black uppercase tracking-[0.12em] text-slate-500 sm:tracking-widest">
@@ -1363,7 +1363,7 @@ const OverviewDashboard = ({
                           {dryRun.fileCount.toLocaleString()} files | {dryRun.status} | {formatDate(dryRun.executedAt)}
                         </p>
                       </div>
-                      <span className="w-fit rounded-lg border border-white/10 bg-white/[0.04] px-2 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-slate-500 sm:tracking-widest">
+                      <span className="w-fit rounded-lg border border-white/10 bg-white/[0.04] px-2 py-1 text-xs font-black uppercase tracking-[0.12em] text-slate-500 sm:tracking-widest">
                         Dry Run
                       </span>
                     </div>

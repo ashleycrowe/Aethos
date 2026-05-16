@@ -1,5 +1,5 @@
 /**
- * Database Migration: V1.5 → V4 Features
+ * Database Migration: V1.5 to V4 Features
  * 
  * PURPOSE: Add database schema for AI+, Multi-Provider, Governance, and Federation features
  * VERSION: V1.5, V2, V3, V4
@@ -24,6 +24,10 @@
 -- ============================================================================
 -- V1.5 AI+ CONTENT INTELLIGENCE TABLES
 -- ============================================================================
+
+CREATE EXTENSION IF NOT EXISTS vector;
+
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS ai_features_enabled BOOLEAN DEFAULT FALSE;
 
 -- Content Embeddings (for semantic search)
 CREATE TABLE IF NOT EXISTS content_embeddings (

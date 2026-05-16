@@ -25,6 +25,18 @@ describe('OracleSearchBridgeV2 smoke contract', () => {
     expect(source).toContain('classes stay deferred until their ingestion boundaries are live-backed');
   });
 
+  it('keeps V1.5 AI+ search wired to semantic results and summary actions', () => {
+    expect(source).toContain('indexFileContent({');
+    expect(source).toContain('detectPii({');
+    expect(source).toContain('semanticSearch({');
+    expect(source).toContain('summarizeFile({');
+    expect(source).toContain('AI+ Search Results');
+    expect(source).toContain('Content Match');
+    expect(source).toContain('Index Content');
+    expect(source).toContain('Scan PII');
+    expect(source).toContain('AI+ results also require content indexing');
+  });
+
   it('keeps Oracle search mobile-first', () => {
     expect(source).toContain('overflow-x-hidden');
     expect(source).toContain("animate={{ width: 'auto', opacity: 1 }}");

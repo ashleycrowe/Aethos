@@ -1,8 +1,10 @@
 # Aethos V1 Testable Queue
 
-**Last Updated:** May 15, 2026  
-**Status:** V1 live walkthrough integrating Integrity Layer, accessibility, and workspace remediation polish  
+**Last Updated:** May 16, 2026
+**Status:** V1 engineering cleanup complete pending manual visual/mobile QA
 **Scope:** First testable V1, not full production readiness
+
+**V1.5 Status:** AI+ code path assembled for pre-release/local validation. Live/demo exposure remains gated until OpenAI, Supabase, tenant opt-in, Graph content access, and indexed content are confirmed.
 
 ---
 
@@ -165,6 +167,9 @@ See `docs/OPERATIONAL_INTELLIGENCE_DEVELOPMENT_QUEUE.md` for the detailed implem
 - [x] Add workspace-scoped trust filters for source-of-truth, freshness, owner, external share, stale, and needs-review state.
 - [x] Add read-focused Team View for Knowledge Workers with fewer admin/remediation controls.
 - [x] Add steward audit trail before Microsoft 365 write-back or destructive remediation actions.
+- [x] Integrate Workspace visibility indicators and Blind Steward remediation briefs for restricted workspace review.
+- [x] Derive live workspace access visibility from stewardship owner metadata and workspace item permission signals.
+- [x] Add API contract coverage for derived workspace access visibility without making Aethos permission-authoritative.
 
 ---
 
@@ -174,6 +179,24 @@ See `docs/OPERATIONAL_INTELLIGENCE_DEVELOPMENT_QUEUE.md` for the detailed implem
 
 - [x] Define V1 data scope as files/documents, metadata, permissions, activity, containers, workspaces, and safe remediation.
 - [x] Define V1.5 direction as content intelligence plus SharePoint pages/news inventory as published knowledge.
+- [x] Wire V1.5 Oracle AI+ semantic search to indexed content chunks behind pre-release/local feature gates.
+- [x] Add pre-release Oracle action to index selected file content for AI+ semantic search and summaries.
+- [x] Support Microsoft Graph-backed content indexing from stored discovery metadata instead of relying on public file URLs.
+- [x] Wire V1.5 Oracle summaries to the AI+ summarization endpoint with actionable setup/indexing errors.
+- [x] Wire V1.5 Oracle PII scans to indexed content with repeat-scan cleanup and visible risk badges.
+- [x] Harden V1.5 metadata enrichment with AI+ tenant gating, structured errors, and frontend API helper coverage.
+- [x] Add a gated Metadata Quality action to stage V1.5 AI+ metadata suggestions for human review.
+- [x] Add Admin AI+ readiness check for OpenAI configuration, tenant opt-in, indexed chunks, PII scans, and pending suggestions.
+- [x] Keep V1.5 AI+ hidden from live/demo promotion until content scanning is validated.
+- [ ] Confirm Supabase V1.5 migration is applied in the target environment.
+- [ ] Set `OPENAI_API_KEY` for AI+ endpoint validation.
+- [ ] Enable tenant-level `ai_features_enabled` only for the intended AI+ test tenant.
+- [ ] Run content indexing so `content_embeddings` has real chunks for semantic search, summaries, and PII checks.
+- [ ] Validate the V1.5 manual path: Oracle `Index Content` -> AI+ Content Search -> `Scan PII` -> `Summarize` -> Metadata Quality `Run AI+ Suggestions`.
+- [x] Add AI+ credit-accounting schema scaffold for tenant budgets, usage ledger, and queued bulk jobs.
+- [x] Record successful AI+ actions into the credit ledger for validation visibility.
+- [x] Add opt-in credit enforcement gate for AI+ endpoints when `tenant_ai_settings.credits_enforced = true`.
+- [ ] Before paid AI+ launch, wire admin usage meter and bulk-job workers from `docs/AI_PLUS_USAGE_GUARDRAILS.md`.
 - [x] Keep SharePoint Lists out of first testable V1 implementation.
 - [ ] Add SharePoint Lists as a V1.5/V2 discovery spike after Live Mode auth, discovery, search, and workspace creation are stable.
 - [x] Add data-class labels to future search/results UX: Document, Published Knowledge, Structured List, Container, Signal.
@@ -248,7 +271,7 @@ Priority order:
 Completed component passes:
 - [x] IntelligenceDashboard: remove mobile overflow pressure from scan strips and owner/report cards, reduce tight tracking, and wrap long owner/file labels.
 - [x] OracleSearch: make filter panel full-width on mobile, stack status controls, wrap chat/result text, and keep core search controls touch-sized.
-- [x] WorkspaceEngine: reduce tight label tracking, make workspace/lattice actions touch-sized on phones, and wrap resource titles/labels.
+- [x] WorkspaceEngine: reduce tight label tracking, make workspace actions touch-sized on phones, and wrap resource titles/labels.
 - [x] Mobile contract coverage: add a V1 cross-screen smoke test for overflow containment, touch targets, progressive grids, blur reduction, and long-label wrapping.
 - [x] ReportingCenter: stack report controls at mobile widths, reduce chart/card padding, wrap waste-file rows, and remove hard-coded dollar savings.
 - [x] PeopleCenter: stack directory/manager controls, wrap identity card labels, and make the profile modal phone-friendly.
@@ -261,6 +284,8 @@ Audit rules:
 - [x] Remove accidental horizontal overflow; allow only intentional tab/filter/stat-pill carousels.
 - [x] Ensure primary touch targets are at least 44px x 44px.
 - [x] Keep interactive control text readable: `text-sm` preferred, `text-xs` acceptable for compact tabs/pills that scale up at `sm:`.
+- [x] Increase live Oracle result badge/pill text to at least `text-xs`.
+- [x] Add reduced-motion handling for pulse animations and integrity visualization motion.
 - [x] Preserve Aethos tiny metadata labels for non-interactive/supporting text only.
 - [x] Use progressive dashboard grids: 1 col mobile, 2 col small tablet, 3-4 col desktop.
 - [x] Keep primary dashboard/report cards stacked vertically on mobile instead of horizontal carousels.
@@ -283,6 +308,8 @@ See `docs/PHASE_1_DEPLOYMENT_REVIEW.md` for the full current review and deployme
 
 ## Current Manual Testing Focus
 
+- Confirm Integrity Score Card is visible, readable, and collapsible in the Intelligence Center.
+- Confirm the Blind Steward flow in Workspace Engine: restricted badge, remediation button, slide-over, and copy-access packet.
 - Verify `VITE_DEMO_MODE=false` starts the app in Live Mode.
 - Confirm the floating version toggle can deliberately switch Demo Mode on/off and persists the browser-session override.
 - Walk the V1 path in Live Mode: Microsoft auth, tenant/user setup, discovery, Oracle search, Workspace creation/detail, and remediation dry-run.

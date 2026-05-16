@@ -36,8 +36,10 @@ import {
 } from '@/app/utils/diagnostics';
 import {
   getReportSummary,
+  getAiPlusReadiness,
   listDiagnostics,
   runDiscoveryScan,
+  type AiPlusReadinessResponse,
   type DiagnosticEvent,
   type DiscoveryScanResponse,
   type ReportSummaryResponse,
@@ -154,6 +156,8 @@ export const AdminCenter = () => {
   const [lastScanSummary, setLastScanSummary] = React.useState<ReportSummaryResponse['summary']['lastScan'] | null>(null);
   const [isLoadingLastScan, setIsLoadingLastScan] = React.useState(false);
   const [lastScanError, setLastScanError] = React.useState<string | null>(null);
+  const [aiPlusReadiness, setAiPlusReadiness] = React.useState<AiPlusReadinessResponse | null>(null);
+  const [aiPlusReadinessError, setAiPlusReadinessError] = React.useState<string | null>(null);
   const [localDiagnostics, setLocalDiagnostics] = React.useState<StoredDiagnostic[]>([]);
   const [liveDiagnostics, setLiveDiagnostics] = React.useState<DiagnosticEvent[]>([]);
   const [isLoadingDiagnostics, setIsLoadingDiagnostics] = React.useState(false);
@@ -180,6 +184,23 @@ export const AdminCenter = () => {
     event.severity === 'error' || event.severity === 'fatal' || event.severity === 'warn'
   ).length;
   const capabilityCards = [
+    {
+      label: 'AI+ Readiness',
+      detail: demoMode
+        ? 'AI+ validation uses Live Mode, OpenAI, tenant opt-in, and indexed Microsoft content.'
+        : aiPlusReadinessError
+          ? `Readiness check failed: ${aiPlusReadinessError}`
+          : aiPlusReadiness?.ready
+            ? `${aiPlusReadiness.indexedChunks.toLocaleString()} content chunks ready for semantic search, summaries, PII, and suggestions.`
+            : aiPlusReadiness?.blockers?.[0] || 'Run the AI+ readiness check after sign-in.',
+      status: demoMode
+        ? 'demo'
+        : aiPlusReadinessError
+          ? 'needs_attention'
+          : aiPlusReadiness?.ready
+            ? 'ready'
+            : 'needs_attention',
+    },
     {
       label: 'Microsoft Sign-In',
       detail: isAuthenticated
@@ -270,6 +291,27 @@ export const AdminCenter = () => {
   React.useEffect(() => {
     void refreshLastScanSummary();
   }, [refreshLastScanSummary]);
+
+  const refreshAiPlusReadiness = React.useCallback(async () => {
+    if (demoMode || !isAuthenticated) {
+      setAiPlusReadiness(null);
+      setAiPlusReadinessError(null);
+      return;
+    }
+
+    try {
+      setAiPlusReadinessError(null);
+      const response = await getAiPlusReadiness({ accessToken: await getAccessToken() });
+      setAiPlusReadiness(response);
+    } catch (error) {
+      setAiPlusReadiness(null);
+      setAiPlusReadinessError(error instanceof Error ? error.message : 'Unable to load AI+ readiness');
+    }
+  }, [demoMode, getAccessToken, isAuthenticated]);
+
+  React.useEffect(() => {
+    void refreshAiPlusReadiness();
+  }, [refreshAiPlusReadiness]);
 
   const applyDemoMode = (enabled: boolean) => {
     if (!demoOverrideAllowed) {
@@ -890,8 +932,34 @@ export const AdminCenter = () => {
             <MonitorCog className="mb-4 h-6 w-6 text-[#00F0FF]" />
             <h3 className="mb-2 text-base font-black text-white">Tenant Capability Status</h3>
             <p className="mb-5 text-sm leading-6 text-slate-400">
-              These V1 checks reflect current session and discovery coverage. They do not claim deeper Graph permission validation until a dedicated capability-check endpoint is added.
+              These checks reflect current session, discovery coverage, and V1.5 AI+ readiness where available.
             </p>
+            {!demoMode && aiPlusReadiness && (
+              <div className="mb-4 rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">AI+ Validation Snapshot</p>
+                    <p className="mt-2 text-xs leading-5 text-slate-300">
+                      OpenAI: {aiPlusReadiness.openAiConfigured ? 'configured' : 'missing'} · Tenant AI+: {aiPlusReadiness.tenantAiEnabled ? 'enabled' : 'off'} · Indexed chunks: {aiPlusReadiness.indexedChunks.toLocaleString()}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void refreshAiPlusReadiness()}
+                    className="min-h-10 rounded-xl border border-[#A855F7]/30 bg-[#A855F7]/10 px-3 text-[10px] font-black uppercase tracking-[0.14em] text-[#C084FC] transition hover:bg-[#A855F7]/20"
+                  >
+                    Refresh AI+
+                  </button>
+                </div>
+                {aiPlusReadiness.blockers.length > 0 && (
+                  <ul className="mt-3 space-y-1 text-xs leading-5 text-amber-200">
+                    {aiPlusReadiness.blockers.map((blocker) => (
+                      <li key={blocker}>{blocker}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
             <div className="grid gap-3 sm:grid-cols-2">
               {capabilityCards.map((capability) => (
                 <div

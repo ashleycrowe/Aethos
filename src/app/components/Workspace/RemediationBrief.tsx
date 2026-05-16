@@ -90,11 +90,11 @@ export function RemediationBrief({ isOpen, onClose, reason = 'STEWARD_ACCESS_GAP
 
               <div>
                 <h3 className="text-sm font-black uppercase tracking-widest text-white mb-4 flex items-center gap-2">
-                  <Shield className="w-5 h-5 text-[#00F0FF]" />
+                  <Shield className="w-5 h-5 text-[#1AFFFF]" />
                   Reason Code
                 </h3>
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#00F0FF]/10 border border-[#00F0FF]/30">
-                  <span className="text-[9px] font-black uppercase tracking-widest text-[#00F0FF]">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#1AFFFF]/10 border border-[#1AFFFF]/30">
+                  <span className="text-xs font-black uppercase tracking-widest text-[#1AFFFF]">
                     {reason}
                   </span>
                 </div>
@@ -170,7 +170,7 @@ export function RemediationBrief({ isOpen, onClose, reason = 'STEWARD_ACCESS_GAP
 
                 <div className="bg-white/[0.03] border border-white/10 rounded-xl p-6">
                   <div className="flex items-center gap-2 mb-3">
-                    <FileText className="w-4 h-4 text-[#00F0FF]" />
+                    <FileText className="w-4 h-4 text-[#1AFFFF]" />
                     <h4 className="text-xs font-black uppercase tracking-widest text-white">
                       Access Request Packet
                     </h4>
@@ -188,7 +188,7 @@ export function RemediationBrief({ isOpen, onClose, reason = 'STEWARD_ACCESS_GAP
 
                   <button
                     onClick={handleRequestAccess}
-                    className="w-full min-h-[48px] rounded-xl bg-[#00F0FF] text-[#0B0F19] hover:bg-white transition-colors flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest"
+                    className="w-full min-h-[48px] rounded-xl bg-[#1AFFFF] text-[#0B0F19] hover:bg-white transition-colors flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest"
                   >
                     <Send className="w-4 h-4" />
                     Copy Access Request

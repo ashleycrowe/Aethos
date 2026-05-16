@@ -14,7 +14,8 @@
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import OpenAI from 'openai';
-import { requireApiContext, supabase } from '../_lib/apiAuth.js';
+import { recordAiCreditUsage, verifyAiCreditsAvailable } from '../_lib/aiCredits.js';
+import { requireApiContext, sendApiError, supabase } from '../_lib/apiAuth.js';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -25,12 +26,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!context) return;
 
   try {
-    const { tenantId } = context;
+    const { tenantId, userId } = context;
     const { fileId, artifactId, summaryType = 'concise' } = req.body;
     const targetFileId = fileId || artifactId;
 
     if (!targetFileId) {
-      return res.status(400).json({ error: 'Missing required fields' });
+      return sendApiError(res, 400, 'Missing required fields', 'VALIDATION_ERROR', {
+        required: ['fileId'],
+      });
+    }
+
+    if (!process.env.OPENAI_API_KEY) {
+      return sendApiError(res, 503, 'AI+ summarization is not configured. Add OPENAI_API_KEY.', 'SERVER_NOT_CONFIGURED');
     }
 
     // Check if tenant has AI+ subscription
@@ -41,7 +48,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .single();
 
     if (!tenant?.ai_features_enabled) {
-      return res.status(403).json({ error: 'AI+ features not enabled for this tenant' });
+      return sendApiError(res, 403, 'AI+ features are not enabled for this tenant.', 'TENANT_INACTIVE', {
+        action: 'Enable ai_features_enabled for this tenant before summarizing content.',
+      });
     }
 
     // Check for cached summary
@@ -56,6 +65,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .single();
 
     if (cachedSummary) {
+      await recordAiCreditUsage({
+        tenantId,
+        userId,
+        fileId: targetFileId,
+        actionType: 'summarize_document',
+        creditCost: 0,
+        cached: true,
+        status: 'succeeded',
+        metadata: {
+          summaryType,
+          cacheAge: cachedSummary.created_at,
+        },
+      });
+
       return res.status(200).json({
         success: true,
         summary: cachedSummary.summary,
@@ -73,7 +96,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .order('chunk_index', { ascending: true });
 
     if (!chunks || chunks.length === 0) {
-      return res.status(404).json({ error: 'No content found for this file' });
+      return sendApiError(res, 404, 'No indexed content found for this file.', 'RESOURCE_NOT_FOUND', {
+        action: 'Run AI+ content indexing before requesting a summary.',
+      });
+    }
+
+    const summaryCreditCost = summaryType === 'concise' ? 5 : 20;
+    const creditCheck = await verifyAiCreditsAvailable({
+      tenantId,
+      requiredCredits: summaryCreditCost,
+      actionType: 'summarize_document',
+    });
+
+    if (!creditCheck.allowed) {
+      return sendApiError(res, 402, creditCheck.message || 'Insufficient Intelligence Credits.', 'CREDIT_LIMIT_EXCEEDED', creditCheck);
     }
 
     // Combine chunks
@@ -100,9 +136,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const summaryText = completion.choices[0].message.content || '';
 
     // Extract key points (simple heuristic - look for bullet points or numbered lists)
-    const keyPointsMatch = summaryText.match(/[-•]\s(.+?)(?=\n[-•]|\n\n|$)/g);
+    const keyPointsMatch = summaryText.match(/[-*]\s(.+?)(?=\n[-*]|\n\n|$)/g);
     const keyPoints = keyPointsMatch
-      ? keyPointsMatch.map((p) => p.replace(/^[-•]\s/, '').trim())
+      ? keyPointsMatch.map((p) => p.replace(/^[-*]\s/, '').trim())
       : [];
 
     // Store summary in cache
@@ -115,6 +151,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       created_at: new Date().toISOString(),
     });
 
+    await recordAiCreditUsage({
+      tenantId,
+      userId,
+      fileId: targetFileId,
+      actionType: 'summarize_document',
+      creditCost: summaryCreditCost,
+      model: 'gpt-4o-mini',
+      inputTokens: completion.usage?.prompt_tokens ?? null,
+      outputTokens: completion.usage?.completion_tokens ?? null,
+      metadata: {
+        summaryType,
+      },
+    });
+
     return res.status(200).json({
       success: true,
       summary: summaryText,
@@ -123,6 +173,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   } catch (error: any) {
     console.error('Error generating summary:', error);
-    return res.status(500).json({ error: error.message || 'Internal server error' });
+    return sendApiError(res, 500, error.message || 'Internal server error', 'INTERNAL_ERROR');
   }
 }

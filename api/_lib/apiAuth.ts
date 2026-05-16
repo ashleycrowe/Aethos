@@ -41,6 +41,7 @@ export type ApiErrorCode =
   | 'VALIDATION_ERROR'
   | 'DATABASE_ERROR'
   | 'UPSTREAM_ERROR'
+  | 'CREDIT_LIMIT_EXCEEDED'
   | 'RATE_LIMITED'
   | 'INTERNAL_ERROR';
 

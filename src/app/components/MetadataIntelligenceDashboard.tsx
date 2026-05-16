@@ -6,8 +6,8 @@ import {
 } from 'lucide-react';
 import { isDemoModeEnabled } from '@/app/config/demoMode';
 import { useAuth } from '@/app/context/AuthContext';
-import { useVersion } from '@/app/context/VersionContext';
-import { recordMetadataSuggestionDecision } from '@/lib/api';
+import { useFeature, useVersion } from '@/app/context/VersionContext';
+import { recordMetadataSuggestionDecision, runMetadataEnrichment } from '@/lib/api';
 import { toast } from 'sonner';
 
 interface MetadataQuality {
@@ -95,8 +95,10 @@ function openAppTab(tab: string) {
 export const MetadataIntelligenceDashboard: React.FC = () => {
   const { tenantId, getAccessToken } = useAuth();
   const { isDemoMode: globalDemoMode } = useVersion();
+  const hasAISearch = useFeature('aiContentSearch');
   const [selectedView, setSelectedView] = useState<'overview' | 'categories' | 'opportunities'>('overview');
   const [isLoading, setIsLoading] = useState(true);
+  const [isRunningAiEnrichment, setIsRunningAiEnrichment] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(isDemoModeEnabled());
   const [error, setError] = useState<string | null>(null);
   const [sourceMetadataScore, setSourceMetadataScore] = useState(0);
@@ -511,6 +513,32 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
       // Individual errors are already surfaced by recordSuggestionDecision.
     } finally {
       setSavingSuggestionId(null);
+    }
+  };
+
+  const runAiMetadataEnrichment = async () => {
+    if (isDemoMode) {
+      toast.message('AI+ enrichment uses live tenant content and is disabled in Demo Mode');
+      return;
+    }
+
+    try {
+      setIsRunningAiEnrichment(true);
+      const response = await runMetadataEnrichment({
+        accessToken: await getAccessToken(),
+        batchSize: 10,
+      });
+      toast.success('AI+ metadata suggestions staged', {
+        description: response.suggestionsCreated > 0
+          ? `${response.suggestionsCreated} review-first suggestion${response.suggestionsCreated === 1 ? '' : 's'} created. Refresh Metadata Quality to review them.`
+          : response.message || 'No new files needed AI+ metadata suggestions.',
+      });
+    } catch (error) {
+      toast.error('AI+ metadata enrichment unavailable', {
+        description: error instanceof Error ? error.message : 'Confirm OpenAI, tenant AI+ access, and indexed content.',
+      });
+    } finally {
+      setIsRunningAiEnrichment(false);
     }
   };
 
@@ -1126,13 +1154,25 @@ export const MetadataIntelligenceDashboard: React.FC = () => {
                     These suggestions use filename, path, owner, extension, and activity metadata. They do not read file bodies and do not write back to Microsoft 365.
                   </p>
                 </div>
-                <span className={`w-fit rounded-full border px-3 py-1 text-[9px] font-black uppercase tracking-widest ${
-                  isDemoMode
-                    ? 'border-[#F59E0B]/25 bg-[#F59E0B]/10 text-[#F59E0B]'
-                    : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400'
-                }`}>
-                  Data source: {isDemoMode ? 'Demo fixtures' : 'Live tenant'}
-                </span>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  {hasAISearch && (
+                    <button
+                      type="button"
+                      onClick={() => void runAiMetadataEnrichment()}
+                      disabled={isRunningAiEnrichment || isDemoMode}
+                      className="min-h-[40px] rounded-xl border border-[#A855F7]/30 bg-[#A855F7]/10 px-4 py-2 text-xs font-black uppercase tracking-[0.12em] text-[#C084FC] transition hover:bg-[#A855F7]/20 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {isRunningAiEnrichment ? 'Staging AI+' : 'Run AI+ Suggestions'}
+                    </button>
+                  )}
+                  <span className={`w-fit rounded-full border px-3 py-1 text-[9px] font-black uppercase tracking-widest ${
+                    isDemoMode
+                      ? 'border-[#F59E0B]/25 bg-[#F59E0B]/10 text-[#F59E0B]'
+                      : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400'
+                  }`}>
+                    Data source: {isDemoMode ? 'Demo fixtures' : 'Live tenant'}
+                  </span>
+                </div>
               </div>
 
               {metadataSuggestions.length > 0 ? (
