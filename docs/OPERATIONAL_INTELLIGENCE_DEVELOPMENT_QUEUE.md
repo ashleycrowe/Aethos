@@ -713,12 +713,14 @@ Steps:
 13. Verify accepted metadata improves search/workspace suggestions.
 14. Run the guardrail checks from `docs/V15_AI_PLUS_SETUP_CHECKLIST.md`: summary cache reuse, graceful AI+ disable/degrade, and regex-first PII efficiency.
 15. Optionally enable `credits_enforced` with a very low monthly limit and confirm AI+ actions return `CREDIT_LIMIT_EXCEEDED` while V1 metadata workflows continue.
+16. If Microsoft Graph consent is revoked, confirm Oracle AI+ indexing shows the re-authorization toast and Admin Center flips to `AI+ Action Required`.
 
 Pass:
 
 - Users understand content reading is a higher-trust paid/AI+ capability.
 - Oracle AI+ search and summaries work against indexed content without implying V1 metadata search reads file bodies.
 - AI+ accounting schema exists for tenant budgets, ledgers, and queued bulk jobs; successful AI+ actions produce ledger rows; opt-in credit enforcement can block over-budget AI+ actions.
+- Revoked Microsoft Graph consent is trapped before content indexing credits are deducted and routed to Admin Center re-authorization.
 
 Fail:
 

@@ -196,7 +196,18 @@ See `docs/OPERATIONAL_INTELLIGENCE_DEVELOPMENT_QUEUE.md` for the detailed implem
 - [x] Add AI+ credit-accounting schema scaffold for tenant budgets, usage ledger, and queued bulk jobs.
 - [x] Record successful AI+ actions into the credit ledger for validation visibility.
 - [x] Add opt-in credit enforcement gate for AI+ endpoints when `tenant_ai_settings.credits_enforced = true`.
-- [ ] Before paid AI+ launch, wire admin usage meter and bulk-job workers from `docs/AI_PLUS_USAGE_GUARDRAILS.md`.
+- [x] Add Intelligent Entitlement Recovery for revoked Microsoft Graph consent during AI+ content indexing.
+- [x] Surface monthly Intelligence Credit usage and recent ledger rows in Admin Center AI+ readiness.
+- [ ] Before paid AI+ launch, wire bulk-job workers from `docs/AI_PLUS_USAGE_GUARDRAILS.md`.
+
+### Operations Hub / Support Platform
+
+- [x] Add Operations Hub schema for support tickets, knowledge articles, internal roles, and product intelligence.
+- [x] Add AI-assisted support ticket triage with deterministic fallback.
+- [x] Add role-scoped Operations Hub APIs for tickets, search, and dashboard intelligence.
+- [x] Add internal React Operations Hub with Sales/Success, Support, and Product Intelligence views.
+- [x] Add setup guide in `docs/OPERATIONS_HUB_SETUP.md`.
+- [ ] Apply `supabase/migrations/011_operations_hub.sql` and assign internal `operations_user_roles` before live Operations Hub validation.
 - [x] Keep SharePoint Lists out of first testable V1 implementation.
 - [ ] Add SharePoint Lists as a V1.5/V2 discovery spike after Live Mode auth, discovery, search, and workspace creation are stable.
 - [x] Add data-class labels to future search/results UX: Document, Published Knowledge, Structured List, Container, Signal.

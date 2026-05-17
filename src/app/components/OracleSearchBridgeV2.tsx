@@ -45,7 +45,7 @@ import {
   Info
 } from 'lucide-react';
 import { motion as Motion, AnimatePresence } from 'motion/react';
-import { detectPii, indexFileContent, searchFiles, semanticSearch, summarizeFile, type SemanticSearchResponse } from '@/lib/api';
+import { detectPii, indexFileContent, isGraphConsentRevokedError, searchFiles, semanticSearch, summarizeFile, type SemanticSearchResponse } from '@/lib/api';
 import { isDemoModeEnabled } from '@/app/config/demoMode';
 import { useAuth } from '@/app/context/AuthContext';
 import { useTheme } from '@/app/context/ThemeContext';
@@ -81,6 +81,8 @@ type SemanticResult = SemanticSearchResponse['results'][number];
 const V1_DATA_CLASS = 'Document';
 const FUTURE_DATA_CLASSES = ['Published Knowledge', 'Structured List', 'Container', 'Signal'];
 const TEST_TENANT_ID = '00000000-0000-0000-0000-000000000101';
+const GRAPH_CONSENT_TOAST =
+  'Your organization security policies have updated. An Aethos admin needs to re-authorize document access.';
 
 const demoSearchResults: SearchFileResult[] = [
   {
@@ -245,7 +247,9 @@ export const OracleSearchBridgeV2 = () => {
       });
     } catch (error) {
       toast.error('AI+ summary unavailable', {
-        description: error instanceof Error ? error.message : 'Run AI+ content indexing before summarizing.',
+        description: isGraphConsentRevokedError(error)
+          ? GRAPH_CONSENT_TOAST
+          : error instanceof Error ? error.message : 'Run AI+ content indexing before summarizing.',
       });
     } finally {
       setSummarizingFileId(null);
@@ -277,7 +281,9 @@ export const OracleSearchBridgeV2 = () => {
       );
     } catch (error) {
       toast.error('AI+ indexing unavailable', {
-        description: error instanceof Error ? error.message : 'Confirm OpenAI, tenant AI+ access, and Microsoft file permissions.',
+        description: isGraphConsentRevokedError(error)
+          ? GRAPH_CONSENT_TOAST
+          : error instanceof Error ? error.message : 'Confirm OpenAI, tenant AI+ access, and Microsoft file permissions.',
       });
     } finally {
       setIndexingFileId(null);
@@ -307,7 +313,9 @@ export const OracleSearchBridgeV2 = () => {
       );
     } catch (error) {
       toast.error('AI+ PII scan unavailable', {
-        description: error instanceof Error ? error.message : 'Index content before running PII detection.',
+        description: isGraphConsentRevokedError(error)
+          ? GRAPH_CONSENT_TOAST
+          : error instanceof Error ? error.message : 'Index content before running PII detection.',
       });
     } finally {
       setScanningPiiFileId(null);

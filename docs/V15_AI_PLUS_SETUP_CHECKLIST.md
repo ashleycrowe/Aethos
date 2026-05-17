@@ -42,6 +42,7 @@ Apply the V1.5 migration:
 ```text
 supabase/migrations/003_v15_to_v4_features.sql
 supabase/migrations/009_ai_credit_accounting.sql
+supabase/migrations/010_graph_consent_recovery.sql
 ```
 
 It creates or updates:
@@ -56,6 +57,8 @@ It creates or updates:
 - `ai_credit_balances`
 - `ai_credit_ledger`
 - `ai_job_queue`
+- `tenants.api_consent_revoked`
+- `tenants.missing_graph_scopes`
 
 If the migration was already applied before the latest changes, manually confirm these two statements have run:
 
@@ -97,6 +100,10 @@ Useful validation queries:
 select id, name, subscription_tier, ai_features_enabled
 from tenants
 order by created_at desc;
+
+select api_consent_revoked, missing_graph_scopes, last_graph_error
+from tenants
+where id = '<tenant-id>';
 
 select count(*) as indexed_chunks
 from content_embeddings
@@ -183,6 +190,8 @@ That means the tester must sign in with an account that can actually read the se
 
 No application permission flow is required for this V1.5 pass.
 
+If an admin revokes a previously granted permission, AI+ content indexing should trap the Microsoft Graph 403, set `tenants.api_consent_revoked = true`, and show Admin Center `AI+ Action Required`. Use the Admin Center `Re-Authenticate` button to reopen Microsoft consent with `prompt=consent`.
+
 ---
 
 ## 5. Manual V1.5 Validation Path
@@ -194,6 +203,7 @@ No application permission flow is required for this V1.5 pass.
    - Missing `OPENAI_API_KEY`
    - Tenant AI+ flag off
    - Zero indexed chunks
+   - Microsoft Graph consent revoked
 5. Open Oracle.
 6. Search for a real Microsoft file.
 7. Click `Index Content` on a small file.
@@ -219,6 +229,8 @@ These are not visual QA checks. They verify V1.5 behaves like the pricing model.
 Expected result: the second response should reuse the cached summary. Once credit enforcement is wired, the cached response should not create a full-cost ledger debit.
 
 Ledger check: `ai_credit_ledger` should show the first `summarize_document` entry with a positive credit cost and the cached repeat with `cached = true` and `credit_cost = 0`.
+
+Admin check: Admin Center should show the monthly Intelligence Credit usage meter and recent ledger rows.
 
 ### Graceful Degrade Test
 
@@ -271,6 +283,18 @@ Run `Scan PII` on an indexed file that should not contain emails, SSNs, phone nu
 Expected result: the API completes a deterministic regex-only pass, reports low/no findings, and skips OpenAI AI-assist work unless explicitly requested or deterministic patterns make a deeper pass useful.
 
 Ledger check: clean regex-only scans should record `pii_scan_regex` with `credit_cost = 0`. AI-assisted scans should record `pii_scan_ai_assist` with a positive credit cost.
+
+### Microsoft Consent Recovery Test
+
+Only run this if you are comfortable temporarily changing the Microsoft app consent state.
+
+1. Revoke or remove `Files.Read.All` consent for Aethos Production Tenant in Entra ID.
+2. Try Oracle `Index Content` on a Microsoft file.
+3. Confirm the user-facing toast says an Aethos admin needs to re-authorize document access.
+4. Confirm no `content_indexing` credit debit was added for the failed attempt.
+5. Open Admin Center and confirm `AI+ Action Required` shows the missing scope and scope documentation link.
+6. Click `Re-Authenticate` and complete Microsoft consent.
+7. Refresh AI+ readiness and confirm the consent blocker clears.
 
 ---
 

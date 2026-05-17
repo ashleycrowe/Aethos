@@ -7,8 +7,13 @@ const piiDetectionSource = readFileSync(new URL('./pii-detection.ts', import.met
 const semanticSearchSource = readFileSync(new URL('./semantic-search.ts', import.meta.url), 'utf8');
 const readinessSource = readFileSync(new URL('./ai-readiness.ts', import.meta.url), 'utf8');
 const aiCreditsSource = readFileSync(new URL('../_lib/aiCredits.ts', import.meta.url), 'utf8');
+const graphSource = readFileSync(new URL('../_lib/microsoftGraph.ts', import.meta.url), 'utf8');
 const creditAccountingMigrationSource = readFileSync(
   new URL('../../supabase/migrations/009_ai_credit_accounting.sql', import.meta.url),
+  'utf8'
+);
+const graphConsentMigrationSource = readFileSync(
+  new URL('../../supabase/migrations/010_graph_consent_recovery.sql', import.meta.url),
   'utf8'
 );
 
@@ -46,6 +51,8 @@ describe('V1.5 AI+ infrastructure contract', () => {
     expect(readinessSource).toContain('ai_features_enabled');
     expect(readinessSource).toContain('content_embeddings');
     expect(readinessSource).toContain('Run Oracle AI+ Index Content');
+    expect(readinessSource).toContain('creditUsage');
+    expect(readinessSource).toContain('ai_credit_balances');
   });
 
   it('scaffolds paid AI+ credit accounting before launch enforcement', () => {
@@ -59,5 +66,16 @@ describe('V1.5 AI+ infrastructure contract', () => {
     expect(creditAccountingMigrationSource).toContain('CREATE OR REPLACE FUNCTION record_ai_credit_usage');
     expect(aiCreditsSource).toContain("supabase.rpc('record_ai_credit_usage'");
     expect(semanticSearchSource).toContain("actionType: 'semantic_search'");
+  });
+
+  it('traps Microsoft Graph consent revocation for AI+ indexing recovery', () => {
+    expect(graphConsentMigrationSource).toContain('api_consent_revoked');
+    expect(graphConsentMigrationSource).toContain('missing_graph_scopes');
+    expect(graphSource).toContain('GraphConsentError');
+    expect(graphSource).toContain('Files.Read.All');
+    expect(graphSource).toContain('markTenantGraphConsentRevoked');
+    expect(embeddingsSource).toContain('graphFetch');
+    expect(embeddingsSource).toContain('GRAPH_CONSENT_REVOKED');
+    expect(readinessSource).toContain('graphConsent');
   });
 });

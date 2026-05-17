@@ -42,6 +42,7 @@ Avoid "index everything" as the default content-AI motion.
 - Per-tenant hard cap or admin-approved overage: opt-in API enforcement is wired through `tenant_ai_settings.credits_enforced` and `allow_overage`.
 - Bulk-job queue for large indexing/enrichment jobs: schema scaffolded in `ai_job_queue`; worker processing not wired yet.
 - Cached-result reuse for summaries, PII scans, suggestions, and common answers: partially started for summaries.
+- Microsoft Graph consent recovery: content indexing traps revoked/insufficient Graph consent before credit debit and flags Admin Center for re-authorization.
 
 ---
 

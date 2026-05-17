@@ -35,6 +35,8 @@ describe('OracleSearchBridgeV2 smoke contract', () => {
     expect(source).toContain('Index Content');
     expect(source).toContain('Scan PII');
     expect(source).toContain('AI+ results also require content indexing');
+    expect(source).toContain('GRAPH_CONSENT_TOAST');
+    expect(source).toContain('isGraphConsentRevokedError');
   });
 
   it('keeps Oracle search mobile-first', () => {

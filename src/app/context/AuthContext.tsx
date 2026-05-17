@@ -88,6 +88,11 @@ const interactiveLoginRequest = {
   prompt: 'select_account',
 };
 
+const consentLoginRequest = {
+  ...loginRequest,
+  prompt: 'consent',
+};
+
 interface AuthContextType {
   // State
   user: AccountInfo | null;
@@ -99,6 +104,7 @@ interface AuthContextType {
 
   // Methods
   login: () => Promise<void>;
+  reauthenticateWithConsent: () => Promise<void>;
   logout: () => Promise<void>;
   getAccessToken: () => Promise<string | null>;
 }
@@ -292,6 +298,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  const reauthenticateWithConsent = async () => {
+    try {
+      setIsLoading(true);
+      const msal = await initializeMsal();
+
+      if (!msal) return;
+
+      await msal.loginRedirect(consentLoginRequest);
+    } catch (error: any) {
+      console.error('Consent re-authentication error:', error);
+      toast.error('Re-authentication failed', {
+        description: error.errorMessage || 'Unable to open the Microsoft consent flow.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   /**
    * Logout
    */
@@ -371,6 +395,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     isLoading,
     isAuthenticated: !!user && !!accessToken,
     login,
+    reauthenticateWithConsent,
     logout,
     getAccessToken,
   };

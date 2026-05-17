@@ -42,7 +42,12 @@ describe('AdminCenter smoke contract', () => {
     expect(source).toContain('getAiPlusReadiness');
     expect(source).toContain('AI+ Readiness');
     expect(source).toContain('AI+ Validation Snapshot');
+    expect(source).toContain('AI+ Action Required');
+    expect(source).toContain('Re-Authenticate');
+    expect(source).toContain('Aethos Production Tenant');
     expect(source).toContain('Refresh AI+');
+    expect(source).toContain('Intelligence Credits');
+    expect(source).toContain('Observe Only');
     expect(source).toContain('Microsoft Sign-In');
     expect(source).toContain('Tenant Provisioning');
     expect(source).toContain('OneDrive / Files');

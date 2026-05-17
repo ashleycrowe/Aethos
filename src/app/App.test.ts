@@ -21,7 +21,7 @@ describe('App shell mobile readiness contract', () => {
 
 describe('App live/demo tab boundary contract', () => {
   it('keeps Live Mode constrained to live-backed V1 surfaces', () => {
-    expect(source).toContain("export const LIVE_CORE_TABS = new Set(['oracle', 'insights', 'nexus', 'archival', 'admin']);");
+    expect(source).toContain("export const LIVE_CORE_TABS = new Set(['oracle', 'insights', 'nexus', 'archival', 'admin', 'ops']);");
     expect(source).toContain("export const DEMO_ONLY_TABS = new Set(['reports']);");
     expect(source).toContain('isTabAllowedForMode(activeTab, isDemoMode)');
   });
@@ -33,6 +33,7 @@ describe('App live/demo tab boundary contract', () => {
     expect(liveAllowList).toContain("'nexus'");
     expect(liveAllowList).toContain("'archival'");
     expect(liveAllowList).toContain("'admin'");
+    expect(liveAllowList).toContain("'ops'");
     expect(liveAllowList).not.toContain("'reports'");
     expect(liveAllowList).not.toContain("'documents'");
     expect(liveAllowList).not.toContain("'lab'");

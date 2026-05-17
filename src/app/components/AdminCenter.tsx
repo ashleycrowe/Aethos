@@ -149,6 +149,7 @@ export const AdminCenter = () => {
     isLoading,
     getAccessToken,
     login,
+    reauthenticateWithConsent,
     logout,
   } = useAuth();
   const [isScanning, setIsScanning] = React.useState(false);
@@ -183,6 +184,15 @@ export const AdminCenter = () => {
   const diagnosticIssueCount = visibleDiagnostics.filter((event) =>
     event.severity === 'error' || event.severity === 'fatal' || event.severity === 'warn'
   ).length;
+  const graphConsentRevoked = Boolean(aiPlusReadiness?.graphConsent?.revoked);
+  const missingGraphScope = aiPlusReadiness?.graphConsent?.missingScopes?.[0] || 'Files.Read.All';
+  const missingGraphScopeDocs =
+    aiPlusReadiness?.graphConsent?.documentation?.[missingGraphScope] ||
+    'https://learn.microsoft.com/en-us/graph/permissions-reference';
+  const aiCreditUsage = aiPlusReadiness?.creditUsage;
+  const creditUsagePercent = aiCreditUsage?.monthlyCreditLimit
+    ? Math.min(100, Math.round((aiCreditUsage.creditsUsed / aiCreditUsage.monthlyCreditLimit) * 100))
+    : 0;
   const capabilityCards = [
     {
       label: 'AI+ Readiness',
@@ -197,7 +207,9 @@ export const AdminCenter = () => {
         ? 'demo'
         : aiPlusReadinessError
           ? 'needs_attention'
-          : aiPlusReadiness?.ready
+          : graphConsentRevoked
+            ? 'needs_attention'
+            : aiPlusReadiness?.ready
             ? 'ready'
             : 'needs_attention',
     },
@@ -353,6 +365,12 @@ export const AdminCenter = () => {
     window.localStorage.setItem(DEMO_MODE_STORAGE_KEY, 'false');
     setDemoMode(false);
     void login();
+  };
+
+  const handleConsentReauth = () => {
+    window.localStorage.setItem(DEMO_MODE_STORAGE_KEY, 'false');
+    setDemoMode(false);
+    void reauthenticateWithConsent();
   };
 
   const handleDiscoveryScan = async () => {
@@ -935,21 +953,56 @@ export const AdminCenter = () => {
               These checks reflect current session, discovery coverage, and V1.5 AI+ readiness where available.
             </p>
             {!demoMode && aiPlusReadiness && (
-              <div className="mb-4 rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+              <div className={`mb-4 rounded-2xl border p-4 ${
+                graphConsentRevoked
+                  ? 'border-rose-400/30 bg-rose-500/10'
+                  : 'border-white/10 bg-white/[0.035]'
+              }`}>
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">AI+ Validation Snapshot</p>
+                    <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${
+                      graphConsentRevoked ? 'text-rose-200' : 'text-slate-500'
+                    }`}>
+                      {graphConsentRevoked ? 'AI+ Action Required' : 'AI+ Validation Snapshot'}
+                    </p>
                     <p className="mt-2 text-xs leading-5 text-slate-300">
                       OpenAI: {aiPlusReadiness.openAiConfigured ? 'configured' : 'missing'} · Tenant AI+: {aiPlusReadiness.tenantAiEnabled ? 'enabled' : 'off'} · Indexed chunks: {aiPlusReadiness.indexedChunks.toLocaleString()}
                     </p>
+                    {graphConsentRevoked && (
+                      <p className="mt-2 text-xs leading-5 text-rose-100">
+                        Microsoft Graph consent is broken for <span className="font-black">{missingGraphScope}</span>. Re-authorize Aethos Production Tenant access before indexing or summarizing Microsoft files.
+                      </p>
+                    )}
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => void refreshAiPlusReadiness()}
-                    className="min-h-10 rounded-xl border border-[#A855F7]/30 bg-[#A855F7]/10 px-3 text-[10px] font-black uppercase tracking-[0.14em] text-[#C084FC] transition hover:bg-[#A855F7]/20"
-                  >
-                    Refresh AI+
-                  </button>
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    {graphConsentRevoked && (
+                      <>
+                        <a
+                          href={missingGraphScopeDocs}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex min-h-10 items-center justify-center gap-2 rounded-xl border border-rose-200/25 bg-rose-200/10 px-3 text-[10px] font-black uppercase tracking-[0.14em] text-rose-100 transition hover:bg-rose-200/20"
+                        >
+                          <ExternalLink className="h-3.5 w-3.5" />
+                          Scope Docs
+                        </a>
+                        <button
+                          type="button"
+                          onClick={handleConsentReauth}
+                          className="min-h-10 rounded-xl border border-rose-200/30 bg-rose-200 px-3 text-[10px] font-black uppercase tracking-[0.14em] text-rose-950 transition hover:bg-white"
+                        >
+                          Re-Authenticate
+                        </button>
+                      </>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => void refreshAiPlusReadiness()}
+                      className="min-h-10 rounded-xl border border-[#A855F7]/30 bg-[#A855F7]/10 px-3 text-[10px] font-black uppercase tracking-[0.14em] text-[#C084FC] transition hover:bg-[#A855F7]/20"
+                    >
+                      Refresh AI+
+                    </button>
+                  </div>
                 </div>
                 {aiPlusReadiness.blockers.length > 0 && (
                   <ul className="mt-3 space-y-1 text-xs leading-5 text-amber-200">
@@ -957,6 +1010,41 @@ export const AdminCenter = () => {
                       <li key={blocker}>{blocker}</li>
                     ))}
                   </ul>
+                )}
+                {aiCreditUsage && (
+                  <div className="mt-4 rounded-2xl border border-white/10 bg-black/15 p-4">
+                    <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Intelligence Credits</p>
+                        <p className="mt-1 text-xs text-slate-300">
+                          {aiCreditUsage.creditsUsed.toLocaleString()} used / {aiCreditUsage.monthlyCreditLimit.toLocaleString()} monthly · {aiCreditUsage.creditsRemaining.toLocaleString()} remaining
+                        </p>
+                      </div>
+                      <span className={`w-fit rounded-full border px-2 py-1 text-[9px] font-black uppercase tracking-widest ${
+                        aiCreditUsage.creditsEnforced
+                          ? 'border-amber-300/25 bg-amber-300/10 text-amber-200'
+                          : 'border-slate-300/20 bg-slate-300/10 text-slate-300'
+                      }`}>
+                        {aiCreditUsage.creditsEnforced ? 'Enforced' : 'Observe Only'}
+                      </span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-white/10">
+                      <div
+                        className="h-full rounded-full bg-[#1AFFFF]"
+                        style={{ width: `${creditUsagePercent}%` }}
+                      />
+                    </div>
+                    {aiCreditUsage.recentLedger.length > 0 && (
+                      <div className="mt-3 grid gap-2">
+                        {aiCreditUsage.recentLedger.slice(0, 3).map((entry) => (
+                          <div key={`${entry.action_type}-${entry.created_at}`} className="flex items-center justify-between gap-3 text-[10px] text-slate-400">
+                            <span className="font-black uppercase tracking-[0.12em]">{entry.action_type.replace(/_/g, ' ')}</span>
+                            <span>{entry.cached ? 'cached' : `${entry.credit_cost} credits`}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             )}

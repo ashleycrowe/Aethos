@@ -18,6 +18,7 @@ import OpenAI from 'openai';
 import { XMLParser } from 'fast-xml-parser';
 import { recordAiCreditUsage, verifyAiCreditsAvailable } from '../_lib/aiCredits.js';
 import { requireApiContext, sendApiError, supabase } from '../_lib/apiAuth.js';
+import { graphFetch, isGraphConsentError } from '../_lib/microsoftGraph.js';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -26,10 +27,18 @@ const openai = new OpenAI({
 
 const MAX_EXTRACTED_CHARS = 500_000;
 
-async function downloadFile(fileUrl: string, accessToken?: string): Promise<Buffer> {
-  const response = await fetch(fileUrl, accessToken
-    ? { headers: { Authorization: `Bearer ${accessToken}` } }
-    : undefined);
+async function downloadFile(
+  fileUrl: string,
+  accessToken?: string,
+  tenantId?: string,
+  requiredScope?: string
+): Promise<Buffer> {
+  const isGraphUrl = /^https:\/\/graph\.microsoft\.com\//i.test(fileUrl);
+  const response = isGraphUrl
+    ? await graphFetch(fileUrl, { accessToken, tenantId, requiredScope })
+    : await fetch(fileUrl, accessToken
+      ? { headers: { Authorization: `Bearer ${accessToken}` } }
+      : undefined);
 
   if (!response.ok) {
     throw new Error(`Failed to download file content: ${response.status} ${response.statusText}`);
@@ -51,10 +60,12 @@ async function resolveDownloadBuffer({
   fileRecord,
   fileUrl,
   accessToken,
+  tenantId,
 }: {
   fileRecord?: any;
   fileUrl?: string | null;
   accessToken?: string;
+  tenantId?: string;
 }): Promise<Buffer> {
   if (fileRecord?.provider === 'microsoft') {
     const driveId = getMicrosoftDriveId(fileRecord);
@@ -64,7 +75,9 @@ async function resolveDownloadBuffer({
 
     return downloadFile(
       `https://graph.microsoft.com/v1.0/drives/${driveId}/items/${fileRecord.provider_id}/content`,
-      accessToken
+      accessToken,
+      tenantId,
+      'Files.Read.All'
     );
   }
 
@@ -268,6 +281,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       fileRecord,
       fileUrl: fileUrl || fileRecord.url,
       accessToken,
+      tenantId,
     });
     const textContent = await extractTextContent(fileBuffer, mimeType || fileRecord.mime_type);
 
@@ -355,6 +369,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   } catch (error: any) {
     console.error('Error generating embeddings:', error);
+    if (isGraphConsentError(error)) {
+      return sendApiError(res, 403, error.message, 'GRAPH_CONSENT_REVOKED', error.details);
+    }
     return sendApiError(res, 500, error.message || 'Internal server error', 'INTERNAL_ERROR');
   }
 }

@@ -11,6 +11,20 @@ interface ApiErrorEnvelope {
   };
 }
 
+export class ApiRequestError extends Error {
+  code?: string;
+  details?: unknown;
+  status?: number;
+
+  constructor(message: string, options: { code?: string; details?: unknown; status?: number } = {}) {
+    super(message);
+    this.name = 'ApiRequestError';
+    this.code = options.code;
+    this.details = options.details;
+    this.status = options.status;
+  }
+}
+
 function getApiErrorMessage(errorBody: ApiErrorEnvelope | null, fallback: string) {
   if (!errorBody?.error) return fallback;
   if (typeof errorBody.error === 'string') return errorBody.error;
@@ -20,6 +34,10 @@ function getApiErrorMessage(errorBody: ApiErrorEnvelope | null, fallback: string
     ? (details as { action?: unknown }).action
     : undefined;
   return typeof action === 'string' && action ? `${message} ${action}` : message;
+}
+
+export function isGraphConsentRevokedError(error: unknown) {
+  return error instanceof ApiRequestError && error.code === 'GRAPH_CONSENT_REVOKED';
 }
 
 export interface SearchFilesRequest {
@@ -392,8 +410,92 @@ export interface AiPlusReadinessResponse {
   indexedChunks: number;
   piiScans: number;
   pendingAiSuggestions: number;
+  graphConsent?: {
+    revoked: boolean;
+    missingScopes: string[];
+    revokedAt: string | null;
+    lastError?: unknown;
+    documentation?: Record<string, string>;
+  };
+  creditUsage?: {
+    periodMonth: string;
+    monthlyCreditLimit: number;
+    creditsUsed: number;
+    creditsReserved: number;
+    creditsRemaining: number;
+    status: string;
+    creditsEnforced: boolean;
+    allowOverage: boolean;
+    trialCreditGrant: number;
+    indexingFileLimit: number;
+    recentLedger: Array<{
+      action_type: string;
+      credit_cost: number;
+      cached: boolean;
+      status: string;
+      created_at: string;
+    }>;
+  } | null;
   blockers: string[];
   details?: string;
+}
+
+export interface SupportTicket {
+  id: string;
+  tenant_id?: string | null;
+  user_id?: string | null;
+  title: string;
+  description: string;
+  category: 'question' | 'issue' | 'feature' | 'billing' | 'landing_page';
+  status: string;
+  priority?: string;
+  product_area_tag?: string | null;
+  sentiment?: string | null;
+  resolution_summary?: string | null;
+  ui_context_dump?: unknown;
+  source?: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface KnowledgeArticle {
+  id: string;
+  title: string;
+  content?: string;
+  category: string;
+  product_area_tag?: string | null;
+  updated_at?: string;
+}
+
+export interface OperationsHubResponse {
+  success: boolean;
+  role: 'sales_success' | 'support' | 'product_admin';
+  tickets: SupportTicket[];
+  articles: KnowledgeArticle[];
+  featureRequests: Array<{ name: string; count: number }>;
+  frustrations: Array<{ name: string; count: number }>;
+  anomalyAlerts: Array<{
+    productAreaTag: string;
+    count24h: number;
+    severity: 'medium' | 'high';
+    message: string;
+  }>;
+  creditSettings: Array<{
+    tenant_id: string;
+    monthly_credit_limit: number;
+    trial_credit_grant: number;
+    indexing_file_limit: number;
+    credits_enforced: boolean;
+    allow_overage: boolean;
+  }>;
+}
+
+export interface SupportSearchResponse {
+  success: boolean;
+  role: OperationsHubResponse['role'];
+  query: string;
+  tickets: SupportTicket[];
+  articles: KnowledgeArticle[];
 }
 
 async function request<T>(path: string, options: RequestInit = {}, accessToken?: string | null): Promise<T> {
@@ -415,7 +517,13 @@ async function request<T>(path: string, options: RequestInit = {}, accessToken?:
 
   if (!response.ok) {
     const errorBody = await response.json().catch(() => null) as ApiErrorEnvelope | null;
-    throw new Error(getApiErrorMessage(errorBody, `${response.status} ${response.statusText}`));
+    const code = errorBody?.error && typeof errorBody.error === 'object' ? errorBody.error.code : undefined;
+    const details = errorBody?.error && typeof errorBody.error === 'object' ? errorBody.error.details : undefined;
+    throw new ApiRequestError(getApiErrorMessage(errorBody, `${response.status} ${response.statusText}`), {
+      code,
+      details,
+      status: response.status,
+    });
   }
 
   return response.json();
@@ -732,6 +840,33 @@ export async function summarizeFile({
     {
       method: 'POST',
       body: JSON.stringify(body),
+    },
+    accessToken
+  );
+}
+
+export async function getOperationsHub({
+  accessToken,
+}: { accessToken?: string | null } = {}): Promise<OperationsHubResponse> {
+  return request<OperationsHubResponse>(
+    '/support/intelligence',
+    {
+      method: 'POST',
+      body: JSON.stringify({}),
+    },
+    accessToken
+  );
+}
+
+export async function searchOperationsHub({
+  query,
+  accessToken,
+}: { query: string; accessToken?: string | null }): Promise<SupportSearchResponse> {
+  return request<SupportSearchResponse>(
+    '/support/search',
+    {
+      method: 'POST',
+      body: JSON.stringify({ query }),
     },
     accessToken
   );

@@ -41,6 +41,7 @@ const LatticeDeconstruction = lazy(() =>
 const OracleSearchBridgeV2 = lazy(() =>
   import('@/app/components/OracleSearchBridgeV2').then((module) => ({ default: module.OracleSearchBridgeV2 }))
 );
+const OperationsHub = lazy(() => import('@/app/components/OperationsHub').then((module) => ({ default: module.OperationsHub })));
 const PeopleCenter = lazy(() => import('@/app/components/PeopleCenter').then((module) => ({ default: module.PeopleCenter })));
 const PrototypeLab = lazy(() => import('@/app/components/PrototypeLab').then((module) => ({ default: module.PrototypeLab })));
 const PulseBridge = lazy(() => import('@/app/components/PulseBridge').then((module) => ({ default: module.PulseBridge })));
@@ -59,7 +60,7 @@ const VoyagerWorkbench = lazy(() =>
 );
 const WorkspaceEngine = lazy(() => import('@/app/components/WorkspaceEngine').then((module) => ({ default: module.WorkspaceEngine })));
 
-export const LIVE_CORE_TABS = new Set(['oracle', 'insights', 'nexus', 'archival', 'admin']);
+export const LIVE_CORE_TABS = new Set(['oracle', 'insights', 'nexus', 'archival', 'admin', 'ops']);
 export const DEMO_ONLY_TABS = new Set(['reports']);
 
 export const getAllowedTabsForMode = (isDemoMode: boolean) =>
@@ -297,6 +298,8 @@ const Layout: React.FC = () => {
         return <ReportingCenter />;
       case 'admin':
         return <AdminCenter />; // Settings/Admin
+      case 'ops':
+        return <OperationsHub />;
       case 'documents':
         return <DocumentControlModule />;
       // Legacy routes for backwards compatibility

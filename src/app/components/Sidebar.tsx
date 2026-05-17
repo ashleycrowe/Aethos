@@ -22,7 +22,8 @@ import {
   Brain,
   Tags,
   ChevronDown,
-  FileCheck
+  FileCheck,
+  Headphones
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useTheme } from '@/app/context/ThemeContext';
@@ -80,6 +81,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       items: [
         { id: 'archival', icon: Archive, label: 'Remediation', description: 'Archival & cleanup protocols', minVersion: 'V1' },
         { id: 'admin', icon: Settings, label: 'Admin', description: 'Tenant, auth, and deployment controls', minVersion: 'V1' },
+        { id: 'ops', icon: Headphones, label: 'Ops Hub', description: 'Support and product intelligence', minVersion: 'V1' },
       ]
     }
   ];
